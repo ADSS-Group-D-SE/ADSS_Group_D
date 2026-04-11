@@ -10,13 +10,13 @@ public class ProductDL {
     private final static int MAIN =0;
     private final static int SUB=1;
     private final static int SUBSUB =2;
-    private String name;
-    private String catalog_number;
+    private final String name;
+    private final String catalog_number;
 
     private HashMap<Integer,Category> tags;
 
     private String location;
-    private String manufacturer;
+    private final String manufacturer;
 
     private int amount_on_shelves;
     private int amount_on_stock;
@@ -33,7 +33,7 @@ public class ProductDL {
                      int on_shelves,int on_stock,double price_to_consumer,double price_to_supply,double supplier_discount)
     {
         if(main == null || sub == null || subsub ==null)
-            throw new IllegalArgumentException("Bad categories was sent.");
+            throw new IllegalArgumentException("Product construction:" +cat+" ,Bad categories was sent.");
 
         this.tags = new HashMap<>();
         this.tags.put(MAIN,main);
@@ -57,6 +57,8 @@ public class ProductDL {
      */
     public void Purchase(int shelves,int stock)
     {
+        if(shelves > this.amount_on_shelves || stock > this.amount_on_stock)
+            throw new IllegalArgumentException("Product purchase:" + this.catalog_number +" ,amount on shelves or stock is insufficient");
         this.amount_on_shelves -=shelves;
         this.amount_on_stock-=stock;
     }
