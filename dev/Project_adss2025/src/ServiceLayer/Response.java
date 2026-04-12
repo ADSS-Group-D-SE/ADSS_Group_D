@@ -1,10 +1,5 @@
 package ServiceLayer;
-/**
- * A generic wrapper class used to return a response from the Service Layer.
- * It contains either a return value on success or an error message on failure.
- *
- * @param <T> The type of the value returned in the response.
- */
+
 public class Response<T> {
 
     private String errorMsg;
