@@ -114,12 +114,12 @@ public class ProductServices {
     Returns response: with report ID if operation was successful
                       else, return response with error msg.
      **/
-    public Response<Integer> ReportFaultyProduct(String catalog_number, String description, LocalDateTime dateOnReport)
+    public Response<Integer> ReportFaultyProduct(String catalog_number,String locationProduct, String description)
     {
         Response<Integer> res = null;
         try
         {
-            res = new Response<>(null,this.pFacade.ReportFaultyProduct(catalog_number,description,dateOnReport));
+            res = new Response<>(null,this.pFacade.ReportFaultyProduct(catalog_number,locationProduct,description));
         }
         catch (Exception e)
         {
@@ -154,7 +154,7 @@ public class ProductServices {
                       else, returns error msg.
 
      **/
-    public Response<String> CreateFaultyProductReport(LocalDateTime start,LocalDateTime end)
+    public Response<String> CreateFaultyProductReport(String start,String end)
     {
         Response<String> res = null;
         try
@@ -186,6 +186,22 @@ public class ProductServices {
             res = new Response<>(e.getMessage());
         }
         return res;
+    }
+
+    public Response<String> update(String catalogNumber, String name, String storageLocation,
+                                   Double consumerPrice, Double supplyPrice,
+                                   Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
+
+
+        Response<String> res = null;
+        try {
+
+            res = new Response<>(null, this.pFacade.update(catalogNumber, name, storageLocation, consumerPrice, supplyPrice, shelvesAmount, stockAmount, minAmountAlert));
+        } catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+
     }
 
 }

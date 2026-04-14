@@ -15,7 +15,7 @@ public class Category {
      * @param name
      * @param category_id
      * @param subCategory - a list of its subcategories, can be empty.
-     * @param discount_pre - a double between 0 to 1.
+     * @param discount_pre - a double between 0 and 1.
      *
      */
     public Category(String name, String category_id, List<Category> subCategory, double discount_pre) {

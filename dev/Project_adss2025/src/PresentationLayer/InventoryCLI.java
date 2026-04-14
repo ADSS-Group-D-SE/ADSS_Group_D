@@ -37,12 +37,12 @@ public class InventoryCLI {
         System.out.println("\nChoose an option:");
         System.out.println("1. Add Product");
         System.out.println("2. Add faulty Product (Report Damage)");
-        System.out.println("2. Update Min Amount");
         System.out.println("3. Update Product");
         System.out.println("4. Add Product/Category Discount");
         System.out.println("5. View Stock Alerts (Products running out)");
         System.out.println("6. Export Inventory Report by Dates");
         System.out.println("7. Add Supplier Discount per Product");
+
         System.out.println("0. Exit");
         System.out.print("Please enter your choice: ");
     }
@@ -75,6 +75,10 @@ public class InventoryCLI {
 
             case "7":
                 handleSupplierDiscount(scanner, service);
+                break;
+
+            default:
+                System.out.println("Invalid input. Please choose a number between 0 and 7.");
                 break;
         }
     }
@@ -153,8 +157,6 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
 
         try {
-            System.out.print("Enter Product Name: ");
-            String name = scanner.nextLine();
 
             System.out.print("Enter Catalog Number: ");
             String catalogNumber = scanner.nextLine();
@@ -166,19 +168,15 @@ public class InventoryCLI {
             String description = scanner.nextLine();
 
 
-            //בדוק לגבי זה
-            System.out.print("Enter date: ");
-            String date = scanner.nextLine();
-
             System.out.println("\n[*] Sending data to system...");
 
-            Response<String> res = service.createFaultyReport(name, catalogNumber,locationProduct,description,date);
+            Response<Integer> res = service.ReportFaultyProduct( catalogNumber,locationProduct,description);
 
             if (res.isError()) {
                 System.out.println("\n[!] FAILURE: Could not add product.");
                 System.out.println("Reason: " + res.getErrorMsg());
             } else {
-                System.out.println("\n[V] SUCCESS: Product '" + name + "' added successfully!");
+                System.out.println("\n[V] SUCCESS: Product '" +  "' added successfully!");
             }
 
         } catch (Exception e) {
@@ -189,6 +187,86 @@ public class InventoryCLI {
 
 
     private void handleUpdateProduct(Scanner scanner, ProductServices service) {
+
+        System.out.println("\n-----------------------------------------");
+        System.out.println(">>> Action: Update Existing Product");
+        System.out.println("-----------------------------------------");
+
+        System.out.print("Enter the Catalog Number of the product to update: ");
+        String catalogNumber = scanner.nextLine();
+
+
+        System.out.println("\nWhat would you like to update?");
+        System.out.println("1. Product Name");
+        System.out.println("2. Storage Location");
+        System.out.println("3. Consumer Prices");
+        System.out.println("4. Supply Prices");
+        System.out.println("5. Shelves Amounts");
+        System.out.println("6. Stock Amounts");
+        System.out.println("7. Minimum Amount Alert");
+        System.out.println("0. Cancel and return to main menu");
+
+        int updateChoice = getIntInput("\nPlease choose an option (0-5): ");
+
+        switch (updateChoice){
+            case 0:
+                System.out.println("Returning to main menu...");
+                break;
+
+            case 1:
+                System.out.print("Enter New Name: ");
+                String name = scanner.nextLine();
+                service.update(catalogNumber, name, null, null, null, null, null, null);
+                break;
+
+            case 2:
+                System.out.print("Enter New Storage Location: ");
+                String location = scanner.nextLine();
+                service.update(catalogNumber, null, location, null, null, null, null, null);
+                break;
+
+            case 3:
+                System.out.print("Enter New Consumer Price: ");
+                double consumerPrice = scanner.nextDouble();
+                scanner.nextLine();
+                service.update(catalogNumber, null, null, consumerPrice, null, null, null, null);
+                break;
+
+            case 4:
+                System.out.print("Enter New Supply Price: ");
+                double supplyPrice = scanner.nextDouble();
+                scanner.nextLine();
+                service.update(catalogNumber, null, null, null, supplyPrice, null, null, null);
+                break;
+
+            case 5:
+                System.out.print("Enter New Shelves Amount: ");
+                int shelvesAmount = scanner.nextInt();
+                scanner.nextLine();
+                service.update(catalogNumber, null, null, null, null, shelvesAmount, null, null);
+                break;
+
+            case 6:
+                System.out.print("Enter New Stock Amount: ");
+                int stockAmount = scanner.nextInt();
+                scanner.nextLine();
+                service.update(catalogNumber, null, null, null, null, null, stockAmount, null);
+                break;
+
+            case 7:
+                System.out.print("Enter New Minimum Amount Alert: ");
+                int minAlert = scanner.nextInt();
+                scanner.nextLine();
+                service.update(catalogNumber, null, null, null, null, null, null, minAlert);
+                break;
+
+            default:
+                System.out.println("Invalid input. Please choose a number between 0 and 7.");
+                break;
+
+        }
+
+
 
     }
 
@@ -238,12 +316,10 @@ public class InventoryCLI {
         System.out.print("Enter End Date (DD/MM/YYYY): ");
         String endDate = scanner.nextLine();
 
-        System.out.print("Enter Category Name): ");
-        String target = scanner.nextLine();
 
         System.out.println("[*] Generating report for " + startDate + " to " + endDate + "...");
 
-        Response<String> res = service.getInventoryReport(startDate, endDate);
+        Response<String> res = service.CreateFaultyProductReport(startDate, endDate);
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
@@ -263,20 +339,17 @@ public class InventoryCLI {
         System.out.print("Enter Product Catalog Number: ");
         String catNum = scanner.nextLine();
 
-        double supplierDiscount = getDoubleInput("Enter Supplier Discount Percentage: ");
+        int supplierDiscount = getIntInput("Enter Supplier Discount Percentage: ");
 
-        Response<String> res = service.addSupplierDiscount(catNum, supplierDiscount);
+        Response<String> res = service.setSupplierDiscount(catNum, supplierDiscount);
 
         if (res.isError()) {
-            System.out.println("[!] FAILURE: " + res.getErrorMsg());
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
         } else {
             System.out.println("[V] SUCCESS: Supplier discount recorded.");
         }
         System.out.println("-----------------------------------------");
     }
-
-
-
 
 
 }

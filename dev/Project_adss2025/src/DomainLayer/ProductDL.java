@@ -10,7 +10,7 @@ public class ProductDL {
     private final static int MAIN =0;
     private final static int SUB=1;
     private final static int SUBSUB =2;
-    private final String name;
+    private String name;
     private final String catalog_number;
 
     private HashMap<Integer,Category> tags;
@@ -25,12 +25,14 @@ public class ProductDL {
     private double price_to_supply;
     private double supplier_discount;
 
+    private int minAmountAlert;
+
     /*
     The productDL class's constructor, inits the fields of the class.
     Checks for nulls in category inputs.
      */
     public ProductDL(String name,String cat,Category main,Category sub,Category subsub,String loc,String manu,
-                     int on_shelves,int on_stock,double price_to_consumer,double price_to_supply,double supplier_discount)
+                     int on_shelves,int on_stock,double price_to_consumer,double price_to_supply,double supplier_discount,int minAmountAlert)
     {
         if(main == null || sub == null || subsub ==null)
             throw new IllegalArgumentException("Product construction:" +cat+" ,Bad categories was sent.");
@@ -49,6 +51,7 @@ public class ProductDL {
         this.price_to_consumer = price_to_consumer;
         this.price_to_supply = price_to_supply;
         this.supplier_discount = supplier_discount;
+        this.minAmountAlert=minAmountAlert;
     }
 
     /*
@@ -127,7 +130,38 @@ public class ProductDL {
         return supplier_discount;
     }
 
+
+
+
     public void setSupplier_discount(double supplier_discount) {
         this.supplier_discount = supplier_discount;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public void setAmount_on_shelves(int amount_on_shelves) {
+        this.amount_on_shelves = amount_on_shelves;
+    }
+
+    public void setAmount_on_stock(int amount_on_stock) {
+        this.amount_on_stock = amount_on_stock;
+    }
+
+    public void setPrice_to_consumer(double price_to_consumer) {
+        this.price_to_consumer = price_to_consumer;
+    }
+
+    public void setPrice_to_supply(double price_to_supply) {
+        this.price_to_supply = price_to_supply;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setMinAmountAlert(int minAmountAlert) {
+        this.minAmountAlert = minAmountAlert;
     }
 }

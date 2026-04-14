@@ -1,7 +1,9 @@
 package DomainLayer;
 
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,10 +160,11 @@ public class ProductFacade {
     Looks for the product by catalog, throws exception if wasnt found.
     returns report id to the client
      **/
-    public Integer ReportFaultyProduct(String catalog_number, String description, LocalDateTime dateOnReport)
+    public Integer ReportFaultyProduct(String catalog_number,String locationProduct, String description)
     {
         ProductDL toFaulty = FindProductByID(catalog_number);
-        FaultyProductDL toAdd = new FaultyProductDL(toFaulty,generateNextId(),description,dateOnReport);
+        LocalDateTime dateOnReport = LocalDateTime.now();
+        FaultyProductDL toAdd = new FaultyProductDL(toFaulty,generateNextId(),locationProduct,description,dateOnReport);
 
         this.faultyProducts.put(toAdd.getReportID(), toAdd);
         return toAdd.getReportID();
@@ -181,9 +184,17 @@ public class ProductFacade {
     Method that iterates on the faulty product map, and adds each entry that fit the entered date range.
     construct a string reports and returns it.
      **/
-    public String CreateFaultyReport(LocalDateTime start,LocalDateTime end)
+    public String CreateFaultyReport(String startdate,String enddate)
     {
-        String report = "Fault product reports from " + start.toString() +" to " + end.toString() +"\n===========================================\n";
+
+
+        LocalDate datestart = LocalDate.parse(startdate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        LocalDateTime start = datestart.atStartOfDay();
+
+        LocalDate dateend = LocalDate.parse(enddate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        LocalDateTime end = dateend.atStartOfDay();
+
+        String report = "Fault product reports from " + start +" to " + end +"\n===========================================\n";
         for(Map.Entry<Integer,FaultyProductDL> en: this.faultyProducts.entrySet())
         {
             FaultyProductDL p = en.getValue();
@@ -204,6 +215,29 @@ public class ProductFacade {
     {
         ProductDL p = FindProductByID(catalog_number);
         p.Purchase(shelves,stock);
+    }
+
+
+    public String update(String catalogNumber, String name, String storageLocation,
+                       Double consumerPrice, Double supplyPrice,
+                       Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
+
+        ProductDL product = FindProductByID(catalogNumber);
+
+        if (product == null) {
+            throw new NoSuchElementException ("Error: Product with catalog number " + catalogNumber + " not found.");
+
+        }
+
+        if (name != null) product.setName(name);
+        if (storageLocation != null) product.setLocation(storageLocation);
+        if (consumerPrice != null) product.setPrice_to_consumer(consumerPrice);
+        if (supplyPrice != null) product.setPrice_to_supply(supplyPrice);
+        if (shelvesAmount != null) product.setAmount_on_shelves(shelvesAmount);
+        if (stockAmount != null) product.setAmount_on_stock(stockAmount);
+        if (minAmountAlert != null) product.setMinAmountAlert(minAmountAlert);
+
+        return "Product updated successfully!";
     }
 
 }

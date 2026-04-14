@@ -15,12 +15,12 @@ public class FaultyProductDL {
     /**
     Constructor of a faulty product object, constructs from a product instance, and saves description and date on report.
      **/
-    public FaultyProductDL(ProductDL p,int reportID,String description, LocalDateTime reportTime)
+    public FaultyProductDL(ProductDL p,int reportID,String location, String description, LocalDateTime reportTime)
     {
         this.reportID = reportID;
         this.name = p.getName();
         this.catalog_number = p.getCatalog_number();
-        this.location = p.getLocation(); // saves data from product.
+        this.location = location; // saves data from product.
 
         this.description = description;
         this.dateOnReport = reportTime;
