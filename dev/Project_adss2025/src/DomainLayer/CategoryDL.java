@@ -2,13 +2,21 @@ package DomainLayer;
 
 import java.util.List;
 
-public class Category {
 
+public class CategoryDL {
+
+    public CategoryType getType() {
+        return type;
+    }
+
+    public enum CategoryType{
+        Main,Sub,Subsub
+    }
     private String name;
     private String category_id;
-    private List<Category> subCategory;
+    private List<CategoryDL> subCategory;
     private double discount_pre;
-
+    private CategoryType type;
 
     /**
      *
@@ -18,9 +26,9 @@ public class Category {
      * @param discount_pre - a double between 0 to 1.
      *
      */
-    public Category(String name, String category_id, List<Category> subCategory, double discount_pre) {
+    public CategoryDL(String name, String category_id, List<CategoryDL> subCategory, double discount_pre,CategoryType t) {
 
-        for(Category c:subCategory) // checks for a null subcategory
+        for(CategoryDL c:subCategory) // checks for a null subcategory
             if(c == null)
                 throw new IllegalArgumentException("A bad subcategory was sent.");
 
@@ -31,6 +39,17 @@ public class Category {
         this.category_id = category_id;
         this.subCategory = subCategory;
         this.discount_pre = discount_pre;
+        this.type = t;
+    }
+
+    /*
+    Method that receives a new subcategory to add to the category.
+     */
+    public void AddSubcategory(CategoryDL toAdd)
+    {
+        if(toAdd == null)
+            throw new IllegalArgumentException("CategoryDL - Add Category:null category was sent.");
+        this.subCategory.add(toAdd);
     }
 
     /*
@@ -46,12 +65,12 @@ public class Category {
         return category_id;
     }
 
-    public List<Category> getSubCategory() {
-        return subCategory;
-    }
-
     public double getDiscount_pre() {
         return discount_pre;
+    }
+
+    public List<CategoryDL> getSubCategories(){
+        return this.subCategory;
     }
 
     public void setDiscount_pre(double discount_pre) {

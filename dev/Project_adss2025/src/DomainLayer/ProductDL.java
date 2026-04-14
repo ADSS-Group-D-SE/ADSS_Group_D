@@ -1,7 +1,5 @@
 package DomainLayer;
 
-import ServiceLayer.ProductServices;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,7 +11,7 @@ public class ProductDL {
     private final String name;
     private final String catalog_number;
 
-    private HashMap<Integer,Category> tags;
+    private HashMap<Integer, CategoryDL> tags;
 
     private String location;
     private final String manufacturer;
@@ -29,8 +27,8 @@ public class ProductDL {
     The productDL class's constructor, inits the fields of the class.
     Checks for nulls in category inputs.
      */
-    public ProductDL(String name,String cat,Category main,Category sub,Category subsub,String loc,String manu,
-                     int on_shelves,int on_stock,double price_to_consumer,double price_to_supply,double supplier_discount)
+    public ProductDL(String name, String cat, CategoryDL main, CategoryDL sub, CategoryDL subsub, String loc, String manu,
+                     int on_shelves, int on_stock, double price_to_consumer, double price_to_supply, double supplier_discount)
     {
         if(main == null || sub == null || subsub ==null)
             throw new IllegalArgumentException("Product construction:" +cat+" ,Bad categories was sent.");
@@ -69,9 +67,9 @@ public class ProductDL {
     public double GetFinalPrice()
     {
         double res = this.price_to_consumer;
-        for(Map.Entry<Integer,Category> en:this.tags.entrySet())
+        for(Map.Entry<Integer, CategoryDL> en:this.tags.entrySet())
         {
-            Category curr = en.getValue();
+            CategoryDL curr = en.getValue();
             if(curr.getDiscount_pre()!= 0)
                 res = res*(1- curr.getDiscount_pre()); // applies discount for each category.
         }
@@ -91,15 +89,15 @@ public class ProductDL {
         return catalog_number;
     }
 
-    public Category getMain_category() {
+    public CategoryDL getMain_category() {
         return tags.get(MAIN);
     }
 
-    public Category getSub_category() {
+    public CategoryDL getSub_category() {
         return tags.get(SUB);
     }
 
-    public Category getSubsub_category() {
+    public CategoryDL getSubsub_category() {
         return tags.get(SUBSUB);
     }
 
