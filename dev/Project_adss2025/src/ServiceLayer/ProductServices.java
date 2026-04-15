@@ -208,6 +208,27 @@ public class ProductServices {
     }
 
     /**
+     * The service that operates the inventory report by categories method.
+     * Returns:A response with a string inventory report if op was a success
+     * Else:returns a response with a error msg.
+     * @param cats
+     * @return
+     */
+    public Response<String> GetInventoryReport(List<String> cats)
+    {
+        Response<String> res = null;
+        try
+        {
+            res = new Response<>(null,this.pFacade.GetInventoryReportByCategory(cats));
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    /**
     Service for the purchase method ,mainly for testing purposes.
     Returns response: with null value if operation was successful.
     else : with error msg.
@@ -241,6 +262,25 @@ public class ProductServices {
         }
         return res;
 
+    }
+
+    /**
+     * Service that operates the product notification report
+     * Returns:Response with product warning report in string if was a success
+     * Else:Response with an error string
+     */
+    public Response<String> getLowStockAlerts()
+    {
+        Response<String> res = null;
+        try
+        {
+            res = new Response<>(null,this.pFacade.GetProductsWarnings());
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
     }
 
 }

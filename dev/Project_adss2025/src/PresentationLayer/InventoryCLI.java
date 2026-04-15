@@ -5,6 +5,7 @@ import ServiceLayer.CategoryServices;
 import ServiceLayer.ProductServices;
 import ServiceLayer.Response;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -44,8 +45,9 @@ public class InventoryCLI {
         System.out.println("3. Update Product");
         System.out.println("4. Add Product/Category Discount");
         System.out.println("5. View Stock Alerts (Products running out)");
-        System.out.println("6. Export Inventory Report by Dates");
+        System.out.println("6. Export Faulty Inventory Report by Dates");
         System.out.println("7. Add Supplier Discount per Product");
+        System.out.println("8  Get inventory report by categories.");
 
         System.out.println("0. Exit");
         System.out.print("Please enter your choice: ");
@@ -315,14 +317,14 @@ public class InventoryCLI {
                 this.productServices.update(catalogNumber, null, null, null, null, null, null, minAlert);
                 break;
 
+            case 8:
+                this.HandleInventoryReport();
+                break;
             default:
                 System.out.println("Invalid input. Please choose a number between 0 and 7.");
                 break;
 
         }
-
-
-
     }
 
     private void handleDiscountProduct() {
@@ -330,11 +332,14 @@ public class InventoryCLI {
         System.out.println(">>> Action: Add Product/Category Discount");
         System.out.println("-----------------------------------------");
 
-        System.out.print("Enter Category Name): ");
-        String target = scanner.nextLine();
+        CategorySL c = this.HandleMainCategoryChoice();
+        double discountPercentage=-1;
 
-        double discountPercentage = getDoubleInput("Enter Discount Percentage (e.g. 15.5): ");
-        Response<String> res = this.productServices.addDiscount(target, discountPercentage);
+        do {
+            discountPercentage = getDoubleInput("Enter Discount Percentage (from 0 to 1 eg 0.5 for 50%):");
+        }while(discountPercentage <0 || discountPercentage >1);
+
+        Response<String> res = this.productServices.SetCategoryDiscount(c.Id, discountPercentage);
 
         if (res.isError()) {
             System.out.println("[!] FAILURE: " + res.getErrorMsg());
@@ -406,5 +411,36 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
     }
 
+    private boolean existInList(List<String> s,String value)
+    {
+        for(String id:s)
+            if(id.equals(value))
+                return true;
+        return false;
+    }
+    public void HandleInventoryReport()
+    {
+        List<String> cats = new ArrayList<>();
+        String choice ="";
+        do {
+            choice ="";
+            System.out.println("Select Category to add to the report:");
+            CategorySL c= this.HandleMainCategoryChoice();
+            if(existInList(cats,c.Id))
+                System.out.println("Category already exist in report.");
+            else
+                cats.add(c.Id);
+            do {
+                System.out.println("Add another? (y/n)");
+                choice = scanner.nextLine();
+            }while (!choice.equals("y") && !choice.equals("n"));
+
+        }while(choice.equals("y"));
+
+        Response<String> res = this.productServices.GetInventoryReport(cats);
+        if(res.isError())
+            throw new RuntimeException(res.getErrorMsg());
+        System.out.println("Displaying Report:\n\n" + res.getReturnValue());
+    }
 
 }
