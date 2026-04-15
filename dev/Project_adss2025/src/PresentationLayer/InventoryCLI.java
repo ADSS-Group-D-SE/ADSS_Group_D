@@ -1,5 +1,7 @@
 package PresentationLayer;
 
+import ServiceLayer.CategorySL;
+import ServiceLayer.CategoryServices;
 import ServiceLayer.ProductServices;
 import ServiceLayer.Response;
 
@@ -10,11 +12,13 @@ import java.util.Scanner;
 public class InventoryCLI {
 
     private final Scanner scanner;
-    private final ProductServices service;
+    private final ProductServices productServices;
+    private final CategoryServices categoryServices;
 
     public InventoryCLI(){
         this.scanner = new Scanner(System.in);
-        this.service = ProductServices.getInstance();
+        this.productServices = ProductServices.getInstance();
+        this.categoryServices=CategoryServices.GetInstance();
     }
 
     public void start() {
@@ -50,31 +54,31 @@ public class InventoryCLI {
     private void handleChoice(String num){
         switch (num) {
             case "1":
-                handleAddProduct(scanner, service);
+                handleAddProduct();
                 break;
 
             case "2":
-                handleAddFaultyProduct(scanner, service);
+                handleAddFaultyProduct();
                 break;
 
             case "3":
-                handleUpdateProduct(scanner, service);
+                handleUpdateProduct();
                 break;
 
             case "4":
-                handleDiscountProduct(scanner, service);
+                handleDiscountProduct();
                 break;
 
             case "5":
-                handleViewLowStock(scanner, service);
+                handleViewLowStock();
                 break;
 
             case "6":
-                handleInventoryReport(scanner, service);
+                handleInventoryReport();
                 break;
 
             case "7":
-                handleSupplierDiscount(scanner, service);
+                handleSupplierDiscount();
                 break;
 
             default:
@@ -83,7 +87,53 @@ public class InventoryCLI {
         }
     }
 
-    private void handleAddProduct(Scanner scanner, ProductServices service) {
+    private CategorySL HandleMainCategoryChoice()
+    {
+        Response<List<CategorySL>> res = this.categoryServices.GetMainCategories();
+        if(res.isError())
+            throw new RuntimeException(res.getErrorMsg());
+
+        List<CategorySL> categories = res.getReturnValue();
+        if(categories.isEmpty())
+            throw new RuntimeException("No categories to be selected.");
+
+        int choice = 0;
+        do {
+            System.out.println("Select a main category:");
+            for (int i = 0; i < categories.size(); i++) {
+                System.out.println(i + 1 + "." + categories.get(i).name + "\n");
+            }
+            choice = scanner.nextInt();
+            if(choice < 1 || choice > categories.size())
+                System.out.println("Choice is not in allowed range. try again:");
+        }while(choice < 1 || choice > categories.size());
+        return categories.get(choice-1);
+    }
+
+    private CategorySL HandleSubCategoryChoice(CategorySL root)
+    {
+        Response<List<CategorySL>> res = this.categoryServices.GetSubCategories(root.Id);
+        if(res.isError())
+            throw new RuntimeException(res.getErrorMsg());
+
+        List<CategorySL> categories = res.getReturnValue();
+        if(categories.isEmpty())
+            throw new RuntimeException("No sub-categories to be selected.");
+
+        int choice = 0;
+        do {
+            System.out.println("Select a sub category to the category " +root.name +":");
+            for (int i = 0; i < categories.size(); i++) {
+                System.out.println(i + 1 + "." + categories.get(i).name + "\n");
+            }
+            choice = scanner.nextInt();
+            if(choice < 1 || choice > categories.size())
+                System.out.println("Choice is not in allowed range. try again:");
+        }while(choice < 1 || choice > categories.size());
+        return categories.get(choice-1);
+    }
+
+    private void handleAddProduct() {
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Adding a New Product");
         System.out.println("-----------------------------------------");
@@ -95,12 +145,17 @@ public class InventoryCLI {
             System.out.print("Enter Catalog Number: ");
             String catalogNumber = scanner.nextLine();
 
-            System.out.print("Enter Categories (separated by comma, e.g. Dairy,Milk,Fridge): ");
+            CategorySL main = this.HandleMainCategoryChoice();
+            CategorySL sub = this.HandleSubCategoryChoice(main);
+            CategorySL subsub = this.HandleSubCategoryChoice(sub);
+
             String categoriesInput = scanner.nextLine();
             List<String> categories = Arrays.asList(categoriesInput.split("\\s*,\\s*"));
 
             System.out.print("Enter Storage Location (e.g., A-12): ");
             String location = scanner.nextLine();
+            System.out.print("Enter Product manufacturer Location (e.g., A-12): ");
+            String manu = scanner.nextLine();
 
             int amountOnShelves = getIntInput("Enter Amount on Shelves: ");
             int amountOnStock = getIntInput("Enter Amount in Stock: ");
@@ -110,7 +165,7 @@ public class InventoryCLI {
 
             System.out.println("\n[*] Sending data to system...");
 
-            Response<String> res = service.addProduct(name, catalogNumber, categories, location,
+            Response<String> res = this.productServices.addProduct(name, catalogNumber, main.Id,sub.Id,subsub.Id, location,manu,
                     amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
 
             if (res.isError()) {
@@ -151,7 +206,7 @@ public class InventoryCLI {
         }
     }
 
-    private void handleAddFaultyProduct(Scanner scanner, ProductServices service) {
+    private void handleAddFaultyProduct() {
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Adding a Faulty Product");
         System.out.println("-----------------------------------------");
@@ -170,7 +225,7 @@ public class InventoryCLI {
 
             System.out.println("\n[*] Sending data to system...");
 
-            Response<Integer> res = service.ReportFaultyProduct( catalogNumber,locationProduct,description);
+            Response<Integer> res = this.productServices.ReportFaultyProduct( catalogNumber,locationProduct,description);
 
             if (res.isError()) {
                 System.out.println("\n[!] FAILURE: Could not add product.");
@@ -186,7 +241,7 @@ public class InventoryCLI {
 
 
 
-    private void handleUpdateProduct(Scanner scanner, ProductServices service) {
+    private void handleUpdateProduct() {
 
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Update Existing Product");
@@ -216,48 +271,48 @@ public class InventoryCLI {
             case 1:
                 System.out.print("Enter New Name: ");
                 String name = scanner.nextLine();
-                service.update(catalogNumber, name, null, null, null, null, null, null);
+                this.productServices.update(catalogNumber, name, null, null, null, null, null, null);
                 break;
 
             case 2:
                 System.out.print("Enter New Storage Location: ");
                 String location = scanner.nextLine();
-                service.update(catalogNumber, null, location, null, null, null, null, null);
+                this.productServices.update(catalogNumber, null, location, null, null, null, null, null);
                 break;
 
             case 3:
                 System.out.print("Enter New Consumer Price: ");
                 double consumerPrice = scanner.nextDouble();
                 scanner.nextLine();
-                service.update(catalogNumber, null, null, consumerPrice, null, null, null, null);
+                this.productServices.update(catalogNumber, null, null, consumerPrice, null, null, null, null);
                 break;
 
             case 4:
                 System.out.print("Enter New Supply Price: ");
                 double supplyPrice = scanner.nextDouble();
                 scanner.nextLine();
-                service.update(catalogNumber, null, null, null, supplyPrice, null, null, null);
+                this.productServices.update(catalogNumber, null, null, null, supplyPrice, null, null, null);
                 break;
 
             case 5:
                 System.out.print("Enter New Shelves Amount: ");
                 int shelvesAmount = scanner.nextInt();
                 scanner.nextLine();
-                service.update(catalogNumber, null, null, null, null, shelvesAmount, null, null);
+                this.productServices.update(catalogNumber, null, null, null, null, shelvesAmount, null, null);
                 break;
 
             case 6:
                 System.out.print("Enter New Stock Amount: ");
                 int stockAmount = scanner.nextInt();
                 scanner.nextLine();
-                service.update(catalogNumber, null, null, null, null, null, stockAmount, null);
+                this.productServices.update(catalogNumber, null, null, null, null, null, stockAmount, null);
                 break;
 
             case 7:
                 System.out.print("Enter New Minimum Amount Alert: ");
                 int minAlert = scanner.nextInt();
                 scanner.nextLine();
-                service.update(catalogNumber, null, null, null, null, null, null, minAlert);
+                this.productServices.update(catalogNumber, null, null, null, null, null, null, minAlert);
                 break;
 
             default:
@@ -270,7 +325,7 @@ public class InventoryCLI {
 
     }
 
-    private void handleDiscountProduct(Scanner scanner, ProductServices service) {
+    private void handleDiscountProduct() {
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Add Product/Category Discount");
         System.out.println("-----------------------------------------");
@@ -279,7 +334,7 @@ public class InventoryCLI {
         String target = scanner.nextLine();
 
         double discountPercentage = getDoubleInput("Enter Discount Percentage (e.g. 15.5): ");
-        Response<String> res = service.addDiscount(target, discountPercentage);
+        Response<String> res = this.productServices.addDiscount(target, discountPercentage);
 
         if (res.isError()) {
             System.out.println("[!] FAILURE: " + res.getErrorMsg());
@@ -289,12 +344,12 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
     }
 
-    private void handleViewLowStock(Scanner scanner, ProductServices service) {
+    private void handleViewLowStock() {
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Viewing Stock Alerts (Running Out)");
         System.out.println("-----------------------------------------");
 
-        Response<String> res = service.getLowStockAlerts();
+        Response<String> res = this.productServices.getLowStockAlerts();
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
@@ -304,7 +359,7 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
     }
 
-    private void handleInventoryReport(Scanner scanner, ProductServices service) {
+    private void handleInventoryReport() {
 
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Export Inventory Report");
@@ -319,7 +374,7 @@ public class InventoryCLI {
 
         System.out.println("[*] Generating report for " + startDate + " to " + endDate + "...");
 
-        Response<String> res = service.CreateFaultyProductReport(startDate, endDate);
+        Response<String> res = this.productServices.CreateFaultyProductReport(startDate, endDate);
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
@@ -330,7 +385,7 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
     }
 
-    private void handleSupplierDiscount(Scanner scanner, ProductServices service) {
+    private void handleSupplierDiscount() {
 
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Add Supplier Discount per Product");
@@ -341,7 +396,7 @@ public class InventoryCLI {
 
         int supplierDiscount = getIntInput("Enter Supplier Discount Percentage: ");
 
-        Response<String> res = service.setSupplierDiscount(catNum, supplierDiscount);
+        Response<String> res = this.productServices.setSupplierDiscount(catNum, supplierDiscount);
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());

@@ -12,12 +12,14 @@ import java.util.NoSuchElementException;
 public class ProductFacade {
     private HashMap<String, ProductDL> products;
     private HashMap<Integer,FaultyProductDL> faultyProducts;
+    private HashMap<String,Double> categoryDiscounts;
 
     private int faultyProductsIdCounter=0;
 
     public ProductFacade(){
         products=new HashMap<String, ProductDL>();
         faultyProducts=new HashMap<Integer, FaultyProductDL>();
+        categoryDiscounts = new HashMap<>();
     }
 
     private int generateNextId() {
@@ -29,7 +31,7 @@ public class ProductFacade {
      *
      * @param name name of the product
      * @param catalogNumber unique identifier of the product
-     * @param categoriesNames a list of category names the product belongs to
+     * @param main_id id of the main category
      * @param location location of the product
      * @param amountOnShelves the quantity of the product available on shelves
      * @param amountOnStock the quantity of the product available in stock
@@ -39,23 +41,16 @@ public class ProductFacade {
      * @return the newly created object
      * @throws Exception Exception if the product does  exist in the system or if an error occurs while creating the product
      */
-    public ProductDL addProduct(String name, String catalogNumber, List<String> categoriesNames,
-                                String location, int amountOnShelves, int amountOnStock,
+    public ProductDL addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
+                                String location,String manu, int amountOnShelves, int amountOnStock,
                                 double supplyPrice, double consumerPrice, int minAmount) throws Exception {
 
 
         if(products.get(catalogNumber)!=null){
             throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
         }
-        ProductDL product=null;
-        try {
+        ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
 
-//            product = new ProductDL(name, catalogNumber, categoriesNames, location,
-//                    amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
-
-        } catch (Exception e) {
-            throw e;
-        }
 
         products.put(catalogNumber,product);
         return product;
@@ -68,11 +63,7 @@ public class ProductFacade {
      * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the min amount
      */
     public void setMinAmount(String catalogNumber, int amount) throws Exception{
-        ProductDL product = products.get(catalogNumber);
-
-        if(product==null){
-            throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
-        }
+        ProductDL product = FindProductByID(catalogNumber);
         try{
             //לבדוק שנבדק בתוך הPRODUCTDL שהכמות חיובית
 //            product.setMinAmount(amount);
@@ -90,11 +81,7 @@ public class ProductFacade {
      * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the price
      */
     public void setPrice(String catalogNumber, double price) throws Exception{
-        ProductDL product = products.get(catalogNumber);
-
-        if(product==null){
-            throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
-        }
+        ProductDL product = FindProductByID(catalogNumber);
         try{
             //לבדוק שנבדק בתוך הPRODUCTDL שהמחיר הגיוני
 //            product.setPrice(price);
@@ -112,11 +99,7 @@ public class ProductFacade {
      * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the discount
      */
     public void setSupplierDiscount(String catalogNumber, int discount) throws Exception{
-        ProductDL product = products.get(catalogNumber);
-
-        if(product==null){
-            throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
-        }
+        ProductDL product = FindProductByID(catalogNumber);
         try{
             //לבדוק שנבדק בתוך הPRODUCTDL שהכמות חיובית
 //            product.setSupplierDiscount(discount);
@@ -127,9 +110,32 @@ public class ProductFacade {
 
     }
 
+    /**
+    Method that calculates and returns a products final price based on its discounts.
+     **/
+    public double GetProductPrice(String catalog_number)
+    {
+        ProductDL p = FindProductByID(catalog_number);
+        double res = p.getPrice_to_consumer()*(1-p.getProduct_discount()); //initial discount
 
+        Double cat_discount = this.categoryDiscounts.get(p.getMain_category_id());
+        if(cat_discount !=null)
+            res = res *(1-cat_discount);
 
-    
+        return res;
+    }
+
+    /**
+    Method that allows setting category discount, saves data on the category discount map.
+     **/
+    public void SetCatDiscount(String cat_id,double discount)
+    {
+        if(discount < 0 || discount > 1)
+            throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:"+discount);
+
+        this.categoryDiscounts.put(cat_id,discount); // saves discounts in map.
+    }
+
 
     /**
     A method that locates a product by its catalog number and returns it.
@@ -186,8 +192,6 @@ public class ProductFacade {
      **/
     public String CreateFaultyReport(String startdate,String enddate)
     {
-
-
         LocalDate datestart = LocalDate.parse(startdate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         LocalDateTime start = datestart.atStartOfDay();
 
@@ -223,11 +227,6 @@ public class ProductFacade {
                        Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
 
         ProductDL product = FindProductByID(catalogNumber);
-
-        if (product == null) {
-            throw new NoSuchElementException ("Error: Product with catalog number " + catalogNumber + " not found.");
-
-        }
 
         if (name != null) product.setName(name);
         if (storageLocation != null) product.setLocation(storageLocation);
