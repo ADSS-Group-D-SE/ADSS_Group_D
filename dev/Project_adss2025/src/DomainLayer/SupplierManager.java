@@ -1,4 +1,4 @@
-package domain;
+package DomainLayer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,8 +14,6 @@ public class SupplierManager {
         this.suppliers = new HashMap<>();
         this.nextSupplierId = 1;
     }
-
-    // ── Supplier CRUD ────────────────────────────────────────
 
     /**
      * Creates and registers a new supplier. Returns the created Supplier.
@@ -52,8 +50,6 @@ public class SupplierManager {
     public List<Supplier> getAllSuppliers() {
         return new ArrayList<>(suppliers.values());
     }
-
-    // ── Search / Query ───────────────────────────────────────
 
     /**
      * Finds a supplier by its company registration number (ח"פ).

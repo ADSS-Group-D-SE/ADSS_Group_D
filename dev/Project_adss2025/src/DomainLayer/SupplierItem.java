@@ -1,4 +1,4 @@
-package domain;
+package DomainLayer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +56,6 @@ public class SupplierItem {
         return price * (1 - discount / 100.0);
     }
 
-    // ── Getters ──────────────────────────────────────────────
-
     public int getCatalogNumber() {
         return catalogNumber;
     }
@@ -81,8 +79,6 @@ public class SupplierItem {
     public List<QuantityDiscount> getQuantityDiscounts() {
         return new ArrayList<>(quantityDiscounts);
     }
-
-    // ── Setters ──────────────────────────────────────────────
 
     public void setCatalogNumber(int catalogNumber) {
         this.catalogNumber = catalogNumber;

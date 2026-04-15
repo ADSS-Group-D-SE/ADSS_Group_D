@@ -1,4 +1,4 @@
-package domain;
+package DomainLayer;
 
 public class ContactPerson {
 

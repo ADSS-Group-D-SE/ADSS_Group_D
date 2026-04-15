@@ -1,4 +1,4 @@
-package domain;
+package DomainLayer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +22,6 @@ public class SupplierAgreement {
         this.deliveryDays = 0;
         this.items = new ArrayList<>();
     }
-
-    // ── Item Management ──────────────────────────────────────
 
     public void addItem(SupplierItem item) {
         if (item == null) {
@@ -54,8 +52,6 @@ public class SupplierAgreement {
         return null;
     }
 
-    // ── Fixed Supply Days Management ─────────────────────────
-
     public void addFixedSupplyDay(int day) {
         if (day < 1 || day > 7) {
             throw new IllegalArgumentException("Day must be between 1 (Sunday) and 7 (Saturday).");
@@ -68,8 +64,6 @@ public class SupplierAgreement {
     public void removeFixedSupplyDay(int day) {
         fixedSupplyDays.remove(Integer.valueOf(day));
     }
-
-    // ── Getters ──────────────────────────────────────────────
 
     public SupplyMethod getSupplyMethod() {
         return supplyMethod;
@@ -86,8 +80,6 @@ public class SupplierAgreement {
     public List<SupplierItem> getItems() {
         return new ArrayList<>(items);
     }
-
-    // ── Setters ──────────────────────────────────────────────
 
     public void setSupplyMethod(SupplyMethod supplyMethod) {
         this.supplyMethod = supplyMethod;
