@@ -16,6 +16,7 @@ public class CategoryFacade {
 
     public CategoryFacade()
     {
+        this.mainCategories = new ArrayList<>();
         this.categories = new HashMap<>();
     }
 
