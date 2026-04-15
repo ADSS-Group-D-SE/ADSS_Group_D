@@ -40,7 +40,8 @@ public class ProductServices {
      * Adds a new product to the system with the provided details.
      * @param name name of the product
      * @param catalogNumber unique identifier of the product
-     * @param categoriesNames a list of category names the product belongs to
+     * @param main_id id of the main category
+     * @param manu name of product manufacturer.
      * @param location location of the product
      * @param amountOnShelves the quantity of the product available on shelves
      * @param amountOnStock the quantity of the product available in stock
@@ -49,11 +50,11 @@ public class ProductServices {
      * @param minAmount the minimum required quantity of the product
      * @return A Response indicating success or an error message
      */
-    public Response<String> addProduct(String name, String catalogNumber, List<String> categoriesNames,
-                                        String location, int amountOnShelves, int amountOnStock,
+    public Response<String> addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
+                                        String location,String manu, int amountOnShelves, int amountOnStock,
                                         double supplyPrice, double consumerPrice, int minAmount) {
         try {
-            pFacade.addProduct(name, catalogNumber, categoriesNames, location,
+            pFacade.addProduct(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,
                     amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
             return new Response<>(null,null);
         } catch (Exception e) {
@@ -107,6 +108,44 @@ public class ProductServices {
         }
     }
 
+    /**
+    The category discount setup service.
+    Returns response: with null value when op was a success.
+    else:Response with an error msg.
+     **/
+    public Response<String> SetCategoryDiscount(String category_id,double discount)
+    {
+        Response<String> res = null;
+        try
+        {
+            this.pFacade.SetCatDiscount(category_id,discount);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    /**
+     * The price calculation service.
+     * Returns a response: With the entered product final price.
+     * Else:Response with an error msg.
+     */
+    public Response<Double> GetProductPrice(String catalog_number)
+    {
+        Response<Double> res = null;
+        try
+        {
+            res = new Response<>(null,this.pFacade.GetProductPrice(catalog_number));
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
 
 
     /**

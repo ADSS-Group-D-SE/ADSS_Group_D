@@ -11,7 +11,7 @@ public class ProductDL {
     private String name;
     private final String catalog_number;
 
-    private HashMap<Integer, CategoryDL> tags;
+    private HashMap<Integer, String> tags;
 
     private String location;
     private final String manufacturer;
@@ -19,6 +19,7 @@ public class ProductDL {
     private int amount_on_shelves;
     private int amount_on_stock;
 
+    private double product_discount;
     private double price_to_consumer;
     private double price_to_supply;
     private double supplier_discount;
@@ -30,16 +31,16 @@ public class ProductDL {
     Checks for nulls in category inputs.
      */
 
-    public ProductDL(String name, String cat, CategoryDL main, CategoryDL sub, CategoryDL subsub, String loc, String manu,
-                     int on_shelves, int on_stock, double price_to_consumer, double price_to_supply, double supplier_discount,int minAmountAlert)
+    public ProductDL(String name, String cat, String main_id, String sub_id, String subsub_id, String loc, String manu,
+                     int on_shelves, int on_stock, double price_to_consumer, double price_to_supply,int minAmountAlert)
     {
-        if(main == null || sub == null || subsub ==null)
+        if(main_id == null || sub_id == null || subsub_id ==null || main_id.isEmpty() || sub_id.isEmpty()||subsub_id.isEmpty())
             throw new IllegalArgumentException("Product construction:" +cat+" ,Bad categories was sent.");
 
         this.tags = new HashMap<>();
-        this.tags.put(MAIN,main);
-        this.tags.put(SUB,sub);
-        this.tags.put(SUBSUB,subsub); // inits tags map.
+        this.tags.put(MAIN,main_id);
+        this.tags.put(SUB,sub_id);
+        this.tags.put(SUBSUB,subsub_id); // inits tags map.
 
         this.name = name;
         this.catalog_number =cat;
@@ -49,8 +50,11 @@ public class ProductDL {
         this.amount_on_stock = on_stock;
         this.price_to_consumer = price_to_consumer;
         this.price_to_supply = price_to_supply;
-        this.supplier_discount = supplier_discount;
+
         this.minAmountAlert=minAmountAlert;
+
+        this.supplier_discount = 0;
+        this.product_discount = 0; // initial product amd supplier discount is 0.
     }
 
     /*
@@ -64,22 +68,6 @@ public class ProductDL {
         this.amount_on_shelves -=shelves;
         this.amount_on_stock-=stock;
     }
-
-    /*
-    Calculates final price to consumer, based on its categories price discount.
-     */
-    public double GetFinalPrice()
-    {
-        double res = this.price_to_consumer;
-        for(Map.Entry<Integer, CategoryDL> en:this.tags.entrySet())
-        {
-            CategoryDL curr = en.getValue();
-            if(curr.getDiscount_pre()!= 0)
-                res = res*(1- curr.getDiscount_pre()); // applies discount for each category.
-        }
-        return res;
-    }
-
     /*
     ==================================
     Getters and setters
@@ -93,15 +81,15 @@ public class ProductDL {
         return catalog_number;
     }
 
-    public CategoryDL getMain_category() {
+    public String getMain_category_id() {
         return tags.get(MAIN);
     }
 
-    public CategoryDL getSub_category() {
+    public String getSub_category_id() {
         return tags.get(SUB);
     }
 
-    public CategoryDL getSubsub_category() {
+    public String getSubsub_category_id() {
         return tags.get(SUBSUB);
     }
 
@@ -162,5 +150,17 @@ public class ProductDL {
 
     public void setMinAmountAlert(int minAmountAlert) {
         this.minAmountAlert = minAmountAlert;
+    }
+
+    public double getPrice_to_consumer() {
+        return price_to_consumer;
+    }
+
+    public double getProduct_discount() {
+        return product_discount;
+    }
+
+    public void setProduct_discount(double product_discount) {
+        this.product_discount = product_discount;
     }
 }
