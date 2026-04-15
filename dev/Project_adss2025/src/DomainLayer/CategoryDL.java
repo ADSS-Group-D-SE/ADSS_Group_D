@@ -23,7 +23,7 @@ public class CategoryDL {
      * @param name
      * @param category_id
      * @param subCategory - a list of its subcategories, can be empty.
-     * @param discount_pre - a double between 0 to 1.
+     * @param discount_pre - a double between 0 and 1.
      *
      */
     public CategoryDL(String name, String category_id, List<CategoryDL> subCategory, double discount_pre,CategoryType t) {
