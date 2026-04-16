@@ -1,2 +1,9 @@
+*.class
 bin/
+out/
+target/
+
 lib/
+dev/Project_adss2025/junit_lib/
+
+.DS_Store
