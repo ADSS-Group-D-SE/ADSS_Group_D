@@ -443,4 +443,54 @@ public class InventoryCLI {
         System.out.println("Displaying Report:\n\n" + res.getReturnValue());
     }
 
+    private void HandleCategoryCreation()
+    {
+        int choice;
+        System.out.println("Select an option:");
+        System.out.println("1.Create a main category");
+        System.out.println("2.Create a sub category");
+        System.out.println("3.Create a subsub category");
+        System.out.println("4.Back to menu.");
+        choice = 0;
+        String catName = "";
+        Response<String> res;
+        do {
+            choice = scanner.nextInt();
+        switch (choice) {
+            case 1:
+                System.out.println("Enter category name:");
+                catName = scanner.nextLine();
+                System.out.println("Enter discount (from 0 to 1 , eg 0.5 for 50%):");
+                res = this.categoryServices.CreateCategory(catName, scanner.nextDouble());
+
+                if (res.isError())
+                    throw new RuntimeException(res.getErrorMsg());
+                System.out.println("Category was created successfully");
+                break;
+            case 2:
+                CategorySL c = this.HandleMainCategoryChoice();
+                System.out.println("Enter Sub-category name:");
+                catName = scanner.nextLine();
+                res = this.categoryServices.CreateSubCategory(catName, 0, c.Id); //subcategory does not hold discount
+                if (res.isError())
+                    throw new RuntimeException(res.getErrorMsg());
+                System.out.println("Sub-Category was created successfully");
+                break;
+            case 3:
+                CategorySL main = this.HandleMainCategoryChoice();
+                CategorySL sub = this.HandleSubCategoryChoice(main);
+                System.out.println("Enter Sub-Sub-category name:");
+                catName = scanner.nextLine();
+                res = this.categoryServices.CreateSubCategory(catName, 0, sub.Id); //subcategory does not hold discount
+                if (res.isError())
+                    throw new RuntimeException(res.getErrorMsg());
+                System.out.println("Sub-Sub-Category was created successfully");
+                break;
+            case 4:
+                return;
+            default:
+                System.out.println("Wrong input,try again");
+        }
+        }while (choice <0 || choice > 4);
+    }
 }
