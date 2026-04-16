@@ -1,137 +1,105 @@
 package Tests;
 
 import DomainLayer.*;
-
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DomainLayerTests {
 
-    private static int passed = 0;
-    private static int failed = 0;
-
-    // Helper method to check a condition and print PASS or FAIL
-    private static void check(boolean condition, String testName) {
-        if (condition) {
-            passed++;
-            System.out.println("[PASS] " + testName);
-        } else {
-            failed++;
-            System.out.println("[FAIL] " + testName);
-        }
-    }
-
     // Test 1: Create a Supplier and check its name
-    private static void test1_createSupplier() {
+    @Test
+    public void testCreateSupplier() {
         Supplier s = new Supplier(1, "CMP-001", "Acme Ltd", "12-345", "Net 30");
-        check(s.getName().equals("Acme Ltd"), "Test 1 - Supplier name is correct");
+        assertEquals("Acme Ltd", s.getName(), "Supplier name is correct");
     }
 
     // Test 2: Supplier rejects empty name
-    private static void test2_supplierRejectsEmptyName() {
-        try {
+    @Test
+    public void testSupplierRejectsEmptyName() {
+        assertThrows(IllegalArgumentException.class, () -> {
             new Supplier(1, "CMP-001", "", "12-345", "Net 30");
-            check(false, "Test 2 - Should throw for empty name");
-        } catch (IllegalArgumentException e) {
-            check(true, "Test 2 - Empty name throws exception");
-        }
+        }, "Empty name should throw IllegalArgumentException");
     }
 
     // Test 3: Add a contact person to a supplier
-    private static void test3_addContactPerson() {
+    @Test
+    public void testAddContactPerson() {
         Supplier s = new Supplier(1, "CMP-001", "Acme", "bank", "terms");
         ContactPerson cp = new ContactPerson("Alice", "050-111", "alice@mail.com");
+        
         s.addContactPerson(cp);
-        check(s.getContactPersons().size() == 1, "Test 3 - Contact person added");
+        
+        assertEquals(1, s.getContactPersons().size(), "Contact person should be added successfully");
+        assertTrue(s.getContactPersons().contains(cp), "The correct contact person should be in the list");
     }
 
     // Test 4: Create a ContactPerson and check phone
-    private static void test4_contactPersonPhone() {
+    @Test
+    public void testContactPersonPhone() {
         ContactPerson cp = new ContactPerson("Bob", "050-222", "bob@mail.com");
         cp.setPhoneNumber("050-999");
-        check(cp.getPhoneNumber().equals("050-999"), "Test 4 - Phone number updated");
+        
+        assertEquals("050-999", cp.getPhoneNumber(), "Phone number should be updated");
     }
 
     // Test 5: Create a QuantityDiscount and check values
-    private static void test5_createQuantityDiscount() {
+    @Test
+    public void testCreateQuantityDiscount() {
         QuantityDiscount qd = new QuantityDiscount(10, 5.0);
-        check(qd.getMinQuantity() == 10 && qd.getDiscountPercent() == 5.0,
-                "Test 5 - Discount created with correct values");
+        
+        assertEquals(10, qd.getMinQuantity(), "Minimum quantity should match");
+        assertEquals(5.0, qd.getDiscountPercent(), "Discount percent should match");
     }
 
     // Test 6: QuantityDiscount rejects negative quantity
-    private static void test6_discountRejectsNegative() {
-        try {
+    @Test
+    public void testDiscountRejectsNegative() {
+        assertThrows(IllegalArgumentException.class, () -> {
             new QuantityDiscount(-1, 10);
-            check(false, "Test 6 - Should throw for negative quantity");
-        } catch (IllegalArgumentException e) {
-            check(true, "Test 6 - Negative quantity throws exception");
-        }
+        }, "Negative quantity should throw exception");
     }
 
     // Test 7: Strict price calculation (sensitive to small changes)
-    private static void test7_strictPriceCalculation() {
-    SupplierItem item = new SupplierItem(100, 200, "Widget", 50.0, "Company");
+    @Test
+    public void testStrictPriceCalculation() {
+        SupplierItem item = new SupplierItem(100, 200, "Widget", 50.0, "Company");
 
-    // add two discounts
-    item.addQuantityDiscount(new QuantityDiscount(10, 10)); // 10%
-    item.addQuantityDiscount(new QuantityDiscount(50, 20)); // 20%
+        // add two discounts
+        item.addQuantityDiscount(new QuantityDiscount(10, 10)); // 10%
+        item.addQuantityDiscount(new QuantityDiscount(50, 20)); // 20%
 
-    double price1 = item.getEffectivePrice(10);  // should be 45.0
-    double price2 = item.getEffectivePrice(50);  // should be 40.0
-
-    check(price1 == 45.0, "Test 7a - 10 units gives 10% discount");
-    check(price2 == 40.0, "Test 7b - 50 units gives best discount (20%)");
-}
+        // Notice the 3rd parameter (0.001) - it's the allowed delta for double comparisons
+        assertEquals(45.0, item.getEffectivePrice(10), 0.001, "10 units gives 10% discount");
+        assertEquals(40.0, item.getEffectivePrice(50), 0.001, "50 units gives best discount (20%)");
+    }
 
     // Test 8: Add an item to a SupplierAgreement
-    private static void test8_addItemToAgreement() {
+    @Test
+    public void testAddItemToAgreement() {
         SupplierAgreement agreement = new SupplierAgreement(SupplierAgreement.SupplyMethod.ON_ORDER);
         SupplierItem item = new SupplierItem(101, 201, "Bolt", 1.5, "BoltCo");
+        
         agreement.addItem(item);
-        check(agreement.getItems().size() == 1, "Test 8 - Item added to agreement");
+        
+        assertEquals(1, agreement.getItems().size(), "Item should be added to agreement");
     }
 
     // Test 9: SupplierAgreement rejects invalid supply day
-    private static void test9_agreementRejectsInvalidDay() {
+    @Test
+    public void testAgreementRejectsInvalidDay() {
         SupplierAgreement agreement = new SupplierAgreement(SupplierAgreement.SupplyMethod.FIXED_DAYS);
-        try {
+        
+        assertThrows(IllegalArgumentException.class, () -> {
             agreement.addFixedSupplyDay(8); // invalid, must be 1-7
-            check(false, "Test 9 - Should throw for day 8");
-        } catch (IllegalArgumentException e) {
-            check(true, "Test 9 - Invalid day throws exception");
-        }
+        }, "Day 8 is invalid and should throw exception");
     }
 
     // Test 10: SupplierManager add and find supplier
-    private static void test10_managerAddAndFind() {
+    @Test
+    public void testManagerAddAndFind() {
         SupplierManager manager = new SupplierManager();
         Supplier s = manager.addSupplier("CMP-100", "Alpha", "bank1", "Net 30");
-        check(manager.getSupplier(s.getSupplierId()) == s,
-                "Test 10 - Supplier found by ID");
-    }
-
-    // Main - run all 10 tests
-    public static void main(String[] args) {
-        System.out.println("===========================================");
-        System.out.println("   Domain Layer Tests - Running 10 Tests   ");
-        System.out.println("===========================================\n");
-
-        test1_createSupplier();
-        test2_supplierRejectsEmptyName();
-        test3_addContactPerson();
-        test4_contactPersonPhone();
-        test5_createQuantityDiscount();
-        test6_discountRejectsNegative();
-       test7_strictPriceCalculation();
-        test8_addItemToAgreement();
-        test9_agreementRejectsInvalidDay();
-        test10_managerAddAndFind();
-
-        System.out.println("\n===========================================");
-        System.out.println("   Results: " + passed + " passed, " + failed + " failed");
-        System.out.println("===========================================");
-
-        if (failed > 0) {
-            System.exit(1);
-        }
+        
+        assertEquals(s, manager.getSupplier(s.getSupplierId()), "Manager should return the exact same supplier by ID");
     }
 }
