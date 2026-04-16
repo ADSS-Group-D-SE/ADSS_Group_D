@@ -1,0 +1,103 @@
+Introduction
+The project will accompany the course and will serve as a practical exercise of the system analysis and design stages, with an emphasis on system analysis and design and updating the documents in light of changes in the client's requirements.
+The project will be submitted in stages: for each stage, there will be a detailed description of the tasks, and a submission date will be given as detailed in the syllabus. A significant part of the assignments will be carried out using modeling tools (such as Draw.io, Visio, Visual Paradigm, and other CASE tools).
+
+Description of Assignment 1
+The client of the system has written down the problems facing them and the needs as they see them, divided into sub-systems (modules). In this assignment, you will work on the module you chose: Employees, Inventory, Suppliers, or Transportations, where each pair works on a specific module. Each pair will study the assignment for themselves on a dedicated git branch and will perform it independently. It is highly recommended to hold meetings between the pairs, share coding conventions, and exchange code/interfaces.
+
+You, as system analysts and designers, must provide the client with a system requirements analysis using an Object-Oriented approach and implement the module you are responsible for in Java. In any place where you make assumptions that are not included in the requirements document and/or rely on missing data completion, you must note this explicitly. In any case, discrepancies between your assumptions and the client's instructions will result in a point deduction.
+Please note, the answers in the forum bind all students. Ignoring or missing a written instruction in the forums is your responsibility and may result in a point deduction!
+
+The assignment will be performed and submitted in two parts:
+
+Part A (60%) Initial analysis and design of the system in light of the problem and needs document.
+
+Part B (40%) Module implementation and execution of Unit Tests.
+
+Part A - Requirements Analysis and Initial Design of the System
+1. Requirements (25%)
+1.1 Analyze the requirements of the module you must implement according to the description of the entire system you received. During the analysis, you must complete the requirements that are implied by the text even if they do not appear explicitly in the text. It is recommended to use the MUST/CAN technique to complete the requirements and organize them in Table format.
+Note: The system story is written as a client would tell you about the system they are interested in. You must understand and deduce the requirements from the system story. Regarding missing system requirements, see below. However, you are welcome to ask what the client meant in the story in the "Questions to the Client" forum until the date indicated at the beginning.
+
+(Note: Requirements must be formulated in the format of "The system MUST/CAN...").
+
+1.1.1 For each requirement, define whether it is a functional or non-functional requirement.
+
+1.1.2 Prioritize the requirements.
+
+1.1.3 Perform a risk assessment and clearly mark which requirements will be implemented and which cannot be implemented at this stage of the project (you must explain why they cannot be implemented).
+
+1.2 Detail all the open questions that cannot be answered based on the system description, meaning questions with which you are supposed to return to the client.
+
+1.2.1 All questions that do not affect the implementation of the module at this stage will remain as open questions and will appear in Table 2.
+
+1.2.2 For all questions that affect the implementation at this stage but do not significantly change the difficulty of the implementation (a difference of less than 5 hours of coding work), you must assume a logical answer from the client and document it along with the question in Table 2.
+
+1.2.3 All questions that significantly affect the difficulty of the implementation (a difference of more than 5 hours of coding work) must be asked in Moodle, in the questions forum, by the date indicated on the cover of the assignment. You must update the tables according to the answers.
+
+2. Class Diagram (15%)
+2.1 In light of the requirements described in the requirements document, design and describe your module using a class diagram. The classes MUST be divided into two groups (two layers): (1) Classes intended for interaction with the user only! (presentation layer) and (2) Classes representing functional requirements without relation to the form of interaction with the user (domain model).
+It is recommended (but not mandatory in this assignment) to define classes that constitute an interface between the two groups (this will be mandatory later).
+2.2 The classes should include fields only (including types).
+2.3 The validity of the diagrams must be maintained, noting multiplicity and the roles of the classes in the relationships (Roles).
+The diagrams (which will be developed using a software tool) must be submitted within the PDF document. You must ensure the diagram is readable and of a reasonable font size (at least 8) on the page. If necessary, split the diagram.
+
+Part B - Module Implementation (40%)
+1. Implement the module you received in Java. You must maintain traceability between the class diagram in section 2 in Part A and the implementation: every class and relationship appearing in the diagram must appear in the code; in case of a lack of matching between the two, you are liable to lose points.
+Note: Not every line of code/data structure you use needs to appear in the system model, and this depends on the level of abstraction. However, it is mandatory to include data structures and static service classes in the class diagram.
+In this assignment, you are not implementing any database. You must save all the information in memory using dedicated classes that will hold the relevant data.
+
+2. Tests.
+Prepare tests according to one of the following two options:
+
+Option 1: Implement at least 10 Unit Tests. It is highly recommended to implement a unit test on the domain layer. Additionally, it is recommended to implement a test every time before you solve a certain bug. The test is supposed to fail before solving the bug and succeed after solving the bug. Please note, in a case where there are less than 10 tests or if some of them do not pass, points will be deducted.
+
+Option 2: Manual end-to-end tests of three main processes matching the functional requirements you defined. For each test, you must detail the script that includes all the inputs the user enters into the system one by one (actual input values and not just a generic definition), the expected output, and the actual result upon execution. A test must start from the initial operation of the system, including system initialization if necessary.
+
+3. Attach clear operating instructions for the system in a PDF file in the docs folder. The operating instructions should allow a user who has no prior familiarity with the system to operate it. The instructions will contain user details and passwords if there is a use of access permissions in the system.
+
+4. In Git, your Repository must be in the following structure:
+
+dev folder: will contain all the source-code, external jar files, database, etc.
+
+docs folder: will contain a file named instructions.pdf. These are the operating instructions for your system.
+
+release folder: will contain a file named adss2025_v01.jar. This is the compiled jar that will be tested.
+
+Please note, after you have submitted the jar, download it from the site and test it!
+
+In the case of a broken/outdated/invalid jar, we will not have the ability to do anything and you will receive a 0 for the programming part, which is a shame! The jar must run by running the command: java -jar adss2025_v01.jar
+
+For any question or clarification – there is a forum in Moodle for the assignment.
+
+Additional Emphases
+1. In this exercise there is no database! All data must be saved in memory and reset on every run.
+2. However, the system must contain sample data that allows for the full testing of the functionality of your system! You must attach in the instructions document details about the existing data in the system upon its startup.
+3. Since you are not using a database in this exercise, in order to answer the requirement above you must write a function that initializes the system with the necessary information upon its startup. This function must be external to the domain layer, meaning you must make the appropriate calls to the domain layer functions, and not perform direct access to the data.
+4. The system must be allowed to start even without the data and allow loading it afterwards.
+
+Late Submission Policy:
+For any work submitted after the deadline set for the work (according to Moodle) and up to 24 hours later, 10% will be deducted for late submission.
+
+For any work submitted with a delay of 24-72 hours, 30% will be deducted for late submission.
+
+Works submitted with a delay of more than 72 hours will not be checked!
+
+If the group does not manage to complete the assignment on time, the students in the group must decide whether to submit the incomplete work on time or the complete work late.
+
+Suppliers Module (מודול ספקים) - Exact Description
+The company works with different suppliers for different fields. Some of the suppliers arrive on fixed days, some arrive only when there is an order (sometimes it takes a few days from the date of the order to the date of the supplier's visit), and some do not transport their products, but rather need "Super-Lee" to take care of collecting and transporting the orders made from them.
+
+In addition, each supplier represents different companies in the market. There may be a situation where several different suppliers supply products of the same manufacturer.
+
+With the new management trend, the company's management requires managing the suppliers in a computerized manner.
+
+For each supplier, a supplier card must be opened in which to manage the supplier's details, company ID (ח"פ - Company Registration Number), bank account, payment terms, and also to save the names of the contact persons and contact details with them.
+
+The company has different agreements with different suppliers and with different business terms.
+
+In the engagement with each supplier, it is defined whether the supplier has fixed supply days or not, and the details of the items included in the agreement, including what the price is for each item.
+
+Agreements sometimes also define a "Bill of Quantities" (כתב כמויות) which defines for each item what the discount will be given to the item during large-scale purchases. The discount amount changes according to the quantity of items the company ordered from the supplier in that same order.
+
+In addition, the company is interested in knowing what items it purchases from each supplier and what the supplier's catalog number is for each item, for the purpose of generating orders from suppliers and interfacing with their systems.
