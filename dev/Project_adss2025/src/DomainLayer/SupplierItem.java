@@ -34,7 +34,7 @@ public class SupplierItem {
     }
 
     
-     ֿ//  Returns the applicable discount percentage for a given order quantity.
+     // Returns the applicable discount percentage for a given order quantity.
      // Finds the highest minQuantity tier that the ordered quantity satisfies.
      
     public double getApplicableDiscount(int quantity) {
