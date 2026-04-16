@@ -73,12 +73,20 @@ public class DomainLayerTests {
         }
     }
 
-    // Test 7: SupplierItem effective price with a discount
-    private static void test7_itemEffectivePrice() {
-        SupplierItem item = new SupplierItem(100, 200, "Widget", 50.0, "WidgetCo");
-        item.addQuantityDiscount(new QuantityDiscount(10, 10)); // 10% off for 10+ units
-        check(item.getEffectivePrice(10) == 45.0, "Test 7 - Effective price with 10% discount");
-    }
+    // Test 7: Strict price calculation (sensitive to small changes)
+    private static void test7_strictPriceCalculation() {
+    SupplierItem item = new SupplierItem(100, 200, "Widget", 50.0, "Company");
+
+    // add two discounts
+    item.addQuantityDiscount(new QuantityDiscount(10, 10)); // 10%
+    item.addQuantityDiscount(new QuantityDiscount(50, 20)); // 20%
+
+    double price1 = item.getEffectivePrice(10);  // should be 45.0
+    double price2 = item.getEffectivePrice(50);  // should be 40.0
+
+    check(price1 == 45.0, "Test 7a - 10 units gives 10% discount");
+    check(price2 == 40.0, "Test 7b - 50 units gives best discount (20%)");
+}
 
     // Test 8: Add an item to a SupplierAgreement
     private static void test8_addItemToAgreement() {
@@ -119,7 +127,7 @@ public class DomainLayerTests {
         test4_contactPersonPhone();
         test5_createQuantityDiscount();
         test6_discountRejectsNegative();
-        test7_itemEffectivePrice();
+       test7_strictPriceCalculation();
         test8_addItemToAgreement();
         test9_agreementRejectsInvalidDay();
         test10_managerAddAndFind();
