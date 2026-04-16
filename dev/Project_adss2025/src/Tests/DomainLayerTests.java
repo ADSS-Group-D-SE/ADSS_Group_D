@@ -2,13 +2,7 @@ package Tests;
 
 import DomainLayer.*;
 
-/**
- * 10 simple unit tests for the Domain Layer.
- * Run from terminal:
- *   cd src
- *   javac DomainLayer/*.java Tests/DomainLayerTests.java
- *   java Tests.DomainLayerTests
- */
+
 public class DomainLayerTests {
 
     private static int passed = 0;
