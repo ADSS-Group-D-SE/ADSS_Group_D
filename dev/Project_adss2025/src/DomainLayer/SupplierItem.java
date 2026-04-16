@@ -33,10 +33,10 @@ public class SupplierItem {
         quantityDiscounts.remove(discount);
     }
 
-    /**
-     * Returns the applicable discount percentage for a given order quantity.
-     * Finds the highest minQuantity tier that the ordered quantity satisfies.
-     */
+    
+     ֿ//  Returns the applicable discount percentage for a given order quantity.
+     // Finds the highest minQuantity tier that the ordered quantity satisfies.
+     
     public double getApplicableDiscount(int quantity) {
         double bestDiscount = 0;
         for (QuantityDiscount qd : quantityDiscounts) {
@@ -47,10 +47,9 @@ public class SupplierItem {
         return bestDiscount;
     }
 
-    /**
-     * Calculates the effective price per unit after applying the best quantity
-     * discount.
-     */
+    
+     // Calculates the effective price per unit after applying the best quantity discount.
+    
     public double getEffectivePrice(int quantity) {
         double discount = getApplicableDiscount(quantity);
         return price * (1 - discount / 100.0);
