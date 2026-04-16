@@ -68,6 +68,14 @@ public class ProductDL {
         this.amount_on_shelves -=shelves;
         this.amount_on_stock-=stock;
     }
+
+    /*
+    Method that returns whether the product is in low stock range.
+     */
+    public boolean isInWarningRange()
+    {
+        return this.amount_on_shelves+amount_on_stock <= this.minAmountAlert;
+    }
     /*
     ==================================
     Getters and setters

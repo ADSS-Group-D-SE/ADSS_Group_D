@@ -4,15 +4,13 @@ package DomainLayer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class ProductFacade {
     private HashMap<String, ProductDL> products;
     private HashMap<Integer,FaultyProductDL> faultyProducts;
     private HashMap<String,Double> categoryDiscounts;
+    private HashMap<String,List<ProductDL>> mapByCategory;
 
     private int faultyProductsIdCounter=0;
 
@@ -20,6 +18,7 @@ public class ProductFacade {
         products=new HashMap<String, ProductDL>();
         faultyProducts=new HashMap<Integer, FaultyProductDL>();
         categoryDiscounts = new HashMap<>();
+        mapByCategory = new HashMap<>();
     }
 
     private int generateNextId() {
@@ -53,7 +52,9 @@ public class ProductFacade {
 
 
         products.put(catalogNumber,product);
-        return product;
+        mapByCategory.putIfAbsent(main_id,new ArrayList<>()); // create a new list for the category if its new to the data.
+        mapByCategory.get(main_id).add(product); // saves in the category map as well.
+        return product;//???
     }
 
     /**
@@ -239,4 +240,44 @@ public class ProductFacade {
         return "Product updated successfully!";
     }
 
+    /**
+     * A method that iterates over all products to check for products that are in warning range.
+     * Collects each one and creates a notification report.
+     */
+    public String GetProductsWarnings()
+    {
+        String report = "Products in warning range:\n";
+        for(Map.Entry<String,ProductDL> en:this.products.entrySet())
+        {
+            ProductDL p = en.getValue();
+            if(p.isInWarningRange())
+                report+="================\n" + p.getName() +" Catalog number:" + p.getCatalog_number() +" Total of:" +(p.getAmount_on_shelves()+p.getAmount_on_stock())+"\n";
+        }
+        return report;
+    }
+
+    /**
+     * A method that creates an inventory report on the sent categories IDs.
+     * ATTENTION:if mapByCategory returns a null list, id does not mean the category not exist, it may imply that it does not have products yet.
+     */
+    public String GetInventoryReportByCategory(List<String> cats)
+    {
+        String report="Inventory report on categories:"+cats.toString();
+        for(String category:cats){
+            report+="=================\n\n";
+            List<ProductDL> list = this.mapByCategory.get(category);
+            report+="Category " + category+":\n-----------------\n";
+            if(list == null || list.isEmpty())
+                report+="No Products\n\n";
+            else {
+                for(ProductDL p:list)
+                {
+                    report+="Product:" + p.getName() +" Catalog number:"+p.getCatalog_number() +" Location:"+p.getLocation()+" Amount on shelves:"+p.getAmount_on_shelves()+" Amount on stock:"+p.getAmount_on_stock()+"\n";
+                }
+                report+="\n\n";
+            }
+
+        }
+        return report;
+    }
 }
