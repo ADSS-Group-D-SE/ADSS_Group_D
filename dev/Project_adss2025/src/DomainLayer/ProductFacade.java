@@ -40,7 +40,7 @@ public class ProductFacade {
      * @return the newly created object
      * @throws Exception Exception if the product does  exist in the system or if an error occurs while creating the product
      */
-    public ProductDL addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
+    public String addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
                                 String location,String manu, int amountOnShelves, int amountOnStock,
                                 double supplyPrice, double consumerPrice, int minAmount) throws Exception {
 
@@ -54,7 +54,7 @@ public class ProductFacade {
         products.put(catalogNumber,product);
         mapByCategory.putIfAbsent(main_id,new ArrayList<>()); // create a new list for the category if its new to the data.
         mapByCategory.get(main_id).add(product); // saves in the category map as well.
-        return product;//???
+        return product.getCatalog_number();//???
     }
 
     /**
@@ -264,7 +264,7 @@ public class ProductFacade {
     {
         String report="Inventory report on categories:"+cats.toString();
         for(String category:cats){
-            report+="=================\n\n";
+            report+="\n=================\n\n";
             List<ProductDL> list = this.mapByCategory.get(category);
             report+="Category " + category+":\n-----------------\n";
             if(list == null || list.isEmpty())
@@ -272,7 +272,7 @@ public class ProductFacade {
             else {
                 for(ProductDL p:list)
                 {
-                    report+="Product:" + p.getName() +" Catalog number:"+p.getCatalog_number() +" Location:"+p.getLocation()+" Amount on shelves:"+p.getAmount_on_shelves()+" Amount on stock:"+p.getAmount_on_stock()+"\n";
+                    report+="Product:" + p.getName() +" ,Catalog number:"+p.getCatalog_number() +" ,Location:"+p.getLocation()+" ,Amount on shelves:"+p.getAmount_on_shelves()+" ,Amount on stock:"+p.getAmount_on_stock()+"\n";
                 }
                 report+="\n\n";
             }
