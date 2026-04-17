@@ -42,19 +42,45 @@ public class ProductDL {
         this.tags.put(SUB,sub_id);
         this.tags.put(SUBSUB,subsub_id); // inits tags map.
 
-        this.name = name;
+        setName(name);
+        if (cat == null) {
+            throw new IllegalArgumentException("Catalog number cannot be null or empty.");
+        }
         this.catalog_number =cat;
-        this.location = loc;
-        this.manufacturer = manu;
-        this.amount_on_shelves = on_shelves;
-        this.amount_on_stock = on_stock;
-        this.price_to_consumer = price_to_consumer;
-        this.price_to_supply = price_to_supply;
+        setLocation(loc);
 
-        this.minAmountAlert=minAmountAlert;
+        if (manu == null||manu.trim().isEmpty()) {
+            throw new IllegalArgumentException("manufacturer cannot be null or empty.");
+        }
+        this.manufacturer = manu;
+
+        setAmount_on_shelves(on_shelves);
+        setAmount_on_stock(on_stock);
+        setPrice_to_consumer(price_to_consumer);
+        setPrice_to_supply(price_to_supply);
+
+        setMinAmountAlert(minAmountAlert);
 
         this.supplier_discount = 0;
         this.product_discount = 0; // initial product amd supplier discount is 0.
+    }
+
+
+
+    public ProductDL(ProductDL other) {
+        this.name = other.name;
+        this.catalog_number = other.catalog_number;
+        this.location = other.location;
+        this.manufacturer = other.manufacturer;
+        this.amount_on_shelves = other.amount_on_shelves;
+        this.amount_on_stock = other.amount_on_stock;
+        this.price_to_consumer = other.price_to_consumer;
+        this.price_to_supply = other.price_to_supply;
+        this.minAmountAlert = other.minAmountAlert;
+        this.product_discount = other.product_discount;
+        this.supplier_discount = other.supplier_discount;
+
+        this.tags = new HashMap<>(other.tags);
     }
 
     /*
@@ -125,41 +151,6 @@ public class ProductDL {
         return supplier_discount;
     }
 
-
-
-
-    public void setSupplier_discount(double supplier_discount) {
-        this.supplier_discount = supplier_discount;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public void setAmount_on_shelves(int amount_on_shelves) {
-        this.amount_on_shelves = amount_on_shelves;
-    }
-
-    public void setAmount_on_stock(int amount_on_stock) {
-        this.amount_on_stock = amount_on_stock;
-    }
-
-    public void setPrice_to_consumer(double price_to_consumer) {
-        this.price_to_consumer = price_to_consumer;
-    }
-
-    public void setPrice_to_supply(double price_to_supply) {
-        this.price_to_supply = price_to_supply;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setMinAmountAlert(int minAmountAlert) {
-        this.minAmountAlert = minAmountAlert;
-    }
-
     public double getPrice_to_consumer() {
         return price_to_consumer;
     }
@@ -168,7 +159,85 @@ public class ProductDL {
         return product_discount;
     }
 
+
+
+
+    public void setSupplier_discount(double supplier_discount) {
+        if(supplier_discount<0 ||supplier_discount>100){
+            throw new IllegalArgumentException("Supplier discount can be between 0-100");
+        }
+        this.supplier_discount = supplier_discount;
+    }
+
+    public void setLocation(String location) {
+        if (location == null || location.trim().isEmpty()) {
+            throw new IllegalArgumentException("Location cannot be empty.");
+        }
+
+
+        String normalizedLocation = location.trim().toUpperCase();
+
+
+        String locationPattern = "^[A-Z]-[0-9]+$";
+
+        if (!normalizedLocation.matches(locationPattern)) {
+            throw new IllegalArgumentException("Invalid location format. Expected format: Letter-Number (e.g., A-12).");
+        }
+        this.location = normalizedLocation;
+    }
+
+    public void setAmount_on_shelves(int amount_on_shelves) {
+        if(amount_on_shelves<0){
+            throw new IllegalArgumentException("amount can't be negative");
+        }
+        this.amount_on_shelves = amount_on_shelves;
+    }
+
+    public void setAmount_on_stock(int amount_on_stock) {
+        if(amount_on_stock<0){
+            throw new IllegalArgumentException("amount can't be negative");
+        }
+        this.amount_on_stock = amount_on_stock;
+    }
+
+    public void setPrice_to_consumer(double price_to_consumer) {
+        if(price_to_consumer<0){
+            throw new IllegalArgumentException("price can't be negative");
+        }
+        this.price_to_consumer = price_to_consumer;
+    }
+
+    public void setPrice_to_supply(double price_to_supply) {
+        if(price_to_supply<0){
+            throw new IllegalArgumentException("price can't be negative");
+        }
+        this.price_to_supply = price_to_supply;
+    }
+
+    public void setName(String name) {
+        if(name==null||name.trim().isEmpty()){
+            throw new IllegalArgumentException("name can't be empty");
+        }
+        this.name = name;
+    }
+
+    public void setMinAmountAlert(int minAmountAlert) {
+        if(minAmountAlert<0){
+            throw new IllegalArgumentException("Min Amount can't be negative");
+        }
+        this.minAmountAlert = minAmountAlert;
+    }
+
+
+
     public void setProduct_discount(double product_discount) {
+        if(product_discount<0 ||product_discount>100){
+            throw new IllegalArgumentException("Product discount can be only between 0-100");
+        }
         this.product_discount = product_discount;
+    }
+
+    public int getMinAmountAlert() {
+        return minAmountAlert;
     }
 }

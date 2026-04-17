@@ -20,7 +20,16 @@ public class FaultyProductDL {
         this.reportID = reportID;
         this.name = p.getName();
         this.catalog_number = p.getCatalog_number();
-        this.location = location; // saves data from product.
+
+        if (location == null || location.trim().isEmpty()) {
+            throw new IllegalArgumentException("Location cannot be empty.");
+        }
+        String normalizedLocation = location.trim().toUpperCase();
+        String locationPattern = "^[A-Z]-[0-9]+$";
+        if (!normalizedLocation.matches(locationPattern)) {
+            throw new IllegalArgumentException("Invalid location format. Expected format: Letter-Number (e.g., A-12).");
+        }
+        this.location = location;
 
         this.description = description;
         this.dateOnReport = reportTime;
