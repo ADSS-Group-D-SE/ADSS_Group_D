@@ -75,41 +75,6 @@ public class ProductFacade {
 
     }
 
-//    /**
-//     * Sets a Min Amount for a product identified by its catalog number.
-//     * @param catalogNumber unique identifier of the product
-//     * @param amount the minimum required quantity of the product
-//     * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the min amount
-//     */
-//    public void setMinAmount(String catalogNumber, int amount) throws Exception{
-//        ProductDL product = FindProductByID(catalogNumber);
-//        try{
-//            //לבדוק שנבדק בתוך הPRODUCTDL שהכמות חיובית
-////            product.setMinAmount(amount);
-//        }
-//        catch (Exception e) {
-//            throw e;
-//        }
-//
-//    }
-
-//    /**
-//     * Sets a Price for a product identified by its catalog number.
-//     * @param catalogNumber unique identifier of the product
-//     * @param price the consumer price of the product
-//     * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the price
-//     */
-//    public void setPrice(String catalogNumber, double price) throws Exception{
-//        ProductDL product = FindProductByID(catalogNumber);
-//        try{
-//            //לבדוק שנבדק בתוך הPRODUCTDL שהמחיר הגיוני
-////            product.setPrice(price);
-//        }
-//        catch (Exception e) {
-//            throw e;
-//        }
-//
-//    }
 
     /**
      * Sets a supplier discount for a product identified by its catalog number.

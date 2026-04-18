@@ -87,12 +87,17 @@ public class ProductDL {
      Method for testing, allows "purchasing" and changing amounts on shelves and stocks.
      input a positive amount for amount decrease, negative for increase.
      */
-    public void Purchase(int shelves,int stock)
-    {
-        if(shelves > this.amount_on_shelves || stock > this.amount_on_stock)
-            throw new IllegalArgumentException("Product purchase:" + this.catalog_number +" ,amount on shelves or stock is insufficient");
-        this.amount_on_shelves -=shelves;
-        this.amount_on_stock-=stock;
+    public void Purchase(int shelvesChange, int stockChange) {
+        int newShelves = this.amount_on_shelves - shelvesChange;
+        int newStock = this.amount_on_stock - stockChange;
+
+        if (newShelves < 0 || newStock < 0) {
+            throw new IllegalArgumentException("Inventory Error: Catalog " + this.catalog_number +
+                    ". Operation would result in negative inventory (Shelves: " + newShelves + ", Stock: " + newStock + ")");
+        }
+
+        this.amount_on_shelves = newShelves;
+        this.amount_on_stock = newStock;
     }
 
     /*

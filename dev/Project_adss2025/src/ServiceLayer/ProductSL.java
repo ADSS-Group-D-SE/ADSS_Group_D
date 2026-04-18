@@ -1,6 +1,10 @@
 package ServiceLayer;
 
+import DomainLayer.CategoryDL;
 import DomainLayer.ProductDL;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ProductSL {
@@ -36,5 +40,16 @@ public class ProductSL {
         this.main_category_id = dl.getMain_category_id();
         this.sub_category_id = dl.getSub_category_id();
         this.subsub_category_id = dl.getSubsub_category_id();
+    }
+
+
+    public static List<ProductSL> convert (List<ProductDL> toConvert)
+    {
+        List<ProductSL> res = new ArrayList<>();
+        for(ProductDL product:toConvert)
+        {
+            res.add(new ProductSL(product));
+        }
+        return res;
     }
 }
