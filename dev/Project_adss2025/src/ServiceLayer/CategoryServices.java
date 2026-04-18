@@ -89,4 +89,23 @@ public class CategoryServices {
         }
         return res;
     }
+    /**
+     The category discount setup service.
+     Returns response: with null value when op was a success.
+     else:Response with an error msg.
+     **/
+    public Response<String> SetCategoryDiscount(String category_id,double discount)
+    {
+        Response<String> res = null;
+        try
+        {
+            this.cFacade.SetCatDiscount(category_id,discount);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
 }

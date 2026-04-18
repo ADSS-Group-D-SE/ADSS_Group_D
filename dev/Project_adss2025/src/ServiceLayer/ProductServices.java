@@ -27,7 +27,6 @@ public class ProductServices {
         this.pFacade=new ProductFacade();
     }
 
-
     /**
      * Provides a global point of access to the ProductServices instance.
      * @return the single instance of ProductServices
@@ -38,11 +37,6 @@ public class ProductServices {
         }
         return INSTANCE;
     }
-
-
-
-
-
 
     public Response<List<ProductSL>> getAllProducts() {
         try {
@@ -59,11 +53,6 @@ public class ProductServices {
             return new Response<>(e.getMessage());
         }
     }
-
-
-
-
-
 
     /**
      * Adds a new product to the system with the provided details.
@@ -104,26 +93,6 @@ public class ProductServices {
         } catch (Exception e) {
             return new Response<>(e.getMessage());
         }
-    }
-
-    /**
-    The category discount setup service.
-    Returns response: with null value when op was a success.
-    else:Response with an error msg.
-     **/
-    public Response<String> SetCategoryDiscount(String category_id,double discount)
-    {
-        Response<String> res = null;
-        try
-        {
-            this.pFacade.SetCatDiscount(category_id,discount);
-            res = new Response<>(null,null);
-        }
-        catch (Exception e)
-        {
-            res = new Response<>(e.getMessage());
-        }
-        return res;
     }
 
     /**
@@ -246,6 +215,12 @@ public class ProductServices {
         return res;
     }
 
+    /**
+     * Service to update the details of the entered product.
+     * Returns Response with success message if op was a success, else returns a response with error string.
+
+     * @return
+     */
     public Response<String> update(String catalogNumber, String name, String storageLocation,
                                    Double consumerPrice, Double supplyPrice,
                                    Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
@@ -279,7 +254,12 @@ public class ProductServices {
         }
     }
 
-
+    /**
+     * Service that returns a response with productSL of entered product.
+     * if op was a failure, returns a response with error string.
+     * @param catalogNum
+     * @return
+     */
     public Response<ProductSL> getProductByCatalogNumber(String catalogNum) {
         try {
             ProductDL dlProducts = this.pFacade.FindProductByID(catalogNum);
@@ -290,5 +270,28 @@ public class ProductServices {
         } catch (Exception e) {
             return new Response<>(e.getMessage());
         }
+    }
+
+    /**
+     * Service that operates the product discount method.
+     * If op was a success, returns a response with null value,
+     * else, returns a response with error string.
+     * @param id
+     * @param discount
+     * @return
+     */
+    public Response<String> SetProductDiscount(String id,double discount)
+    {
+        Response<String> res = null;
+        try
+        {
+            this.pFacade.SetProductDiscountMod(id,discount);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
     }
 }
