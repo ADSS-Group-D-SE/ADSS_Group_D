@@ -1,9 +1,6 @@
 package PresentationLayer;
 
-import ServiceLayer.CategorySL;
-import ServiceLayer.CategoryServices;
-import ServiceLayer.ProductServices;
-import ServiceLayer.Response;
+import ServiceLayer.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,17 +38,21 @@ public class InventoryCLI {
 
     private void displayMenu(){
         System.out.println("\nChoose an option:");
-        System.out.println("1. Add Product");
-        System.out.println("2. Add faulty Product (Report Damage)");
-        System.out.println("3. Update Product");
-        System.out.println("4. Add Product/Category Discount");
-        System.out.println("5. Category Creations");
-        System.out.println("6. Export Faulty Inventory Report by Dates");
-        System.out.println("7. Add Supplier Discount per Product");
-        System.out.println("8  Get inventory report by categories.");
-        System.out.println("9  Create TEST data.");
+        System.out.println("1.  Add Product");
+        System.out.println("2   Add Category/ SubCategory/ SubsubCategory.");
+        System.out.println("3.  Add faulty Product (Report Damage)");
+        System.out.println("4.  Update Product");
+        System.out.println("5.  Add Product/Category Discount");
+        System.out.println("6.  View Stock Alerts (Products running out)");
+        System.out.println("7.  Export Faulty Inventory Report by Dates");
+        System.out.println("8.  Add Supplier Discount per Product");
+        System.out.println("9.  Get inventory report by categories.");
+        System.out.println("10. show all products");
+        System.out.println("11. Purchase Product from Shelves/Stock");
+        System.out.println("12. Create TEST data.");
 
-        System.out.println("0. Exit");
+
+        System.out.println("0.  Exit");
         System.out.print("Please enter your choice: ");
     }
 
@@ -62,49 +63,203 @@ public class InventoryCLI {
                 break;
 
             case "2":
-                handleAddFaultyProduct();
+                handleCategoryCreation();
                 break;
 
             case "3":
-                handleUpdateProduct();
+                handleAddFaultyProduct();
                 break;
 
             case "4":
-                handleDiscountProduct();
+                handleUpdateProduct();
                 break;
 
             case "5":
-                HandleCategoryCreation();
+                handleDiscountProduct();
                 break;
 
             case "6":
-                handleFaultyInventoryReport();
+                handleViewLowStock();
                 break;
 
             case "7":
+                handleFaultyInventoryReport();
+                break;
+
+            case "8":
                 handleSupplierDiscount();
                 break;
-            case "8":
+
+            case "9":
                 HandleInventoryReport();
                 break;
-            case "9":
+
+            case "10":
+                displayAllProducts();
+                break;
+
+            case "11":
+                handlePurchaseProduct();
+                break;
+
+            case "12":
                 CreateTestData();
                 break;
+
+
             default:
-                System.out.println("Invalid input. Please choose a number between 0 and 9.");
+                System.out.println("Invalid input. Please choose a number between 0 and 7.");
                 break;
         }
     }
 
+    private void handlePurchaseProduct() {
+        System.out.println("\n-----------------------------------------");
+        System.out.println(">>> Action: Purchase Product (Update Inventory)");
+        System.out.println("-----------------------------------------");
+
+
+
+
+
+        System.out.print("Enter Product Catalog Number: ");
+        String catalogNum = scanner.nextLine();
+
+        Response<ProductSL> productRes = this.productServices.getProductByCatalogNumber(catalogNum);
+
+
+
+
+        if (productRes.isError()) {
+            System.out.println("[!] ERROR: " + productRes.getErrorMsg());
+            return;
+        }
+
+        ProductSL product = productRes.getReturnValue();
+
+        System.out.println("\nProduct Found: " + product.name);
+        System.out.println("Current Status:");
+        System.out.println("   [1] Shelves: " + product.amount_on_shelves);
+        System.out.println("   [2] Stock: " + product.amount_on_stock);
+        System.out.println("-----------------------------------------");
+
+        System.out.println("Select source to decrease from:");
+        System.out.println("1. Shelves Only");
+        System.out.println("2. Stock Only");
+        System.out.println("3. Transfer from Stock to Shelves (Refill)");
+        int sourceChoice = getIntInput("Your choice: ");
+
+
+        int actionChoice=0;
+        if(sourceChoice==1||sourceChoice==2) {
+            System.out.println("1. Decrease Inventory (Purchase/Loss)");
+            System.out.println("2. Increase Inventory (New Stock/Return)");
+            actionChoice = getIntInput("Choose action: ");
+
+        }
+
+
+
+        int amountToShelves = 0;
+        int amountToStock = 0;
+        int amount = 0;
+
+
+        int factor = (actionChoice == 1) ? 1 : -1;
+
+        switch (sourceChoice) {
+            case 1:
+                amount = getIntInput("Enter amount: ");
+                amountToShelves = amount * factor;
+                break;
+            case 2:
+                amount = getIntInput("Enter amount: ");
+                amountToStock = amount * factor;
+                break;
+            case 3:
+                amount = getIntInput("Enter amount to transfer from Stock to Shelves: ");
+                amountToStock = amount;
+                amountToShelves = -amount;
+                break;
+            default:
+                System.out.println("Invalid choice.");
+                return;
+        }
+        Response<String> purchaseRes = this.productServices.PurchaseProduct(catalogNum, amountToShelves, amountToStock);
+
+        if (purchaseRes.isError()) {
+            System.out.println("[!] PURCHASE FAILED: " + purchaseRes.getErrorMsg());
+        } else {
+            System.out.println("[V] Inventory updated successfully!");
+
+        }
+        System.out.println("-----------------------------------------");
+    }
+
+    private void displayAllProducts() {
+        Response<List<ProductSL>> res = this.productServices.getAllProducts();
+
+        int tableWidth = 170;
+        System.out.println("\n" + "=".repeat(tableWidth));
+        System.out.printf("| %-166s |%n", "                                                           FULL INVENTORY DETAILED REPORT");
+        System.out.println("=".repeat(tableWidth));
+
+        if (res.isError()) {
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
+        } else {
+            List<ProductSL> products = res.getReturnValue();
+
+            if (products == null || products.isEmpty()) {
+                System.out.printf("| %-166s |%n", "No products found in the system.");
+            } else {
+                System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7s | %-7s | %-9s | %-9s | %-8s | %-8s | %-12s | %-15s | %-18s |%n",
+                        "Catalog #", "Name", "Loc.", "Manufacturer", "Shelf", "Stock", "C.Price", "S.Price", "P.Disc", "S.Disc", "Main Cat", "Sub Cat", "SubSub");
+                System.out.println("-".repeat(tableWidth));
+
+                for (ProductSL p : products) {
+                    System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7d | %-7d | %-9.2f | %-9.2f | %-7.1f%% | %-7.1f%% | %-12s | %-15s | %-18s |%n",
+                            p.catalog_number,
+                            truncate(p.name, 18),
+                            p.location,
+                            truncate(p.manufacturer, 15),
+                            p.amount_on_shelves,
+                            p.amount_on_stock,
+                            p.price_to_consumer,
+                            p.price_to_supply,
+                            p.product_discount,
+                            p.supplier_discount,
+                            truncate(p.main_category_id, 12),
+                            truncate(p.sub_category_id, 15),
+                            truncate(p.subsub_category_id, 18)
+                    );
+                }
+            }
+        }
+        System.out.println("=".repeat(tableWidth) + "\n");
+    }
+
+    private String truncate(String str, int size) {
+        if (str == null) return "N/A";
+        if (str.length() <= size) return str;
+        return str.substring(0, size - 3) + "...";
+    }
+
+
+
     private CategorySL HandleMainCategoryChoice()
     {
         Response<List<CategorySL>> res = this.categoryServices.GetMainCategories();
-        if(res.isError())
-            throw new RuntimeException(res.getErrorMsg());
+        if(res.isError()){
+            System.out.println("[!] Error fetching categories: " + res.getErrorMsg());
+            return null;
+        }
 
         List<CategorySL> categories = res.getReturnValue();
-        if(categories.isEmpty())
-            throw new RuntimeException("No categories to be selected.");
+        if (categories == null || categories.isEmpty()) {
+            System.out.println("[!] No categories available in the system.");
+            System.out.println("[*] Please go to Option 2 in the main menu to add a category first.");
+            return null;
+        }
 
         int choice = 0;
         do {
@@ -113,6 +268,7 @@ public class InventoryCLI {
                 System.out.println(i + 1 + "." + categories.get(i).name);
             }
             choice = scanner.nextInt();
+            scanner.nextLine();
             if(choice < 1 || choice > categories.size())
                 System.out.println("Choice is not in allowed range. try again:");
         }while(choice < 1 || choice > categories.size());
@@ -122,12 +278,16 @@ public class InventoryCLI {
     private CategorySL HandleSubCategoryChoice(CategorySL root)
     {
         Response<List<CategorySL>> res = this.categoryServices.GetSubCategories(root.Id);
-        if(res.isError())
-            throw new RuntimeException(res.getErrorMsg());
-
+        if(res.isError()){
+            System.out.println("[!] Error fetching categories: " + res.getErrorMsg());
+            return null;
+        }
         List<CategorySL> categories = res.getReturnValue();
-        if(categories.isEmpty())
-            throw new RuntimeException("No sub-categories to be selected.");
+        if (categories == null || categories.isEmpty()) {
+            System.out.println("[!] No sub categories available in the system.");
+            System.out.println("[*] Please use Option 2 -> 'Create a sub category' and link it to '" + root.name + "'.");
+            return null;
+        }
 
         int choice = 0;
         do {
@@ -136,6 +296,7 @@ public class InventoryCLI {
                 System.out.println(i + 1 + "." + categories.get(i).name + "\n");
             }
             choice = scanner.nextInt();
+            scanner.nextLine();
             if(choice < 1 || choice > categories.size())
                 System.out.println("Choice is not in allowed range. try again:");
         }while(choice < 1 || choice > categories.size());
@@ -155,15 +316,16 @@ public class InventoryCLI {
             String catalogNumber = scanner.nextLine();
 
             CategorySL main = this.HandleMainCategoryChoice();
+            if (main == null) return;
             CategorySL sub = this.HandleSubCategoryChoice(main);
+            if (sub == null) return;
             CategorySL subsub = this.HandleSubCategoryChoice(sub);
+            if (subsub == null) return;
 
-            String categoriesInput = scanner.nextLine();
-            List<String> categories = Arrays.asList(categoriesInput.split("\\s*,\\s*"));
 
             System.out.print("Enter Storage Location (e.g., A-12): ");
             String location = scanner.nextLine();
-            System.out.print("Enter Product manufacturer Location (e.g., A-12): ");
+            System.out.print("Enter Product manufacturer: ");
             String manu = scanner.nextLine();
 
             int amountOnShelves = getIntInput("Enter Amount on Shelves: ");
@@ -270,7 +432,7 @@ public class InventoryCLI {
         System.out.println("7. Minimum Amount Alert");
         System.out.println("0. Cancel and return to main menu");
 
-        int updateChoice = getIntInput("\nPlease choose an option (0-5): ");
+        int updateChoice = getIntInput("\nPlease choose an option (0-7): ");
 
         switch (updateChoice){
             case 0:
@@ -324,6 +486,7 @@ public class InventoryCLI {
                 this.productServices.update(catalogNumber, null, null, null, null, null, null, minAlert);
                 break;
 
+
             default:
                 System.out.println("Invalid input. Please choose a number between 0 and 7.");
                 break;
@@ -353,46 +516,45 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
     }
 
+
     private void handleViewLowStock() {
-        System.out.println("\n-----------------------------------------");
-        System.out.println(">>> Action: Viewing Stock Alerts (Running Out)");
-        System.out.println("-----------------------------------------");
+        int tableWidth = 90;
+        System.out.println("\n" + "=".repeat(tableWidth));
+        System.out.printf("| %-86s |%n", "                STOCK ALERT: PRODUCTS BELOW MINIMUM AMOUNT");
+        System.out.println("=".repeat(tableWidth));
 
-        Response<String> res = this.productServices.getLowStockAlerts();
-
-        if (res.isError()) {
-            System.out.println("[!] ERROR: " + res.getErrorMsg());
-        } else {
-            System.out.println(res.getReturnValue());
-        }
-        System.out.println("-----------------------------------------");
-    }
-
-    private void handleFaultyInventoryReport() {
-
-        System.out.println("\n-----------------------------------------");
-        System.out.println(">>> Action: Export Inventory Report");
-        System.out.println("-----------------------------------------");
-
-        System.out.print("Enter Start Date (DD/MM/YYYY): ");
-        String startDate = scanner.nextLine();
-
-        System.out.print("Enter End Date (DD/MM/YYYY): ");
-        String endDate = scanner.nextLine();
-
-
-        System.out.println("[*] Generating report for " + startDate + " to " + endDate + "...");
-
-        Response<String> res = this.productServices.CreateFaultyProductReport(startDate, endDate);
+        Response<List<ProductSL>> res = this.productServices.getLowStockAlerts();
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
         } else {
-            System.out.println("\n--- Report Content ---");
-            System.out.println(res.getReturnValue());
+            List<ProductSL> lowStock = res.getReturnValue();
+
+            if (lowStock == null || lowStock.isEmpty()) {
+                System.out.printf("| %-86s |%n", "All products are well-stocked. No alerts at this time.");
+            } else {
+                System.out.printf("| %-7s | %-12s | %-20s | %-10s | %-10s | %-10s |%n",
+                        "STATUS", "Catalog #", "Product Name", "Current", "Min. Alert", "Location");
+                System.out.println("-".repeat(tableWidth));
+
+                for (ProductSL p : lowStock) {
+                    int totalCurrent = p.amount_on_shelves + p.amount_on_stock;
+
+                    System.out.printf("| [!!]   | %-12s | %-20s | %-10d | %-10d | %-10s |%n",
+                            p.catalog_number,
+                            truncate(p.name, 20),
+                            totalCurrent,
+                            p.minAmountAlert,
+                            p.location);
+                }
+                System.out.println("-".repeat(tableWidth));
+                System.out.println("[*] Summary: Found " + lowStock.size() + " products that require restocking.");
+            }
         }
-        System.out.println("-----------------------------------------");
+        System.out.println("=".repeat(tableWidth) + "\n");
     }
+
+
 
     private void handleSupplierDiscount() {
 
@@ -422,8 +584,41 @@ public class InventoryCLI {
                 return true;
         return false;
     }
+
+
+
+    private void handleFaultyInventoryReport() {
+
+        System.out.println("\n-----------------------------------------");
+        System.out.println(">>> Action: Export Inventory Report");
+        System.out.println("-----------------------------------------");
+
+        System.out.print("Enter Start Date (DD/MM/YYYY): ");
+        String startDate = scanner.nextLine();
+
+        System.out.print("Enter End Date (DD/MM/YYYY): ");
+        String endDate = scanner.nextLine();
+
+
+        System.out.println("[*] Generating report for " + startDate + " to " + endDate + "...");
+
+        Response<String> res = this.productServices.CreateFaultyProductReport(startDate, endDate);
+
+        if (res.isError()) {
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
+        } else {
+            System.out.println("\n--- Report Content ---");
+            System.out.println(res.getReturnValue());
+        }
+        System.out.println("-----------------------------------------");
+    }
+
     public void HandleInventoryReport()
     {
+        System.out.println("\n-----------------------------------------");
+        System.out.println(">>> Action: Show Inventory Report");
+        System.out.println("-----------------------------------------");
+
         List<String> cats = new ArrayList<>();
         String choice ="";
         do {
@@ -448,10 +643,16 @@ public class InventoryCLI {
         System.out.println("Displaying Report:\n\n" + res.getReturnValue());
     }
 
-    private void HandleCategoryCreation()
+    private void handleCategoryCreation()
     {
+
+        System.out.println("\n-----------------------------------------");
+        System.out.println(">>> Action: Add Category");
+        System.out.println("-----------------------------------------");
+
+
         int choice;
-        System.out.println("Select an option:");
+        System.out.println("\nSelect an option:");
         System.out.println("1.Create a main category");
         System.out.println("2.Create a sub category");
         System.out.println("3.Create a subsub category");
@@ -460,44 +661,59 @@ public class InventoryCLI {
         String catName = "";
         Response<String> res;
         do {
-            choice = scanner.nextInt();
-        switch (choice) {
-            case 1:
-                System.out.println("Enter category name:");
-                catName = scanner.nextLine();
-                System.out.println("Enter discount (from 0 to 1 , eg 0.5 for 50%):");
-                res = this.categoryServices.CreateCategory(catName, scanner.nextDouble());
+            choice = Integer.parseInt(scanner.nextLine());
+            switch (choice) {
+                case 1:
+                    System.out.println("Enter category name:");
+                    catName =scanner.nextLine();
 
-                if (res.isError())
-                    throw new RuntimeException(res.getErrorMsg());
-                System.out.println("Category was created successfully");
-                break;
-            case 2:
-                CategorySL c = this.HandleMainCategoryChoice();
-                System.out.println("Enter Sub-category name:");
-                catName = scanner.nextLine();
-                res = this.categoryServices.CreateSubCategory(catName, 0, c.Id); //subcategory does not hold discount
-                if (res.isError())
-                    throw new RuntimeException(res.getErrorMsg());
-                System.out.println("Sub-Category was created successfully");
-                break;
-            case 3:
-                CategorySL main = this.HandleMainCategoryChoice();
-                CategorySL sub = this.HandleSubCategoryChoice(main);
-                System.out.println("Enter Sub-Sub-category name:");
-                catName = scanner.nextLine();
-                res = this.categoryServices.CreateSubCategory(catName, 0, sub.Id); //subcategory does not hold discount
-                if (res.isError())
-                    throw new RuntimeException(res.getErrorMsg());
-                System.out.println("Sub-Sub-Category was created successfully");
-                break;
-            case 4:
-                return;
-            default:
-                System.out.println("Wrong input,try again");
+
+                    System.out.println("Enter discount (from 0 to 1 , eg 0.5 for 50%):");
+                    res = this.categoryServices.CreateCategory(catName, scanner.nextDouble());
+                    scanner.nextLine();
+                    if (res.isError()) {
+                        System.out.println("[!] ERROR: " + res.getErrorMsg());
+                    } else {
+                        System.out.println("[V] Category '" + catName + "' was created successfully.");
+                    }
+                    break;
+                case 2:
+                    CategorySL c = this.HandleMainCategoryChoice();
+                    if (c == null) break;
+                    System.out.println("Enter Sub-category name:");
+                    catName = scanner.nextLine();
+                    res = this.categoryServices.CreateSubCategory(catName, 0, c.Id); //subcategory does not hold discount
+                    if (res.isError()) {
+                        System.out.println("[!] ERROR: " + res.getErrorMsg());
+                    } else {
+                        System.out.println("[V] Sub-Category '" + catName + "' added to " + c.name);
+                    }
+                    break;
+                case 3:
+                    CategorySL main = this.HandleMainCategoryChoice();
+                    if (main == null) break;
+                    CategorySL sub = this.HandleSubCategoryChoice(main);
+                    if (sub == null) break;
+                    System.out.println("Enter Sub-Sub-category name:");
+                    catName = scanner.nextLine();
+                    res = this.categoryServices.CreateSubCategory(catName, 0, sub.Id); //subcategory does not hold discount
+                    if (res.isError()) {
+                        System.out.println("[!] ERROR: " + res.getErrorMsg());
+                    } else {
+                        System.out.println("[V] Sub-Sub-Category '" + catName + "' added to " + sub.name);
+                    }
+                    break;
+                case 4:
+                    System.out.println("Returning to main menu...");
+                    return;
+                default:
+                    System.out.println("Wrong input,try again");
+            }
         }
-        }while (choice <0 || choice > 4);
+        while (choice <0 || choice > 4);
     }
+
+
     private void CreateTestData()
     {
         Response<String> res;
@@ -628,7 +844,7 @@ public class InventoryCLI {
                     beveragesId,
                     softDrinksId,
                     softDrinks250mlId,
-                    "A1-S1",
+                    "A-23",
                     "Coca Cola",
                     30,
                     120,
@@ -645,7 +861,7 @@ public class InventoryCLI {
                     beveragesId,
                     softDrinksId,
                     softDrinks1LId,
-                    "A1-S2",
+                    "A-56",
                     "Coca Cola",
                     25,
                     80,
@@ -662,7 +878,7 @@ public class InventoryCLI {
                     beveragesId,
                     juicesId,
                     juices1LId,
-                    "A1-S3",
+                    "d-23",
                     "Tropicana",
                     20,
                     60,
@@ -679,7 +895,7 @@ public class InventoryCLI {
                     beveragesId,
                     juicesId,
                     juices500mlId,
-                    "A1-S4",
+                    "g-4",
                     "Prigat",
                     18,
                     50,
@@ -696,7 +912,7 @@ public class InventoryCLI {
                     bakeryId,
                     breadId,
                     breadLargeLoafId,
-                    "A2-S1",
+                    "w-65",
                     "Angel",
                     15,
                     40,
@@ -713,7 +929,7 @@ public class InventoryCLI {
                     bakeryId,
                     breadId,
                     breadSmallLoafId,
-                    "A2-S2",
+                    "e-5",
                     "Angel",
                     12,
                     35,
@@ -730,7 +946,7 @@ public class InventoryCLI {
                     bakeryId,
                     pastriesId,
                     pastriesSingleId,
-                    "A2-S3",
+                    "c-23",
                     "Bakery House",
                     20,
                     30,
@@ -747,7 +963,7 @@ public class InventoryCLI {
                     bakeryId,
                     pastriesId,
                     pastriesPack4Id,
-                    "A2-S4",
+                    "A-14",
                     "Bakery House",
                     10,
                     25,
@@ -764,7 +980,7 @@ public class InventoryCLI {
                     householdId,
                     cleaningId,
                     cleaning500mlId,
-                    "A3-S1",
+                    "s-14",
                     "Fairy",
                     16,
                     45,
@@ -781,7 +997,7 @@ public class InventoryCLI {
                     householdId,
                     cleaningId,
                     cleaning1LId,
-                    "A3-S2",
+                    "k-23",
                     "Sano",
                     14,
                     40,
@@ -798,7 +1014,7 @@ public class InventoryCLI {
                     householdId,
                     laundryId,
                     laundry2LId,
-                    "A3-S3",
+                    "y-4",
                     "Ariel",
                     10,
                     35,
@@ -815,7 +1031,7 @@ public class InventoryCLI {
                     householdId,
                     laundryId,
                     laundry1LId,
-                    "A3-S4",
+                    "w-7",
                     "Lenor",
                     11,
                     28,

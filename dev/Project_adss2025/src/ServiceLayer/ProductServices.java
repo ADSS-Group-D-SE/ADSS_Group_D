@@ -1,8 +1,12 @@
 package ServiceLayer;
 
+import DomainLayer.ProductDL;
 import DomainLayer.ProductFacade;
+
+import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDateTime;
+
+import static ServiceLayer.ProductSL.convert;
 
 
 /**
@@ -36,6 +40,31 @@ public class ProductServices {
     }
 
 
+
+
+
+
+    public Response<List<ProductSL>> getAllProducts() {
+        try {
+            List<ProductDL> dlProducts = pFacade.getAllProducts();
+            List<ProductSL> slProducts = new ArrayList<>();
+
+            for (ProductDL dl : dlProducts) {
+                slProducts.add(new ProductSL(dl));
+            }
+
+            return new Response<>(null, slProducts);
+
+        } catch (Exception e) {
+            return new Response<>(e.getMessage());
+        }
+    }
+
+
+
+
+
+
     /**
      * Adds a new product to the system with the provided details.
      * @param name name of the product
@@ -56,37 +85,6 @@ public class ProductServices {
         try {
             pFacade.addProduct(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,
                     amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
-            return new Response<>(null,null);
-        } catch (Exception e) {
-            return new Response<>(e.getMessage());
-        }
-    }
-
-    /**
-     * Sets a new minimum amount for a specific product.
-     * @param catalogNumber unique identifier of the product
-     * @param amount the minimum required quantity of the product
-     * @return A Response indicating success or an error message
-     */
-    public Response<String> setMinAmount(String catalogNumber, int amount){
-        try {
-            pFacade.setMinAmount(catalogNumber,amount);
-            return new Response<>(null,null);
-        } catch (Exception e) {
-            return new Response<>(e.getMessage());
-        }
-    }
-
-
-    /**
-     * Updates the price of a specific product.
-     * @param catalogNumber unique identifier of the product
-     * @param price the consumer price of the product
-     * @return A Response indicating success or an error message
-     */
-    public Response<String> setPrice(String catalogNumber, int price){
-        try {
-            pFacade.setPrice(catalogNumber,price);
             return new Response<>(null,null);
         } catch (Exception e) {
             return new Response<>(e.getMessage());
@@ -269,18 +267,28 @@ public class ProductServices {
      * Returns:Response with product warning report in string if was a success
      * Else:Response with an error string
      */
-    public Response<String> getLowStockAlerts()
-    {
-        Response<String> res = null;
-        try
-        {
-            res = new Response<>(null,this.pFacade.GetProductsWarnings());
+    public Response<List<ProductSL>> getLowStockAlerts() {
+        try {
+            List<ProductDL> dlProducts = this.pFacade.GetProductsWarnings();
+
+            List<ProductSL> slProducts =convert(dlProducts);
+            return new Response<>(null, slProducts);
+
+        } catch (Exception e) {
+            return new Response<>(e.getMessage());
         }
-        catch (Exception e)
-        {
-            res = new Response<>(e.getMessage());
-        }
-        return res;
     }
 
+
+    public Response<ProductSL> getProductByCatalogNumber(String catalogNum) {
+        try {
+            ProductDL dlProducts = this.pFacade.FindProductByID(catalogNum);
+
+            ProductSL slProducts =new ProductSL(dlProducts);
+            return new Response<>(null, slProducts);
+
+        } catch (Exception e) {
+            return new Response<>(e.getMessage());
+        }
+    }
 }

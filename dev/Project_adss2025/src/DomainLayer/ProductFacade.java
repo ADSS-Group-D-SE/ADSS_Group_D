@@ -26,6 +26,22 @@ public class ProductFacade {
     }
 
 
+
+
+    public List<ProductDL> getAllProducts() {
+        List<ProductDL> results = new ArrayList<>();
+        for (ProductDL p : products.values()) {
+            results.add(new ProductDL(p));
+        }
+        return results;
+    }
+
+
+
+
+
+
+
     /**
      *
      * @param name name of the product
@@ -45,7 +61,7 @@ public class ProductFacade {
                                 double supplyPrice, double consumerPrice, int minAmount) throws Exception {
 
 
-        if(products.get(catalogNumber)!=null){
+        if(this.products.get(catalogNumber)!=null){
             throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
         }
         ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
@@ -54,44 +70,11 @@ public class ProductFacade {
         products.put(catalogNumber,product);
         mapByCategory.putIfAbsent(main_id,new ArrayList<>()); // create a new list for the category if its new to the data.
         mapByCategory.get(main_id).add(product); // saves in the category map as well.
-        return product.getCatalog_number();//???
-    }
 
-    /**
-     * Sets a Min Amount for a product identified by its catalog number.
-     * @param catalogNumber unique identifier of the product
-     * @param amount the minimum required quantity of the product
-     * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the min amount
-     */
-    public void setMinAmount(String catalogNumber, int amount) throws Exception{
-        ProductDL product = FindProductByID(catalogNumber);
-        try{
-            //לבדוק שנבדק בתוך הPRODUCTDL שהכמות חיובית
-//            product.setMinAmount(amount);
-        }
-        catch (Exception e) {
-            throw e;
-        }
+        return product.getCatalog_number();
 
     }
 
-    /**
-     * Sets a Price for a product identified by its catalog number.
-     * @param catalogNumber unique identifier of the product
-     * @param price the consumer price of the product
-     * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the price
-     */
-    public void setPrice(String catalogNumber, double price) throws Exception{
-        ProductDL product = FindProductByID(catalogNumber);
-        try{
-            //לבדוק שנבדק בתוך הPRODUCTDL שהמחיר הגיוני
-//            product.setPrice(price);
-        }
-        catch (Exception e) {
-            throw e;
-        }
-
-    }
 
     /**
      * Sets a supplier discount for a product identified by its catalog number.
@@ -102,8 +85,7 @@ public class ProductFacade {
     public void setSupplierDiscount(String catalogNumber, int discount) throws Exception{
         ProductDL product = FindProductByID(catalogNumber);
         try{
-            //לבדוק שנבדק בתוך הPRODUCTDL שהכמות חיובית
-//            product.setSupplierDiscount(discount);
+           product.setSupplier_discount(discount);
         }
         catch (Exception e) {
             throw e;
@@ -197,7 +179,7 @@ public class ProductFacade {
         LocalDateTime start = datestart.atStartOfDay();
 
         LocalDate dateend = LocalDate.parse(enddate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        LocalDateTime end = dateend.atStartOfDay();
+        LocalDateTime end = dateend.atTime(23, 59, 59);
 
         String report = "Fault product reports from " + start +" to " + end +"\n===========================================\n";
         for(Map.Entry<Integer,FaultyProductDL> en: this.faultyProducts.entrySet())
@@ -244,16 +226,29 @@ public class ProductFacade {
      * A method that iterates over all products to check for products that are in warning range.
      * Collects each one and creates a notification report.
      */
-    public String GetProductsWarnings()
-    {
-        String report = "Products in warning range:\n";
+//    public String GetProductsWarnings()
+//    {
+//        String report = "Products in warning range:\n";
+//        for(Map.Entry<String,ProductDL> en:this.products.entrySet())
+//        {
+//            ProductDL p = en.getValue();
+//            if(p.isInWarningRange())
+//                report+="================\n" + p.getName() +" Catalog number:" + p.getCatalog_number() +" Total of:" +(p.getAmount_on_shelves()+p.getAmount_on_stock())+"\n";
+//        }
+//        return report;
+//    }
+
+    public List<ProductDL> GetProductsWarnings() {
+        List<ProductDL> warningProducts = new ArrayList<>();
+
         for(Map.Entry<String,ProductDL> en:this.products.entrySet())
         {
             ProductDL p = en.getValue();
             if(p.isInWarningRange())
-                report+="================\n" + p.getName() +" Catalog number:" + p.getCatalog_number() +" Total of:" +(p.getAmount_on_shelves()+p.getAmount_on_stock())+"\n";
+                warningProducts.add(new ProductDL(p));
+
         }
-        return report;
+        return warningProducts;
     }
 
     /**
