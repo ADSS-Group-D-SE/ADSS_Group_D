@@ -7,12 +7,14 @@ import java.util.NoSuchElementException;
 
 public class CategoryFacade {
 
-    private HashMap<String,CategoryDL> categories;
+    private static HashMap<String,CategoryDL> categories;
     private List<CategoryDL> mainCategories;
+
     /*
     Id method for categories
     NAME-NAME SUB- NAME SUBSUB
      */
+
 
     public CategoryFacade()
     {
@@ -28,7 +30,7 @@ public class CategoryFacade {
      */
     public  CategoryDL FindCategoryById(String category_id)
     {
-        CategoryDL res = this.categories.get(category_id);
+        CategoryDL res = categories.get(category_id);
         if (res == null)
             throw new NoSuchElementException("CategoryFacade - FindCategoryById:ID " + category_id +" could not be located in facade.");
 
@@ -45,13 +47,13 @@ public class CategoryFacade {
     {
         if(name == null || name.isEmpty())
             throw new IllegalArgumentException("CategoryFacade - Create Category:Name is invalid.");
-        if(this.categories.get(name) != null)
+        if(categories.get(name) != null)
             throw new IllegalArgumentException ("CategoryFacade - Create Category:Name " + name +" already taken.");
         if(discountPre <0 || discountPre>1)
             throw new IllegalArgumentException ("CategoryFacade - Create Category:Discount is invalid.");
 
         CategoryDL toAdd = new CategoryDL(name,name,new ArrayList<>(),discountPre, CategoryDL.CategoryType.Main); // send as null as we create a main category, also an empty list to start.
-        this.categories.put(name,toAdd);
+        categories.put(name,toAdd);
         this.mainCategories.add(toAdd); // add to main categories list.
         return name;
     }
@@ -74,7 +76,7 @@ public class CategoryFacade {
 
         CategoryDL root = FindCategoryById(rootId);
         String newId = rootId +"-" +name;
-        if(this.categories.get(newId)!= null)
+        if(categories.get(newId)!= null)
             throw new IllegalArgumentException ("CategoryFacade - Create Sub-Category:Name " + name +" already taken.");
 
         CategoryDL.CategoryType newType = CategoryDL.CategoryType.Sub; // finds out the new subcategory type.
@@ -86,7 +88,7 @@ public class CategoryFacade {
 
         CategoryDL toAdd = new CategoryDL(name,newId,new ArrayList<>(),discountPre,newType);
 
-        this.categories.put(toAdd.getCategory_id(),toAdd);
+        categories.put(toAdd.getCategory_id(),toAdd);
         root.AddSubcategory(toAdd);
 
         return toAdd.getCategory_id();
@@ -107,5 +109,30 @@ public class CategoryFacade {
     {
         CategoryDL cat = FindCategoryById(category_id);
         return cat.getSubCategories();
+    }
+
+    /**
+     Method that allows setting category discount, Looks for the category in the facade and updates its discount modifier.
+     **/
+    public void SetCatDiscount(String cat_id,double discount)
+    {
+        if(discount < 0 || discount > 1)
+            throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:"+discount);
+
+        CategoryDL cat = FindCategoryById(cat_id);
+        cat.setDiscount_pre(discount);
+    }
+
+    /**
+    STATIC METHOD: given a string, returns a category discount modifier, if category is found is facade.
+    else: return null.
+     **/
+    public static Double GetCategoryDiscount(String id)
+    {
+        CategoryDL cat = categories.get(id);
+        if(cat!=null)
+            return cat.getDiscount_pre();
+
+        return null;
     }
 }

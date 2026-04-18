@@ -168,7 +168,7 @@ public class ProductDL {
 
 
     public void setSupplier_discount(double supplier_discount) {
-        if(supplier_discount<0 ||supplier_discount>100){
+        if(supplier_discount<0 ||supplier_discount>1){
             throw new IllegalArgumentException("Supplier discount can be between 0-100");
         }
         this.supplier_discount = supplier_discount;
@@ -236,7 +236,7 @@ public class ProductDL {
 
 
     public void setProduct_discount(double product_discount) {
-        if(product_discount<0 ||product_discount>100){
+        if(product_discount<0 ||product_discount>1){
             throw new IllegalArgumentException("Product discount can be only between 0-100");
         }
         this.product_discount = product_discount;

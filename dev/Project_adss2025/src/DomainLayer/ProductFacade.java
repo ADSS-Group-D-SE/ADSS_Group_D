@@ -9,7 +9,6 @@ import java.util.*;
 public class ProductFacade {
     private HashMap<String, ProductDL> products;
     private HashMap<Integer,FaultyProductDL> faultyProducts;
-    private HashMap<String,Double> categoryDiscounts;
     private HashMap<String,List<ProductDL>> mapByCategory;
 
     private int faultyProductsIdCounter=0;
@@ -17,16 +16,13 @@ public class ProductFacade {
     public ProductFacade(){
         products=new HashMap<String, ProductDL>();
         faultyProducts=new HashMap<Integer, FaultyProductDL>();
-        categoryDiscounts = new HashMap<>();
+
         mapByCategory = new HashMap<>();
     }
 
     private int generateNextId() {
         return faultyProductsIdCounter++;
     }
-
-
-
 
     public List<ProductDL> getAllProducts() {
         List<ProductDL> results = new ArrayList<>();
@@ -35,12 +31,6 @@ public class ProductFacade {
         }
         return results;
     }
-
-
-
-
-
-
 
     /**
      *
@@ -84,13 +74,7 @@ public class ProductFacade {
      */
     public void setSupplierDiscount(String catalogNumber, int discount) throws Exception{
         ProductDL product = FindProductByID(catalogNumber);
-        try{
-           product.setSupplier_discount(discount);
-        }
-        catch (Exception e) {
-            throw e;
-        }
-
+        product.setSupplier_discount(discount);
     }
 
     /**
@@ -101,24 +85,12 @@ public class ProductFacade {
         ProductDL p = FindProductByID(catalog_number);
         double res = p.getPrice_to_consumer()*(1-p.getProduct_discount()); //initial discount
 
-        Double cat_discount = this.categoryDiscounts.get(p.getMain_category_id());
+        Double cat_discount = CategoryFacade.GetCategoryDiscount(p.getMain_category_id());
         if(cat_discount !=null)
             res = res *(1-cat_discount);
 
         return res;
     }
-
-    /**
-    Method that allows setting category discount, saves data on the category discount map.
-     **/
-    public void SetCatDiscount(String cat_id,double discount)
-    {
-        if(discount < 0 || discount > 1)
-            throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:"+discount);
-
-        this.categoryDiscounts.put(cat_id,discount); // saves discounts in map.
-    }
-
 
     /**
     A method that locates a product by its catalog number and returns it.
@@ -224,19 +196,8 @@ public class ProductFacade {
 
     /**
      * A method that iterates over all products to check for products that are in warning range.
-     * Collects each one and creates a notification report.
+     * Collects each one and creates a list of products that in warning range.
      */
-//    public String GetProductsWarnings()
-//    {
-//        String report = "Products in warning range:\n";
-//        for(Map.Entry<String,ProductDL> en:this.products.entrySet())
-//        {
-//            ProductDL p = en.getValue();
-//            if(p.isInWarningRange())
-//                report+="================\n" + p.getName() +" Catalog number:" + p.getCatalog_number() +" Total of:" +(p.getAmount_on_shelves()+p.getAmount_on_stock())+"\n";
-//        }
-//        return report;
-//    }
 
     public List<ProductDL> GetProductsWarnings() {
         List<ProductDL> warningProducts = new ArrayList<>();
@@ -274,5 +235,11 @@ public class ProductFacade {
 
         }
         return report;
+    }
+
+    public void SetProductDiscountMod(String id,double newDisc)
+    {
+        ProductDL p =FindProductByID(id);
+        p.setProduct_discount(newDisc);
     }
 }
