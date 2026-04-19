@@ -54,7 +54,7 @@ public class ProductFacade {
         if(this.products.get(catalogNumber)!=null){
             throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
         }
-        ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
+        ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, consumerPrice, supplyPrice,minAmount);
 
 
         products.put(catalogNumber,product);
@@ -207,7 +207,7 @@ public class ProductFacade {
         {
             ProductDL p = en.getValue();
             if(p.isInWarningRange())
-                warningProducts.add(new ProductDL(p));
+                warningProducts.add(p);
 
         }
         return warningProducts;
@@ -238,9 +238,25 @@ public class ProductFacade {
         return report;
     }
 
+    /**
+     * Method that finds a product in data and sets its discount precentage.
+     * @param id
+     * @param newDisc
+     */
     public void SetProductDiscountMod(String id,double newDisc)
     {
         ProductDL p =FindProductByID(id);
         p.setProduct_discount(newDisc);
+    }
+
+    /**
+     * Method that finds a product, and returns its price to supply, with supplier discount.
+     * @param id
+     * @return
+     */
+    public double GetFinalPriceToSupply(String id)
+    {
+        ProductDL p =FindProductByID(id);
+        return p.getPrice_to_supplyDiscounted();
     }
 }
