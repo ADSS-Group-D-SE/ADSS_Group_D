@@ -70,10 +70,10 @@ public class ProductServices {
      */
     public Response<String> addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
                                         String location,String manu, int amountOnShelves, int amountOnStock,
-                                        double supplyPrice, double consumerPrice, int minAmount) {
+                                        double consumerPrice, double supplyPrice, int minAmount) {
         try {
             pFacade.addProduct(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,
-                    amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
+                    amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
             return new Response<>(null,null);
         } catch (Exception e) {
             return new Response<>(e.getMessage());
@@ -86,7 +86,7 @@ public class ProductServices {
      * @param SupplierDiscount discount the discount value to be applied to the product
      * @return A Response indicating success or an error message
      */
-    public Response<String> setSupplierDiscount(String catalogNumber, int SupplierDiscount){
+    public Response<String> setSupplierDiscount(String catalogNumber, double SupplierDiscount){
         try {
             pFacade.setSupplierDiscount(catalogNumber,SupplierDiscount);
             return new Response<>(null,null);

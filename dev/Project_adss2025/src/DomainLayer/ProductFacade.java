@@ -27,7 +27,7 @@ public class ProductFacade {
     public List<ProductDL> getAllProducts() {
         List<ProductDL> results = new ArrayList<>();
         for (ProductDL p : products.values()) {
-            results.add(new ProductDL(p));
+            results.add(p);
         }
         return results;
     }
@@ -48,13 +48,13 @@ public class ProductFacade {
      */
     public String addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
                                 String location,String manu, int amountOnShelves, int amountOnStock,
-                                double supplyPrice, double consumerPrice, int minAmount) throws Exception {
+                                double consumerPrice, double supplyPrice, int minAmount) throws Exception {
 
 
         if(this.products.get(catalogNumber)!=null){
             throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
         }
-        ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
+        ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
 
 
         products.put(catalogNumber,product);
@@ -72,7 +72,7 @@ public class ProductFacade {
      * @param discount discount the discount value to be applied to the product
      * @throws Exception Exception if the product does not exist in the system or if an error occurs while setting the discount
      */
-    public void setSupplierDiscount(String catalogNumber, int discount) throws Exception{
+    public void setSupplierDiscount(String catalogNumber, double discount) throws Exception{
         ProductDL product = FindProductByID(catalogNumber);
         product.setSupplier_discount(discount);
     }
@@ -83,6 +83,7 @@ public class ProductFacade {
     public double GetProductPrice(String catalog_number)
     {
         ProductDL p = FindProductByID(catalog_number);
+
         double res = p.getPrice_to_consumer()*(1-p.getProduct_discount()); //initial discount
 
         Double cat_discount = CategoryFacade.GetCategoryDiscount(p.getMain_category_id());

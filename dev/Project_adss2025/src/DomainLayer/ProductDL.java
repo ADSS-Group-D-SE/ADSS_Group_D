@@ -149,7 +149,7 @@ public class ProductDL {
     }
 
     public double getPrice_to_supply() {
-        return price_to_supply;
+        return price_to_supply*(1-supplier_discount);
     }
 
     public double getSupplier_discount() {
@@ -169,7 +169,7 @@ public class ProductDL {
 
     public void setSupplier_discount(double supplier_discount) {
         if(supplier_discount<0 ||supplier_discount>1){
-            throw new IllegalArgumentException("Supplier discount can be between 0-100");
+            throw new IllegalArgumentException("Supplier discount can be between 0-1  (50% --> 0.5) ");
         }
         this.supplier_discount = supplier_discount;
     }
@@ -237,7 +237,7 @@ public class ProductDL {
 
     public void setProduct_discount(double product_discount) {
         if(product_discount<0 ||product_discount>1){
-            throw new IllegalArgumentException("Product discount can be only between 0-100");
+            throw new IllegalArgumentException("Product discount can be only between 0-1 (50% --> 0.5)");
         }
         this.product_discount = product_discount;
     }
