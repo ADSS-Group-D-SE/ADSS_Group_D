@@ -2,7 +2,7 @@ package DomainLayerTests;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ProductFacadeTests
+public class CategoryFacadeTests
 {
     @Test
     public void sampleTest()
