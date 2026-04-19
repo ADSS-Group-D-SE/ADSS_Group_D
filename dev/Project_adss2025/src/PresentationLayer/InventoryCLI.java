@@ -695,7 +695,7 @@ public class InventoryCLI {
                 System.out.println("Category already exist in report.");
             else
                 cats.add(c.Id);
-            scanner.nextLine(); //clears buffer
+
             do {
                 System.out.println("Add another? (y/n)");
                 choice = scanner.nextLine();
