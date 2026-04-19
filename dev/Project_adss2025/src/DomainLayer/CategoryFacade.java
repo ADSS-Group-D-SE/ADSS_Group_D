@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 public class CategoryFacade {
 
     private static HashMap<String,CategoryDL> categories;
-    private List<CategoryDL> mainCategories;
+    private final List<CategoryDL> mainCategories;
 
     /*
     Id method for categories
@@ -19,7 +19,7 @@ public class CategoryFacade {
     public CategoryFacade()
     {
         this.mainCategories = new ArrayList<>();
-        this.categories = new HashMap<>();
+        categories = new HashMap<>();
     }
 
     /**

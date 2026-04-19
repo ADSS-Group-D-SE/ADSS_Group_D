@@ -70,7 +70,7 @@ public class ProductServices {
      */
     public Response<String> addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
                                         String location,String manu, int amountOnShelves, int amountOnStock,
-                                        double consumerPrice, double supplyPrice, int minAmount) {
+                                         double supplyPrice,double consumerPrice, int minAmount) {
         try {
             pFacade.addProduct(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,
                     amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
@@ -106,6 +106,25 @@ public class ProductServices {
         try
         {
             res = new Response<>(null,this.pFacade.GetProductPrice(catalog_number));
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    /**
+     * The supply price calculation service.
+     * Returns a response: With the entered product final supply price.
+     * Else:Response with an error msg.
+     */
+    public Response<Double> GetProductSupplyPrice(String catalog_number)
+    {
+        Response<Double> res = null;
+        try
+        {
+            res = new Response<>(null,this.pFacade.GetFinalPriceToSupply(catalog_number));
         }
         catch (Exception e)
         {

@@ -65,24 +65,6 @@ public class ProductDL {
         this.product_discount = 0; // initial product amd supplier discount is 0.
     }
 
-
-
-    public ProductDL(ProductDL other) {
-        this.name = other.name;
-        this.catalog_number = other.catalog_number;
-        this.location = other.location;
-        this.manufacturer = other.manufacturer;
-        this.amount_on_shelves = other.amount_on_shelves;
-        this.amount_on_stock = other.amount_on_stock;
-        this.price_to_consumer = other.price_to_consumer;
-        this.price_to_supply = other.price_to_supply;
-        this.minAmountAlert = other.minAmountAlert;
-        this.product_discount = other.product_discount;
-        this.supplier_discount = other.supplier_discount;
-
-        this.tags = new HashMap<>(other.tags);
-    }
-
     /*
      Method for testing, allows "purchasing" and changing amounts on shelves and stocks.
      input a positive amount for amount decrease, negative for increase.
@@ -149,6 +131,10 @@ public class ProductDL {
     }
 
     public double getPrice_to_supply() {
+        return price_to_supply;
+    }
+    public double getPrice_to_supplyDiscounted()
+    {
         return price_to_supply*(1-supplier_discount);
     }
 

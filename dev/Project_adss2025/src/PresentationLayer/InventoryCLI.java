@@ -55,7 +55,7 @@ public class InventoryCLI {
         System.out.println("9.  Get inventory report by categories.");
         System.out.println("10. show all products");
         System.out.println("11. Purchase Product from Shelves/Stock");
-        System.out.println("12. Find product price for consumer");
+        System.out.println("12. Find product final price to supply/customer");
         System.out.println("13. Create TEST data.");
 
 
@@ -109,7 +109,7 @@ public class InventoryCLI {
                 handlePurchaseProduct();
                 break;
             case "12":
-                HandlePriceToConsumer();
+                HandlePrice();
                 break;
             case "13":
                 CreateTestData();
@@ -222,11 +222,11 @@ public class InventoryCLI {
                 System.out.printf("| %-170s |%n", "No products found in the system.");
             } else {
                 System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7s | %-7s | %-15s | %-15s | %-8s | %-12s | %-15s | %-18s |%n",
-                        "Catalog #", "Name", "Loc.", "Manufacturer", "Shelf", "Stock", "C.Price(before)", "S.Price(before)", "S.Disc", "Main Cat", "Sub Cat", "SubSub");
+                        "Catalog #", "Name", "Loc.", "Manufacturer", "Shelf", "Stock", "C.Price(before)", "S.Price(before)", "S.Disc","P.Disc", "Main Cat", "Sub Cat", "SubSub");
                 System.out.println("-".repeat(tableWidth));
 
                 for (ProductSL p : products) {
-                    System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7d | %-7d | %-15.2f | %-15.2f | %-7.1f%% | %-12s | %-15s | %-18s |%n",
+                    System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7d | %-7d | %-15.2f | %-15.2f | %-7.1f%% | %-7.1f%% | %-12s | %-15s | %-18s |%n",
                             p.catalog_number,
                             truncate(p.name, 18),
                             p.location,
@@ -236,6 +236,7 @@ public class InventoryCLI {
                             p.price_to_consumer,
                             p.price_to_supply,
                             p.supplier_discount * 100,
+                            p.product_discount *100,
                             truncate(p.main_category_id, 12),
                             truncate(p.sub_category_id, 15),
                             truncate(p.subsub_category_id, 18)
@@ -785,22 +786,54 @@ public class InventoryCLI {
         while (choice <0 || choice > 4);
     }
 
-    private void HandlePriceToConsumer()
+    private void HandlePrice()
     {
-        System.out.println("Please enter catalog number:");
-        String id = scanner.nextLine();
-
-        Response<Double> res =this.productServices.GetProductPrice(id);
-        if(res.isError())
+        String choice ="";
+        System.out.println("Please select an option:");
+        System.out.println("1.Final price to consumer.");
+        System.out.println("2.Final price to supply");
+        System.out.println("0.Back to menu");
+        do {
+            choice = scanner.nextLine();
+        }while(!choice.equals("0")&&!choice.equals("1")&&!choice.equals("2"));
+        String id;
+        Response<Double> res;
+        switch (choice)
         {
-            System.out.println("Error: could not get price");
-            System.out.println("Reason:"+res.getErrorMsg());
-            System.out.println("-----------------------------------------");
-            throw new RuntimeException();
+            case "1":
+                System.out.println("Please enter catalog number:");
+                id = scanner.nextLine();
+
+                res =this.productServices.GetProductPrice(id);
+                if(res.isError())
+                {
+                    System.out.println("Error: could not get price");
+                    System.out.println("Reason:"+res.getErrorMsg());
+                    System.out.println("-----------------------------------------");
+                    throw new RuntimeException();
+                }
+                System.out.println("Price for customer for product:"+id+", is:"+res.getReturnValue());
+                System.out.println("-----------------------------------------");
+                break;
+            case "2":
+                System.out.println("Please enter catalog number:");
+                id = scanner.nextLine();
+
+                res =this.productServices.GetProductSupplyPrice(id);
+                if(res.isError())
+                {
+                    System.out.println("Error: could not get price");
+                    System.out.println("Reason:"+res.getErrorMsg());
+                    System.out.println("-----------------------------------------");
+                    throw new RuntimeException();
+                }
+
+                System.out.println("Price for customer for product:"+id+", is:"+res.getReturnValue());
+                System.out.println("-----------------------------------------");
+                break;
+
         }
 
-        System.out.println("Price for customer for product:"+id+", is:"+res.getReturnValue());
-        System.out.println("-----------------------------------------");
     }
 
     private void CreateTestData()
