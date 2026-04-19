@@ -210,7 +210,7 @@ public class InventoryCLI {
 
         int tableWidth = 170;
         System.out.println("\n" + "=".repeat(tableWidth));
-        System.out.printf("| %-166s |%n", "                                                           FULL INVENTORY DETAILED REPORT");
+        System.out.printf("| %-170s |%n", "                                                        FULL INVENTORY DETAILED REPORT");
         System.out.println("=".repeat(tableWidth));
 
         if (res.isError()) {
@@ -219,14 +219,14 @@ public class InventoryCLI {
             List<ProductSL> products = res.getReturnValue();
 
             if (products == null || products.isEmpty()) {
-                System.out.printf("| %-166s |%n", "No products found in the system.");
+                System.out.printf("| %-170s |%n", "No products found in the system.");
             } else {
-                System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7s | %-7s | %-9s | %-9s | %-8s | %-8s | %-12s | %-15s | %-18s |%n",
-                        "Catalog #", "Name", "Loc.", "Manufacturer", "Shelf", "Stock", "S.Price", "C.Price", "P.Disc", "S.Disc", "Main Cat", "Sub Cat", "SubSub");
+                System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7s | %-7s | %-15s | %-15s | %-8s | %-12s | %-15s | %-18s |%n",
+                        "Catalog #", "Name", "Loc.", "Manufacturer", "Shelf", "Stock", "C.Price(before)", "S.Price(before)", "S.Disc", "Main Cat", "Sub Cat", "SubSub");
                 System.out.println("-".repeat(tableWidth));
 
                 for (ProductSL p : products) {
-                    System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7d | %-7d | %-9.2f | %-9.2f | %-7.1f%% | %-7.1f%% | %-12s | %-15s | %-18s |%n",
+                    System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7d | %-7d | %-15.2f | %-15.2f | %-7.1f%% | %-12s | %-15s | %-18s |%n",
                             p.catalog_number,
                             truncate(p.name, 18),
                             p.location,
@@ -235,8 +235,7 @@ public class InventoryCLI {
                             p.amount_on_stock,
                             p.price_to_consumer,
                             p.price_to_supply,
-                            p.product_discount*100,
-                            p.supplier_discount*100,
+                            p.supplier_discount * 100,
                             truncate(p.main_category_id, 12),
                             truncate(p.sub_category_id, 15),
                             truncate(p.subsub_category_id, 18)
@@ -357,7 +356,7 @@ public class InventoryCLI {
         System.out.println("\n[*] Sending data to system...");
 
         Response<String> res = this.productServices.addProduct(name, catalogNumber, main.Id,sub.Id,subsub.Id, location,manu,
-                    amountOnShelves, amountOnStock, supplyPrice, consumerPrice, minAmount);
+                    amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
 
         if (res.isError()) {
                 System.out.println("\n[!] FAILURE: Could not add product.");
@@ -625,7 +624,7 @@ public class InventoryCLI {
         System.out.print("Enter Product Catalog Number: ");
         String catNum = scanner.nextLine();
 
-        int supplierDiscount = getIntInput("Enter Supplier Discount Percentage: ");
+        double supplierDiscount = getDoubleInput("Enter Supplier Discount Percentage: ");
 
         Response<String> res = this.productServices.setSupplierDiscount(catNum, supplierDiscount);
 
