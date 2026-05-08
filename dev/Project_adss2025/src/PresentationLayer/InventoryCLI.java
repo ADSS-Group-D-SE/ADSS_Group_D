@@ -311,7 +311,7 @@ public class InventoryCLI {
             do {
                 System.out.println("Select a sub category to the category " + root.name + ":");
                 for (int i = 0; i < categories.size(); i++) {
-                    System.out.println(i + 1 + "." + categories.get(i).name + "\n");
+                    System.out.println(i + 1 + "." + categories.get(i));
                 }
                 choice = scanner.nextInt();
                 scanner.nextLine();
@@ -327,6 +327,43 @@ public class InventoryCLI {
             throw new RuntimeException();
         }
     }
+
+    private CategorySL HandleCategoryChoice()
+    {
+        Response<List<CategorySL>> res = this.categoryServices.GetAllCategories();
+        if(res.isError()){
+            System.out.println("[!] Error fetching categories: " + res.getErrorMsg());
+            throw new RuntimeException();
+        }
+        List<CategorySL> categories = res.getReturnValue();
+        if (categories == null || categories.isEmpty()) {
+            System.out.println("[!] No  categories available in the system.");
+            System.out.println("[*] Please use Option 1 -> 'Create a category");
+            throw new RuntimeException();
+        }
+
+        try {
+            int choice = 0;
+            do {
+                System.out.println("Select a category:");
+                for (int i = 0; i < categories.size(); i++) {
+                    System.out.println(i + 1 + "." + categories.get(i).Id);
+                }
+                choice = scanner.nextInt();
+                scanner.nextLine();
+                if (choice < 1 || choice > categories.size())
+                    System.out.println("Choice is not in allowed range. try again:");
+            } while (choice < 1 || choice > categories.size());
+            return categories.get(choice - 1);
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error: Failed to read bad input, returning to menu...");
+            scanner.nextLine(); // clears buffer.
+            throw new RuntimeException();
+        }
+    }
+
 
     private void handleAddProduct() {
         System.out.println("\n-----------------------------------------");
@@ -690,7 +727,7 @@ public class InventoryCLI {
         do {
             choice = "";
             System.out.println("Select Category to add to the report:");
-            CategorySL c = this.HandleMainCategoryChoice();
+            CategorySL c = this.HandleCategoryChoice();
             if (existInList(cats, c.Id))
                 System.out.println("Category already exist in report.");
             else
