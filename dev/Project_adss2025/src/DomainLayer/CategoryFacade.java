@@ -1,9 +1,6 @@
 package DomainLayer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class CategoryFacade {
 
@@ -134,5 +131,18 @@ public class CategoryFacade {
             return cat.getDiscount_pre();
 
         return null;
+    }
+
+    /**
+    Method that returns a list of all categoryDL in facade.
+     CAN ADD A CONDITION to filter all subsub categories in the future
+     **/
+    public List<CategoryDL> GetAllCategories() {
+        List<CategoryDL> cats = new ArrayList<>();
+        for(Map.Entry<String,CategoryDL> en:categories.entrySet())
+        {
+            cats.add(en.getValue());
+        }
+        return cats;
     }
 }

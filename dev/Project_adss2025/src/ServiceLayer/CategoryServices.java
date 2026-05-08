@@ -108,4 +108,21 @@ public class CategoryServices {
         }
         return res;
     }
+
+    /**
+     * Service that handles the get all categories request.
+     * Returns: a list of categorySL objects if op was a success, else
+     * A Response with error msg.
+     * @return
+     */
+    public Response<List<CategorySL>> GetAllCategories()
+    {
+        Response<List<CategorySL>> res;
+        try {
+            res = new Response<>(null,CategorySL.convert(this.cFacade.GetAllCategories()));
+        } catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
 }

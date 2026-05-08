@@ -9,7 +9,6 @@ import java.util.*;
 public class ProductFacade {
     private HashMap<String, ProductDL> products;
     private HashMap<Integer,FaultyProductDL> faultyProducts;
-    private HashMap<String,List<ProductDL>> mapByCategory;
 
     private int faultyProductsIdCounter=0;
 
@@ -17,7 +16,6 @@ public class ProductFacade {
         products=new HashMap<String, ProductDL>();
         faultyProducts=new HashMap<Integer, FaultyProductDL>();
 
-        mapByCategory = new HashMap<>();
     }
 
     private int generateNextId() {
@@ -58,8 +56,6 @@ public class ProductFacade {
 
 
         products.put(catalogNumber,product);
-        mapByCategory.putIfAbsent(main_id,new ArrayList<>()); // create a new list for the category if its new to the data.
-        mapByCategory.get(main_id).add(product); // saves in the category map as well.
 
         return product.getCatalog_number();
 
@@ -215,16 +211,15 @@ public class ProductFacade {
 
     /**
      * A method that creates an inventory report on the sent categories IDs.
-     * ATTENTION:if mapByCategory returns a null list, id does not mean the category not exist, it may imply that it does not have products yet.
      */
     public String GetInventoryReportByCategory(List<String> cats)
     {
         String report="Inventory report on categories:"+cats.toString();
         for(String category:cats){
             report+="\n=================\n\n";
-            List<ProductDL> list = this.mapByCategory.get(category);
+            List<ProductDL> list = this.GetProductsByCategory(category);
             report+="Category " + category+":\n-----------------\n";
-            if(list == null || list.isEmpty())
+            if(list.isEmpty())
                 report+="No Products\n\n";
             else {
                 for(ProductDL p:list)
@@ -236,6 +231,21 @@ public class ProductFacade {
 
         }
         return report;
+    }
+
+    /*
+    Helper method that returns every product that is linked to the input category in a list.
+     */
+    private List<ProductDL> GetProductsByCategory(String category_id)
+    {
+        List<ProductDL> list = new ArrayList<>();
+        for(Map.Entry<String,ProductDL> en:this.products.entrySet())
+        {
+            ProductDL p = en.getValue();
+            if(p.getMain_category_id().equals(category_id) || p.getSub_category_id().equals(category_id) || p.getSubsub_category_id().equals(category_id))
+                list.add(p);
+        }
+        return list;
     }
 
     /**
@@ -259,4 +269,6 @@ public class ProductFacade {
         ProductDL p =FindProductByID(id);
         return p.getPrice_to_supplyDiscounted();
     }
+
+
 }
