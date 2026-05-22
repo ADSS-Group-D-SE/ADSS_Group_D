@@ -1,6 +1,9 @@
 package DomainLayer;
 
 
+import CrossCuttingPackage.Notification;
+import CrossCuttingPackage.Report;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -142,7 +145,7 @@ public class ProductFacade {
     Method that iterates on the faulty product map, and adds each entry that fit the entered date range.
     construct a string reports and returns it.
      **/
-    public String CreateFaultyReport(String startdate,String enddate)
+    public Report CreateFaultyReport(String startdate,String enddate)
     {
         LocalDate datestart = LocalDate.parse(startdate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         LocalDateTime start = datestart.atStartOfDay();
@@ -150,14 +153,14 @@ public class ProductFacade {
         LocalDate dateend = LocalDate.parse(enddate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         LocalDateTime end = dateend.atTime(23, 59, 59);
 
-        String report = "Fault product reports from " + start +" to " + end +"\n===========================================\n";
+        Report report = new Report("Fault product reports from " + start +" to " + end +"\n===========================================");
         for(Map.Entry<Integer,FaultyProductDL> en: this.faultyProducts.entrySet())
         {
             FaultyProductDL p = en.getValue();
             if(!p.getDateOnReport().isAfter(end) && !p.getDateOnReport().isBefore(start)) // if the report date fits: start <+ report date <= end
             {
-                report += "Report id:" + p.getReportID() +"\nOn product:" +p.getName() + ", Catalog number:" + p.getCatalog_number() + " ,Location:" +p.getLocation() +"\n" +
-                        "Reported on:" + p.getDateOnReport().toString() +"\nDescription:\n" + p.getDescription() +"\n\n";
+                report.AddLine("Report id:" + p.getReportID() +"\nOn product:" +p.getName() + ", Catalog number:" + p.getCatalog_number() + " ,Location:" +p.getLocation() +"\n" +
+                        "Reported on:" + p.getDateOnReport().toString() +"\nDescription:\n" + p.getDescription());
             }
         }
         return report;
@@ -196,14 +199,14 @@ public class ProductFacade {
      * Collects each one and creates a list of products that in warning range.
      */
 
-    public List<ProductDL> GetProductsWarnings() {
-        List<ProductDL> warningProducts = new ArrayList<>();
+    public List<Notification> GetProductsWarnings() {
+        List<Notification> warningProducts = new ArrayList<>();
 
         for(Map.Entry<String,ProductDL> en:this.products.entrySet())
         {
             ProductDL p = en.getValue();
             if(p.isInWarningRange())
-                warningProducts.add(p);
+                warningProducts.add(new Notification(p.getName(),p.getCatalog_number(),p.getLocation(),p.getMinAmountAlert(),p.getAmount_on_stock(),p.getAmount_on_shelves()));
 
         }
         return warningProducts;
@@ -212,21 +215,21 @@ public class ProductFacade {
     /**
      * A method that creates an inventory report on the sent categories IDs.
      */
-    public String GetInventoryReportByCategory(List<String> cats)
+    public Report GetInventoryReportByCategory(List<String> cats)
     {
-        String report="Inventory report on categories:"+cats.toString();
+        Report report = new Report("Inventory report on categories:"+cats.toString());
         for(String category:cats){
-            report+="\n=================\n\n";
+            report.AddLine("\n=================\n");
             List<ProductDL> list = this.GetProductsByCategory(category);
-            report+="Category " + category+":\n-----------------\n";
+            report.AddLine("Category " + category+":\n-----------------");
             if(list.isEmpty())
-                report+="No Products\n\n";
+                report.AddLine("No Products\n");
             else {
                 for(ProductDL p:list)
                 {
-                    report+="Product:" + p.getName() +" ,Catalog number:"+p.getCatalog_number() +" ,Location:"+p.getLocation()+" ,Amount on shelves:"+p.getAmount_on_shelves()+" ,Amount on stock:"+p.getAmount_on_stock()+"\n";
+                    report.AddLine("Product:" + p.getName() +" ,Catalog number:"+p.getCatalog_number() +" ,Location:"+p.getLocation()+" ,Amount on shelves:"+p.getAmount_on_shelves()+" ,Amount on stock:"+p.getAmount_on_stock());
                 }
-                report+="\n\n";
+                report.AddLine(""); //Adds '\n'
             }
 
         }

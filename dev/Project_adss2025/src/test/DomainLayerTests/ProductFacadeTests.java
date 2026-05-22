@@ -1,5 +1,6 @@
 package DomainLayerTests;
 import DomainLayer.CategoryFacade;
+import CrossCuttingPackage.Notification;
 import DomainLayer.ProductDL;
 import DomainLayer.ProductFacade;
 import org.junit.jupiter.api.BeforeEach;
@@ -181,7 +182,7 @@ public class ProductFacadeTests
         Integer reportId2 = pFacade.ReportFaultyProduct("101", "A-12", "Leaking");
         Integer reportId3 = pFacade.ReportFaultyProduct("123", "B-2", "Expired");
 
-        String report = pFacade.CreateFaultyReport("19/04/2026" ,"19/04/2026");
+        String report = pFacade.CreateFaultyReport("19/04/2026" ,"19/04/2026").GetReport();
 
         assertNotNull(report);
 
@@ -225,7 +226,7 @@ public class ProductFacadeTests
 
         pFacade.addProduct("Cheese", "103", "Dairy", "F", "T", "C-3", "Tnuva", 2, 3, 5.0, 8.0, 5);
 
-        List<ProductDL> warnings = pFacade.GetProductsWarnings();
+        List<Notification> warnings = pFacade.GetProductsWarnings();
 
 
         assertFalse(warnings.isEmpty(), "Warning list should not be empty");
@@ -252,7 +253,7 @@ public class ProductFacadeTests
 
         List<String> categoriesToReport = List.of("Dairy", "Bakery");
 
-        String report = pFacade.GetInventoryReportByCategory(categoriesToReport);
+        String report = pFacade.GetInventoryReportByCategory(categoriesToReport).GetReport();
 
         assertNotNull(report);
 
@@ -265,7 +266,7 @@ public class ProductFacadeTests
 
         assertFalse(report.contains("Apple"), "Product from non-requested category should not be in report");
 
-        String reportWithEmptyCat = pFacade.GetInventoryReportByCategory(List.of("Meat"));
+        String reportWithEmptyCat = pFacade.GetInventoryReportByCategory(List.of("Meat")).GetReport();
         assertTrue(reportWithEmptyCat.contains("No Products"), "Should display 'No Products' for empty category");
     }
 

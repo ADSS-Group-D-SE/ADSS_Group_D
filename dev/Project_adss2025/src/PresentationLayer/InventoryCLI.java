@@ -1,5 +1,7 @@
 package PresentationLayer;
 
+import CrossCuttingPackage.Notification;
+import CrossCuttingPackage.Report;
 import ServiceLayer.*;
 
 import java.util.ArrayList;
@@ -311,7 +313,7 @@ public class InventoryCLI {
             do {
                 System.out.println("Select a sub category to the category " + root.name + ":");
                 for (int i = 0; i < categories.size(); i++) {
-                    System.out.println(i + 1 + "." + categories.get(i));
+                    System.out.println(i + 1 + "." + categories.get(i).name);
                 }
                 choice = scanner.nextInt();
                 scanner.nextLine();
@@ -618,14 +620,14 @@ public class InventoryCLI {
         System.out.printf("| %-86s |%n", "                STOCK ALERT: PRODUCTS BELOW MINIMUM AMOUNT");
         System.out.println("=".repeat(tableWidth));
 
-        Response<List<ProductSL>> res = this.productServices.getLowStockAlerts();
+        Response<List<Notification>> res = this.productServices.getLowStockAlerts();
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
             throw new RuntimeException();
         }
 
-        List<ProductSL> lowStock = res.getReturnValue();
+        List<Notification> lowStock = res.getReturnValue();
 
         if (lowStock == null || lowStock.isEmpty()) {
             System.out.printf("| %-86s |%n", "All products are well-stocked. No alerts at this time.");
@@ -635,15 +637,15 @@ public class InventoryCLI {
                         "STATUS", "Catalog #", "Product Name", "Current", "Min. Alert", "Location");
             System.out.println("-".repeat(tableWidth));
 
-            for (ProductSL p : lowStock) {
-                int totalCurrent = p.amount_on_shelves + p.amount_on_stock;
+            for (Notification p : lowStock) {
+                int totalCurrent = p.getAmountOnShelf() + p.getAmountInStock();
 
                 System.out.printf("| [!!]   | %-12s | %-20s | %-10d | %-10d | %-10s |%n",
-                            p.catalog_number,
-                            truncate(p.name, 20),
+                            p.getCatalog_number(),
+                            truncate(p.getpName(), 20),
                             totalCurrent,
-                            p.minAmountAlert,
-                            p.location);
+                            p.getMin(),
+                            p.getLocation());
                 }
             System.out.println("-".repeat(tableWidth));
             System.out.println("[*] Summary: Found " + lowStock.size() + " products that require restocking.");
@@ -704,7 +706,7 @@ public class InventoryCLI {
 
         System.out.println("[*] Generating report for " + startDate + " to " + endDate + "...");
 
-        Response<String> res = this.productServices.CreateFaultyProductReport(startDate, endDate);
+        Response<Report> res = this.productServices.CreateFaultyProductReport(startDate, endDate);
 
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
@@ -712,7 +714,7 @@ public class InventoryCLI {
             throw new RuntimeException();
         } else {
             System.out.println("\n--- Report Content ---");
-            System.out.println(res.getReturnValue());
+            System.out.println(res.getReturnValue().GetReport());
         }
         System.out.println("-----------------------------------------");
     }
@@ -740,14 +742,14 @@ public class InventoryCLI {
 
         } while (choice.equals("y"));
 
-        Response<String> res = this.productServices.GetInventoryReport(cats);
+        Response<Report> res = this.productServices.GetInventoryReport(cats);
         if (res.isError()){
             System.out.println("[!] ERROR: " + res.getErrorMsg());
             System.out.println("-----------------------------------------");
             throw new RuntimeException();
         }
 
-        System.out.println("Displaying Report:\n\n" + res.getReturnValue());
+        System.out.println("Displaying Report:\n\n" + res.getReturnValue().GetReport());
     }
 
     private void handleCategoryCreation()

@@ -1,5 +1,7 @@
 package ServiceLayer;
 
+import CrossCuttingPackage.Notification;
+import CrossCuttingPackage.Report;
 import DomainLayer.ProductDL;
 import DomainLayer.ProductFacade;
 
@@ -179,9 +181,9 @@ public class ProductServices {
                       else, returns error msg.
 
      **/
-    public Response<String> CreateFaultyProductReport(String start,String end)
+    public Response<Report> CreateFaultyProductReport(String start,String end)
     {
-        Response<String> res = null;
+        Response<Report> res = null;
         try
         {
             res = new Response<>(null,this.pFacade.CreateFaultyReport(start,end));
@@ -195,14 +197,14 @@ public class ProductServices {
 
     /**
      * The service that operates the inventory report by categories method.
-     * Returns:A response with a string inventory report if op was a success
+     * Returns:A response with a Report object with inventory report if op was a success
      * Else:returns a response with a error msg.
      * @param cats
      * @return
      */
-    public Response<String> GetInventoryReport(List<String> cats)
+    public Response<Report> GetInventoryReport(List<String> cats)
     {
-        Response<String> res = null;
+        Response<Report> res = null;
         try
         {
             res = new Response<>(null,this.pFacade.GetInventoryReportByCategory(cats));
@@ -261,12 +263,10 @@ public class ProductServices {
      * Returns:Response with product warning report in string if was a success
      * Else:Response with an error string
      */
-    public Response<List<ProductSL>> getLowStockAlerts() {
+    public Response<List<Notification>> getLowStockAlerts() {
         try {
-            List<ProductDL> dlProducts = this.pFacade.GetProductsWarnings();
 
-            List<ProductSL> slProducts =convert(dlProducts);
-            return new Response<>(null, slProducts);
+            return new Response<List<Notification>>(null, this.pFacade.GetProductsWarnings());
 
         } catch (Exception e) {
             return new Response<>(e.getMessage());

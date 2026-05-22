@@ -25,7 +25,7 @@ public class CategoryFacade {
      * @param category_id
      * @return Corresponding category object.
      */
-    public  CategoryDL FindCategoryById(String category_id)
+    public CategoryDL FindCategoryById(String category_id)
     {
         CategoryDL res = categories.get(category_id);
         if (res == null)
