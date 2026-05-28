@@ -19,7 +19,7 @@ public class SupplierManager {
      // Creates and registers a new supplier. Returns the created Supplier.
      
     public Supplier addSupplier(String companyId, String name,
-            String bankAccount, String paymentTerms) {
+            String bankAccount, PaymentTerms paymentTerms) {
         Supplier supplier = new Supplier(nextSupplierId, companyId, name, bankAccount, paymentTerms);
         suppliers.put(nextSupplierId, supplier);
         nextSupplierId++;

@@ -1,353 +1,595 @@
 package Tests;
 
 import DomainLayer.*;
+import DomainLayer.SupplierAgreement.SupplyMethod;
+import DomainLayer.SupplierOrder.OrderStatus;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 10 Unit Tests for the Domain Layer.
- * Run from terminal:
- * cd src
- * javac DomainLayer/*.java Tests/DomainLayerTests.java
- * java Tests.DomainLayerTests
+ * 21 Unit Tests for the Domain/Service Layers using JUnit 5.
+ *
+ * Compile and run from src/:
+ *   javac -cp ../idea/junit_lib/junit-platform-console-standalone-1.10.2.jar DomainLayer/*.java Tests/DomainLayerTests.java
+ *   java -jar ../idea/junit_lib/junit-platform-console-standalone-1.10.2.jar --class-path . --select-class Tests.DomainLayerTests
  */
 public class DomainLayerTests {
-
-    private static int passed = 0;
-    private static int failed = 0;
-
-    // ---------------------------------------------------------------
-    // Assertion helpers
-    // ---------------------------------------------------------------
-    private static void assertEquals(Object expected, Object actual, String testName) {
-        if (expected == null && actual == null || expected != null && expected.equals(actual)) {
-            passed++;
-            System.out.println("[PASS] " + testName);
-        } else {
-            failed++;
-            System.out.println("[FAIL] " + testName +
-                    " | Expected: " + expected + " | Got: " + actual);
-        }
-    }
-
-    private static void assertTrue(boolean condition, String testName) {
-        if (condition) {
-            passed++;
-            System.out.println("[PASS] " + testName);
-        } else {
-            failed++;
-            System.out.println("[FAIL] " + testName);
-        }
-    }
-
-    private static void assertThrows(Runnable action, Class<? extends Throwable> expectedException, String testName) {
-        try {
-            action.run();
-            failed++;
-            System.out.println("[FAIL] " + testName + " | No exception was thrown");
-        } catch (Throwable t) {
-            if (expectedException.isInstance(t)) {
-                passed++;
-                System.out.println("[PASS] " + testName);
-            } else {
-                failed++;
-                System.out.println("[FAIL] " + testName +
-                        " | Expected: " + expectedException.getSimpleName() +
-                        " | Got: " + t.getClass().getSimpleName() + ": " + t.getMessage());
-            }
-        }
-    }
 
     // ---------------------------------------------------------------
     // Test 1: Supplier – valid construction and getters
     // ---------------------------------------------------------------
-    private static void testSupplierCreation() {
-        Supplier s = new Supplier(1, "CMP-001", "Acme Ltd", "12-345-678", "Net 30");
-        assertEquals(1, s.getSupplierId(), "Test 1a: Supplier ID");
-        assertEquals("CMP-001", s.getCompanyId(), "Test 1b: Company ID");
-        assertEquals("Acme Ltd", s.getName(), "Test 1c: Supplier name");
-        assertEquals("12-345-678", s.getBankAccount(), "Test 1d: Bank account");
-        assertEquals("Net 30", s.getPaymentTerms(), "Test 1e: Payment terms");
-        assertTrue(s.getContactPersons().isEmpty(), "Test 1f: Contact list initially empty");
-        assertTrue(s.getAgreement() == null, "Test 1g: Agreement initially null");
+    @Test
+    @DisplayName("Test 1: Supplier creation and getters")
+    public void testSupplierCreation() {
+        PaymentTerms terms = new PaymentTerms("Net", 30);
+        Supplier s = new Supplier(1, "CMP-001", "Acme Ltd", "12-345-678", terms);
+        assertEquals(1, s.getSupplierId());
+        assertEquals("CMP-001", s.getCompanyId());
+        assertEquals("Acme Ltd", s.getName());
+        assertEquals("12-345-678", s.getBankAccount());
+        assertEquals("Net", s.getPaymentTerms().getPaymentMethod());
+        assertEquals(30, s.getPaymentTerms().getNetDays());
+        assertTrue(s.getContactPersons().isEmpty());
+        assertNull(s.getAgreement());
     }
 
     // ---------------------------------------------------------------
     // Test 2: Supplier – reject null/empty company ID and name
     // ---------------------------------------------------------------
-    private static void testSupplierValidation() {
-        assertThrows(
-                () -> new Supplier(1, null, "Name", "bank", "terms"),
-                IllegalArgumentException.class,
-                "Test 2a: Null company ID throws");
-        assertThrows(
-                () -> new Supplier(1, "", "Name", "bank", "terms"),
-                IllegalArgumentException.class,
-                "Test 2b: Empty company ID throws");
-        assertThrows(
-                () -> new Supplier(1, "CMP", null, "bank", "terms"),
-                IllegalArgumentException.class,
-                "Test 2c: Null name throws");
-        assertThrows(
-                () -> new Supplier(1, "CMP", "", "bank", "terms"),
-                IllegalArgumentException.class,
-                "Test 2d: Empty name throws");
+    @Test
+    @DisplayName("Test 2: Supplier validation rejects invalid inputs")
+    public void testSupplierValidation() {
+        PaymentTerms terms = new PaymentTerms("Net", 30);
+        assertThrows(IllegalArgumentException.class,
+                () -> new Supplier(1, null, "Name", "bank", terms));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Supplier(1, "", "Name", "bank", terms));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Supplier(1, "CMP", null, "bank", terms));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Supplier(1, "CMP", "", "bank", terms));
     }
 
     // ---------------------------------------------------------------
     // Test 3: Supplier – add, find, and remove contact persons
     // ---------------------------------------------------------------
-    private static void testSupplierContactPersons() {
-        Supplier s = new Supplier(1, "CMP-001", "Acme", "bank", "terms");
+    @Test
+    @DisplayName("Test 3: Supplier contact person management")
+    public void testSupplierContactPersons() {
+        PaymentTerms terms = new PaymentTerms("Net", 30);
+        Supplier s = new Supplier(1, "CMP-001", "Acme", "bank", terms);
         ContactPerson cp1 = new ContactPerson("Alice", "050-1111111", "alice@acme.com");
         ContactPerson cp2 = new ContactPerson("Bob", "050-2222222", "bob@acme.com");
 
         s.addContactPerson(cp1);
         s.addContactPerson(cp2);
-        assertEquals(2, s.getContactPersons().size(), "Test 3a: Two contacts added");
+        assertEquals(2, s.getContactPersons().size());
 
         // Find by name (case-insensitive)
-        assertEquals(cp1, s.findContactByName("alice"), "Test 3b: Find Alice (case-insensitive)");
-        assertTrue(s.findContactByName("Charlie") == null, "Test 3c: Non-existent contact returns null");
+        assertEquals(cp1, s.findContactByName("alice"));
+        assertNull(s.findContactByName("Charlie"));
 
         // Remove
         s.removeContactPerson(cp1);
-        assertEquals(1, s.getContactPersons().size(), "Test 3d: One contact after removal");
+        assertEquals(1, s.getContactPersons().size());
 
         // Null contact rejected
-        assertThrows(
-                () -> s.addContactPerson(null),
-                IllegalArgumentException.class,
-                "Test 3e: Null contact throws");
+        assertThrows(IllegalArgumentException.class, () -> s.addContactPerson(null));
     }
 
     // ---------------------------------------------------------------
     // Test 4: ContactPerson – validation and setters
     // ---------------------------------------------------------------
-    private static void testContactPersonValidation() {
-        assertThrows(
-                () -> new ContactPerson(null, "050", "e@mail"),
-                IllegalArgumentException.class,
-                "Test 4a: Null name throws");
-        assertThrows(
-                () -> new ContactPerson("", "050", "e@mail"),
-                IllegalArgumentException.class,
-                "Test 4b: Empty name throws");
+    @Test
+    @DisplayName("Test 4: ContactPerson validation and setters")
+    public void testContactPersonValidation() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ContactPerson(null, "050", "e@mail"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ContactPerson("", "050", "e@mail"));
 
         ContactPerson cp = new ContactPerson("Dana", "050-333", "dana@x.com");
         cp.setPhoneNumber("050-444");
-        assertEquals("050-444", cp.getPhoneNumber(), "Test 4c: Phone updated");
+        assertEquals("050-444", cp.getPhoneNumber());
 
-        assertThrows(
-                () -> cp.setName(""),
-                IllegalArgumentException.class,
-                "Test 4d: setName empty throws");
+        assertThrows(IllegalArgumentException.class, () -> cp.setName(""));
     }
 
     // ---------------------------------------------------------------
     // Test 5: QuantityDiscount – valid creation and edge validation
     // ---------------------------------------------------------------
-    private static void testQuantityDiscountValidation() {
+    @Test
+    @DisplayName("Test 5: QuantityDiscount validation")
+    public void testQuantityDiscountValidation() {
         QuantityDiscount qd = new QuantityDiscount(10, 5.0);
-        assertEquals(10, qd.getMinQuantity(), "Test 5a: Min quantity");
-        assertEquals(5.0, qd.getDiscountPercent(), "Test 5b: Discount percent");
+        assertEquals(10, qd.getMinQuantity());
+        assertEquals(5.0, qd.getDiscountPercent());
 
-        // Invalid min quantity
-        assertThrows(
-                () -> new QuantityDiscount(0, 10),
-                IllegalArgumentException.class,
-                "Test 5c: Zero min quantity throws");
-        assertThrows(
-                () -> new QuantityDiscount(-1, 10),
-                IllegalArgumentException.class,
-                "Test 5d: Negative min quantity throws");
-
-        // Invalid discount percent
-        assertThrows(
-                () -> new QuantityDiscount(1, -1),
-                IllegalArgumentException.class,
-                "Test 5e: Negative discount throws");
-        assertThrows(
-                () -> new QuantityDiscount(1, 101),
-                IllegalArgumentException.class,
-                "Test 5f: Discount > 100 throws");
+        assertThrows(IllegalArgumentException.class, () -> new QuantityDiscount(0, 10));
+        assertThrows(IllegalArgumentException.class, () -> new QuantityDiscount(-1, 10));
+        assertThrows(IllegalArgumentException.class, () -> new QuantityDiscount(1, -1));
+        assertThrows(IllegalArgumentException.class, () -> new QuantityDiscount(1, 101));
     }
 
     // ---------------------------------------------------------------
     // Test 6: SupplierItem – effective price with quantity discounts
     // ---------------------------------------------------------------
-    private static void testSupplierItemEffectivePrice() {
+    @Test
+    @DisplayName("Test 6: SupplierItem effective price with discounts")
+    public void testSupplierItemEffectivePrice() {
         SupplierItem item = new SupplierItem(100, 200, "Widget", 50.0, "WidgetCo");
 
-        // No discounts → full price
-        assertEquals(50.0, item.getEffectivePrice(1), "Test 6a: No discount – full price");
+        // No discounts -> full price
+        assertEquals(50.0, item.getEffectivePrice(1), 0.001);
 
-        // Add discount tiers: 10+ units → 10%, 50+ units → 20%
+        // Add discount tiers: 10+ units -> 10%, 50+ units -> 20%
         item.addQuantityDiscount(new QuantityDiscount(10, 10));
         item.addQuantityDiscount(new QuantityDiscount(50, 20));
 
-        assertEquals(50.0, item.getEffectivePrice(5), "Test 6b: Qty 5 – no tier hit");
-        assertEquals(45.0, item.getEffectivePrice(10), "Test 6c: Qty 10 – 10% off");
-        assertEquals(45.0, item.getEffectivePrice(25), "Test 6d: Qty 25 – still 10% tier");
-        assertEquals(40.0, item.getEffectivePrice(50), "Test 6e: Qty 50 – 20% off");
-        assertEquals(40.0, item.getEffectivePrice(100), "Test 6f: Qty 100 – best is 20%");
+        assertEquals(50.0, item.getEffectivePrice(5), 0.001);
+        assertEquals(45.0, item.getEffectivePrice(10), 0.001);
+        assertEquals(45.0, item.getEffectivePrice(25), 0.001);
+        assertEquals(40.0, item.getEffectivePrice(50), 0.001);
+        assertEquals(40.0, item.getEffectivePrice(100), 0.001);
     }
 
     // ---------------------------------------------------------------
-    // Test 7: SupplierItem – add/remove discount, null discount rejected
+    // Test 7: SupplierItem – add/remove discount, null rejected
     // ---------------------------------------------------------------
-    private static void testSupplierItemDiscountManagement() {
+    @Test
+    @DisplayName("Test 7: SupplierItem discount management")
+    public void testSupplierItemDiscountManagement() {
         SupplierItem item = new SupplierItem(1, 2, "Gadget", 100.0, "GadgetCo");
         QuantityDiscount qd = new QuantityDiscount(5, 15);
 
         item.addQuantityDiscount(qd);
-        assertEquals(1, item.getQuantityDiscounts().size(), "Test 7a: One discount added");
+        assertEquals(1, item.getQuantityDiscounts().size());
 
         item.removeQuantityDiscount(qd);
-        assertEquals(0, item.getQuantityDiscounts().size(), "Test 7b: Discount removed");
+        assertEquals(0, item.getQuantityDiscounts().size());
 
-        assertThrows(
-                () -> item.addQuantityDiscount(null),
-                IllegalArgumentException.class,
-                "Test 7c: Null discount throws");
+        assertThrows(IllegalArgumentException.class, () -> item.addQuantityDiscount(null));
     }
 
     // ---------------------------------------------------------------
     // Test 8: SupplierAgreement – add/find/remove items, fixed days
     // ---------------------------------------------------------------
-    private static void testSupplierAgreementItems() {
-        SupplierAgreement agreement = new SupplierAgreement(SupplierAgreement.SupplyMethod.FIXED_DAYS);
-        assertEquals(SupplierAgreement.SupplyMethod.FIXED_DAYS, agreement.getSupplyMethod(),
-                "Test 8a: Supply method");
+    @Test
+    @DisplayName("Test 8: SupplierAgreement item management")
+    public void testSupplierAgreementItems() {
+        SupplierAgreement agreement = new SupplierAgreement(SupplyMethod.FIXED_DAYS);
+        assertEquals(SupplyMethod.FIXED_DAYS, agreement.getSupplyMethod());
 
         SupplierItem item1 = new SupplierItem(101, 201, "Bolt", 1.5, "BoltCo");
         SupplierItem item2 = new SupplierItem(102, 202, "Nut", 0.8, "NutCo");
 
         agreement.addItem(item1);
         agreement.addItem(item2);
-        assertEquals(2, agreement.getItems().size(), "Test 8b: Two items added");
+        assertEquals(2, agreement.getItems().size());
 
-        // Find by catalog number
-        assertEquals(item1, agreement.findItemByCatalogNumber(101), "Test 8c: Find by catalog 101");
-        assertTrue(agreement.findItemByCatalogNumber(999) == null, "Test 8d: Missing catalog returns null");
+        assertEquals(item1, agreement.findItemByCatalogNumber(101));
+        assertNull(agreement.findItemByCatalogNumber(999));
+        assertEquals(item2, agreement.findItemByInternalId(202));
 
-        // Find by internal ID
-        assertEquals(item2, agreement.findItemByInternalId(202), "Test 8e: Find by internal ID 202");
-
-        // Remove
         agreement.removeItem(item1);
-        assertEquals(1, agreement.getItems().size(), "Test 8f: One item after removal");
+        assertEquals(1, agreement.getItems().size());
 
-        // Null item rejected
-        assertThrows(
-                () -> agreement.addItem(null),
-                IllegalArgumentException.class,
-                "Test 8g: Null item throws");
+        assertThrows(IllegalArgumentException.class, () -> agreement.addItem(null));
     }
 
     // ---------------------------------------------------------------
-    // Test 9: SupplierAgreement – fixed supply days & delivery days validation
+    // Test 9: SupplierAgreement – fixed supply days & delivery days
     // ---------------------------------------------------------------
-    private static void testSupplierAgreementDays() {
-        SupplierAgreement agreement = new SupplierAgreement(SupplierAgreement.SupplyMethod.ON_ORDER);
+    @Test
+    @DisplayName("Test 9: SupplierAgreement days validation")
+    public void testSupplierAgreementDays() {
+        SupplierAgreement agreement = new SupplierAgreement(SupplyMethod.ON_ORDER);
 
-        // Delivery days
         agreement.setDeliveryDays(3);
-        assertEquals(3, agreement.getDeliveryDays(), "Test 9a: Delivery days set to 3");
+        assertEquals(3, agreement.getDeliveryDays());
 
-        assertThrows(
-                () -> agreement.setDeliveryDays(-1),
-                IllegalArgumentException.class,
-                "Test 9b: Negative delivery days throws");
+        assertThrows(IllegalArgumentException.class, () -> agreement.setDeliveryDays(-1));
 
-        // Fixed supply days (1-7)
-        agreement.addFixedSupplyDay(1); // Sunday
-        agreement.addFixedSupplyDay(4); // Wednesday
-        assertEquals(2, agreement.getFixedSupplyDays().size(), "Test 9c: Two fixed days");
+        agreement.addFixedSupplyDay(1);
+        agreement.addFixedSupplyDay(4);
+        assertEquals(2, agreement.getFixedSupplyDays().size());
 
         // Duplicate day should not be added twice
         agreement.addFixedSupplyDay(1);
-        assertEquals(2, agreement.getFixedSupplyDays().size(), "Test 9d: Duplicate day ignored");
+        assertEquals(2, agreement.getFixedSupplyDays().size());
 
-        // Invalid day
-        assertThrows(
-                () -> agreement.addFixedSupplyDay(0),
-                IllegalArgumentException.class,
-                "Test 9e: Day 0 throws");
-        assertThrows(
-                () -> agreement.addFixedSupplyDay(8),
-                IllegalArgumentException.class,
-                "Test 9f: Day 8 throws");
+        assertThrows(IllegalArgumentException.class, () -> agreement.addFixedSupplyDay(0));
+        assertThrows(IllegalArgumentException.class, () -> agreement.addFixedSupplyDay(8));
 
-        // Remove day
         agreement.removeFixedSupplyDay(1);
-        assertEquals(1, agreement.getFixedSupplyDays().size(), "Test 9g: One day after removal");
+        assertEquals(1, agreement.getFixedSupplyDays().size());
     }
 
     // ---------------------------------------------------------------
     // Test 10: SupplierManager – add, get, find, remove suppliers
     // ---------------------------------------------------------------
-    private static void testSupplierManager() {
+    @Test
+    @DisplayName("Test 10: SupplierManager CRUD operations")
+    public void testSupplierManager() {
         SupplierManager manager = new SupplierManager();
-        assertEquals(0, manager.getSupplierCount(), "Test 10a: Initially empty");
+        assertEquals(0, manager.getSupplierCount());
 
-        Supplier s1 = manager.addSupplier("CMP-100", "Alpha", "bank1", "Net 30");
-        Supplier s2 = manager.addSupplier("CMP-200", "Beta", "bank2", "Net 60");
-        assertEquals(2, manager.getSupplierCount(), "Test 10b: Two suppliers added");
+        PaymentTerms terms1 = new PaymentTerms("Net", 30);
+        PaymentTerms terms2 = new PaymentTerms("Net", 60);
 
-        // Get by ID
-        assertEquals(s1, manager.getSupplier(s1.getSupplierId()), "Test 10c: Get supplier by ID");
-        assertTrue(manager.getSupplier(999) == null, "Test 10d: Missing ID returns null");
+        Supplier s1 = manager.addSupplier("CMP-100", "Alpha", "bank1", terms1);
+        Supplier s2 = manager.addSupplier("CMP-200", "Beta", "bank2", terms2);
+        assertEquals(2, manager.getSupplierCount());
 
-        // Find by company ID
-        assertEquals(s2, manager.findByCompanyId("CMP-200"), "Test 10e: Find by company ID");
+        assertEquals(s1, manager.getSupplier(s1.getSupplierId()));
+        assertNull(manager.getSupplier(999));
 
-        // Find suppliers by item (need an agreement with an item)
-        SupplierAgreement agreement = new SupplierAgreement(SupplierAgreement.SupplyMethod.ON_ORDER);
+        assertEquals(s2, manager.findByCompanyId("CMP-200"));
+
+        SupplierAgreement agreement = new SupplierAgreement(SupplyMethod.ON_ORDER);
         agreement.addItem(new SupplierItem(10, 500, "Screw", 0.1, "ScrewCo"));
         s1.setAgreement(agreement);
 
-        assertEquals(1, manager.findSuppliersByItem(500).size(), "Test 10f: One supplier has item 500");
-        assertEquals(0, manager.findSuppliersByItem(999).size(), "Test 10g: No supplier has item 999");
+        assertEquals(1, manager.findSuppliersByItem(500).size());
+        assertEquals(0, manager.findSuppliersByItem(999).size());
 
-        // Remove supplier
-        assertTrue(manager.removeSupplier(s1.getSupplierId()), "Test 10h: Remove existing supplier");
-        assertTrue(!manager.removeSupplier(s1.getSupplierId()), "Test 10i: Remove non-existent returns false");
-        assertEquals(1, manager.getSupplierCount(), "Test 10j: One supplier remaining");
+        assertTrue(manager.removeSupplier(s1.getSupplierId()));
+        assertFalse(manager.removeSupplier(s1.getSupplierId()));
+        assertEquals(1, manager.getSupplierCount());
+    }
+
+    // ===============================================================
+    // NEW TESTS (11-17) — Addressing professor feedback
+    // ===============================================================
+
+    // ---------------------------------------------------------------
+    // Test 11: PaymentTerms – creation, parsing, and validation
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 11: PaymentTerms creation and validation")
+    public void testPaymentTerms() {
+        // Explicit constructor
+        PaymentTerms pt1 = new PaymentTerms("Net", 30);
+        assertEquals("Net", pt1.getPaymentMethod());
+        assertEquals(30, pt1.getNetDays());
+        assertEquals("Net 30", pt1.toString());
+
+        // String-parsing constructor
+        PaymentTerms pt2 = new PaymentTerms("Net 60");
+        assertEquals("Net", pt2.getPaymentMethod());
+        assertEquals(60, pt2.getNetDays());
+
+        // Single-word terms (no days)
+        PaymentTerms pt3 = new PaymentTerms("Cash");
+        assertEquals("Cash", pt3.getPaymentMethod());
+        assertEquals(0, pt3.getNetDays());
+
+        // Validation
+        assertThrows(IllegalArgumentException.class, () -> new PaymentTerms(null, 30));
+        assertThrows(IllegalArgumentException.class, () -> new PaymentTerms("", 30));
+        assertThrows(IllegalArgumentException.class, () -> new PaymentTerms("Net", -1));
+
+        // Setter validation
+        pt1.setNetDays(45);
+        assertEquals(45, pt1.getNetDays());
+        assertThrows(IllegalArgumentException.class, () -> pt1.setNetDays(-5));
+        assertThrows(IllegalArgumentException.class, () -> pt1.setPaymentMethod(""));
     }
 
     // ---------------------------------------------------------------
-    // Main – run all tests
+    // Test 12: SupplierOrder – creation, add items, verify totals
     // ---------------------------------------------------------------
-    public static void main(String[] args) {
-        System.out.println("===========================================");
-        System.out.println("   Domain Layer Tests – Running 10 Tests   ");
-        System.out.println("===========================================\n");
+    @Test
+    @DisplayName("Test 12: SupplierOrder creation and total calculation")
+    public void testSupplierOrderCreation() {
+        SupplierOrder order = new SupplierOrder(1, 100, false);
+        assertEquals(1, order.getOrderId());
+        assertEquals(100, order.getSupplierId());
+        assertEquals(OrderStatus.PENDING, order.getStatus());
+        assertFalse(order.isUrgent());
+        assertEquals(LocalDate.now(), order.getOrderDate());
+        assertTrue(order.getItems().isEmpty());
+        assertEquals(0.0, order.getTotalPrice(), 0.001);
 
-        testSupplierCreation(); // Test 1
-        System.out.println();
-        testSupplierValidation(); // Test 2
-        System.out.println();
-        testSupplierContactPersons(); // Test 3
-        System.out.println();
-        testContactPersonValidation(); // Test 4
-        System.out.println();
-        testQuantityDiscountValidation(); // Test 5
-        System.out.println();
-        testSupplierItemEffectivePrice(); // Test 6
-        System.out.println();
-        testSupplierItemDiscountManagement(); // Test 7
-        System.out.println();
-        testSupplierAgreementItems(); // Test 8
-        System.out.println();
-        testSupplierAgreementDays(); // Test 9
-        System.out.println();
-        testSupplierManager(); // Test 10
+        // Add items
+        OrderItem oi1 = new OrderItem(1001, 101, "Bamba", 10, 3.50, 0);
+        OrderItem oi2 = new OrderItem(1002, 102, "Bissli", 5, 5.00, 10); // 10% discount
 
-        System.out.println("\n===========================================");
-        System.out.println("   Results: " + passed + " passed, " + failed + " failed");
-        System.out.println("===========================================");
+        order.addItem(oi1);
+        order.addItem(oi2);
+        assertEquals(2, order.getItems().size());
 
-        if (failed > 0) {
-            System.exit(1);
-        }
+        // Total: 10 * 3.50 + 5 * 5.00 * 0.90 = 35.00 + 22.50 = 57.50
+        assertEquals(57.50, order.getTotalPrice(), 0.001);
+    }
+
+    // ---------------------------------------------------------------
+    // Test 13: Order discount calculation from agreement
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 13: Order applies quantity discounts correctly")
+    public void testOrderDiscountCalculation() {
+        // Setup: item with discount tiers: 10+ -> 5%, 100+ -> 15%
+        SupplierItem agrItem = new SupplierItem(1001, 101, "Widget", 20.0, "WidgetCo");
+        agrItem.addQuantityDiscount(new QuantityDiscount(10, 5));
+        agrItem.addQuantityDiscount(new QuantityDiscount(100, 15));
+
+        // Order 50 units -> 5% discount applies
+        int qty1 = 50;
+        double discount1 = agrItem.getApplicableDiscount(qty1);
+        assertEquals(5.0, discount1, 0.001);
+        OrderItem oi1 = new OrderItem(1001, 101, "Widget", qty1, 20.0, discount1);
+        // Expected: 50 * 20 * 0.95 = 950.00
+        assertEquals(950.0, oi1.getTotalPrice(), 0.001);
+
+        // Order 200 units -> 15% discount applies
+        int qty2 = 200;
+        double discount2 = agrItem.getApplicableDiscount(qty2);
+        assertEquals(15.0, discount2, 0.001);
+        OrderItem oi2 = new OrderItem(1001, 101, "Widget", qty2, 20.0, discount2);
+        // Expected: 200 * 20 * 0.85 = 3400.00
+        assertEquals(3400.0, oi2.getTotalPrice(), 0.001);
+
+        // Order 5 units -> no discount
+        int qty3 = 5;
+        double discount3 = agrItem.getApplicableDiscount(qty3);
+        assertEquals(0.0, discount3, 0.001);
+        OrderItem oi3 = new OrderItem(1001, 101, "Widget", qty3, 20.0, discount3);
+        // Expected: 5 * 20 = 100.00
+        assertEquals(100.0, oi3.getTotalPrice(), 0.001);
+    }
+
+    // ---------------------------------------------------------------
+    // Test 14: Agreement freeze – blocks addItem and removeItem
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 14: Frozen agreement rejects modifications")
+    public void testAgreementFreeze() {
+        SupplierAgreement agreement = new SupplierAgreement(SupplyMethod.ON_ORDER);
+        SupplierItem item1 = new SupplierItem(101, 201, "Bolt", 1.5, "BoltCo");
+
+        // Can add before freeze
+        assertFalse(agreement.isFrozen());
+        agreement.addItem(item1);
+        assertEquals(1, agreement.getItems().size());
+
+        // Freeze
+        agreement.freeze();
+        assertTrue(agreement.isFrozen());
+
+        // Cannot add or remove while frozen
+        SupplierItem item2 = new SupplierItem(102, 202, "Nut", 0.8, "NutCo");
+        assertThrows(IllegalStateException.class, () -> agreement.addItem(item2));
+        assertThrows(IllegalStateException.class, () -> agreement.removeItem(item1));
+
+        // Unfreeze restores normal operation
+        agreement.unfreeze();
+        assertFalse(agreement.isFrozen());
+        agreement.addItem(item2);
+        assertEquals(2, agreement.getItems().size());
+    }
+
+    // ---------------------------------------------------------------
+    // Test 15: Urgent order – delivery date is next day
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 15: Urgent order sets delivery to next day")
+    public void testUrgentOrderDeliveryDate() {
+        // Setup agreement with ON_ORDER method, 5 day delivery
+        SupplierAgreement agreement = new SupplierAgreement(SupplyMethod.ON_ORDER);
+        agreement.setDeliveryDays(5);
+
+        // Non-urgent order: should be orderDate + 5
+        SupplierOrder normalOrder = new SupplierOrder(1, 100, false);
+        normalOrder.computeExpectedDeliveryDate(agreement);
+        assertEquals(LocalDate.now().plusDays(5), normalOrder.getExpectedDeliveryDate());
+
+        // Urgent order: should be orderDate + 1 regardless of delivery days
+        SupplierOrder urgentOrder = new SupplierOrder(2, 100, true);
+        urgentOrder.computeExpectedDeliveryDate(agreement);
+        assertEquals(LocalDate.now().plusDays(1), urgentOrder.getExpectedDeliveryDate());
+    }
+
+    // ---------------------------------------------------------------
+    // Test 16: Order history – multiple orders per supplier
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 16: OrderManager tracks order history per supplier")
+    public void testOrderHistory() {
+        OrderManager manager = new OrderManager();
+        assertEquals(0, manager.getOrderCount());
+
+        // Create orders for two suppliers
+        SupplierOrder o1 = manager.createOrder(1, false);
+        SupplierOrder o2 = manager.createOrder(1, false);
+        SupplierOrder o3 = manager.createOrder(2, true);
+
+        assertEquals(3, manager.getOrderCount());
+
+        // History for supplier 1
+        List<SupplierOrder> history1 = manager.getOrdersBySupplier(1);
+        assertEquals(2, history1.size());
+
+        // History for supplier 2
+        List<SupplierOrder> history2 = manager.getOrdersBySupplier(2);
+        assertEquals(1, history2.size());
+        assertTrue(history2.get(0).isUrgent());
+
+        // No history for non-existent supplier
+        List<SupplierOrder> history3 = manager.getOrdersBySupplier(999);
+        assertEquals(0, history3.size());
+    }
+
+    // ---------------------------------------------------------------
+    // Test 17: OrderManager & SupplierOrder lifecycle
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 17: Order lifecycle (PENDING -> SENT -> DELIVERED)")
+    public void testOrderLifecycle() {
+        OrderManager manager = new OrderManager();
+        SupplierOrder order = manager.createOrder(1, false);
+        assertEquals(OrderStatus.PENDING, order.getStatus());
+
+        // Add an item so we can send
+        order.addItem(new OrderItem(1001, 101, "Test Item", 10, 5.0, 0));
+
+        // Cannot add items once sent
+        order.send();
+        assertEquals(OrderStatus.SENT, order.getStatus());
+        assertThrows(IllegalStateException.class,
+                () -> order.addItem(new OrderItem(1002, 102, "Another", 1, 1.0, 0)));
+
+        // Cannot send again
+        assertThrows(IllegalStateException.class, order::send);
+
+        // Mark delivered
+        order.markDelivered();
+        assertEquals(OrderStatus.DELIVERED, order.getStatus());
+
+        // Cannot cancel delivered order
+        assertThrows(IllegalStateException.class, order::cancel);
+
+        // Test cancel flow
+        SupplierOrder order2 = manager.createOrder(1, false);
+        order2.cancel();
+        assertEquals(OrderStatus.CANCELLED, order2.getStatus());
+
+        // Verify retrieval
+        assertEquals(order, manager.getOrder(order.getOrderId()));
+        assertNull(manager.getOrder(999));
+    }
+
+    // ---------------------------------------------------------------
+    // Test 18: Shortage flow chooses cheapest supplier using discounts
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 18: Shortage order chooses best supplier by quantity discount")
+    public void testShortageOrderSelectsBestSupplier() {
+        SupplierManager supplierManager = new SupplierManager();
+        OrderManager orderManager = new OrderManager();
+        ServiceLayer.SupplierService service = new ServiceLayer.SupplierService(supplierManager, orderManager);
+
+        Supplier s1 = service.addSupplier("CMP-1", "Bulk Supplier", "bank1", new PaymentTerms("Net", 30));
+        service.createAgreement(s1.getSupplierId(), SupplyMethod.ON_ORDER, null, 3);
+        service.addItemToAgreement(s1.getSupplierId(), 1001, 500, "Shared Item", 10.0, "Maker");
+        service.addQuantityDiscount(s1.getSupplierId(), 1001, 100, 30);
+
+        Supplier s2 = service.addSupplier("CMP-2", "Cheap Small Supplier", "bank2", new PaymentTerms("Net", 30));
+        service.createAgreement(s2.getSupplierId(), SupplyMethod.ON_ORDER, null, 2);
+        service.addItemToAgreement(s2.getSupplierId(), 2001, 500, "Shared Item", 8.0, "Maker");
+
+        Supplier best = service.findBestSupplierForItem(500, 100);
+        assertEquals(s1.getSupplierId(), best.getSupplierId());
+
+        SupplierOrder order = service.createShortageOrder(500, 100, false);
+        assertEquals(s1.getSupplierId(), order.getSupplierId());
+        assertEquals(OrderStatus.SENT, order.getStatus());
+        assertEquals(1, order.getItems().size());
+        assertEquals(30.0, order.getItems().get(0).getDiscountPercent(), 0.001);
+        assertEquals(700.0, order.getTotalPrice(), 0.001);
+    }
+
+    // ---------------------------------------------------------------
+    // Test 19: Periodic fixed-day order flow
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 19: Periodic order requires fixed-day agreement")
+    public void testPeriodicOrderForFixedDaySupplier() {
+        SupplierManager supplierManager = new SupplierManager();
+        OrderManager orderManager = new OrderManager();
+        ServiceLayer.SupplierService service = new ServiceLayer.SupplierService(supplierManager, orderManager);
+
+        Supplier fixedSupplier = service.addSupplier("CMP-FIX", "Fixed Days", "bank", new PaymentTerms("Net", 30));
+        service.createAgreement(fixedSupplier.getSupplierId(), SupplyMethod.FIXED_DAYS, Arrays.asList(1, 4), 0);
+        service.addItemToAgreement(fixedSupplier.getSupplierId(), 3001, 700, "Periodic Item", 12.0, "Maker");
+
+        Map<Integer, Integer> internalQuantities = new LinkedHashMap<>();
+        internalQuantities.put(700, 20);
+        SupplierOrder order = service.createPeriodicOrderForSupplier(fixedSupplier.getSupplierId(), internalQuantities);
+
+        assertEquals(fixedSupplier.getSupplierId(), order.getSupplierId());
+        assertEquals(OrderStatus.SENT, order.getStatus());
+        assertNotNull(order.getExpectedDeliveryDate());
+        assertEquals(1, order.getItems().size());
+        assertEquals(700, order.getItems().get(0).getInternalItemId());
+
+        Supplier onOrderSupplier = service.addSupplier("CMP-ON", "On Order", "bank", new PaymentTerms("Net", 30));
+        service.createAgreement(onOrderSupplier.getSupplierId(), SupplyMethod.ON_ORDER, null, 3);
+        service.addItemToAgreement(onOrderSupplier.getSupplierId(), 4001, 800, "On Order Item", 5.0, "Maker");
+
+        Map<Integer, Integer> onOrderItems = new LinkedHashMap<>();
+        onOrderItems.put(800, 5);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createPeriodicOrderForSupplier(onOrderSupplier.getSupplierId(), onOrderItems));
+    }
+
+    // ---------------------------------------------------------------
+    // Test 20: Service-level freeze blocks all agreement mutations
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 20: Frozen agreement blocks service-level mutations")
+    public void testServiceFreezeBlocksAllAgreementChanges() {
+        SupplierManager supplierManager = new SupplierManager();
+        OrderManager orderManager = new OrderManager();
+        ServiceLayer.SupplierService service = new ServiceLayer.SupplierService(supplierManager, orderManager);
+
+        Supplier supplier = service.addSupplier("CMP-FROZEN", "Frozen Supplier", "bank", new PaymentTerms("Net", 30));
+        int supplierId = supplier.getSupplierId();
+        service.createAgreement(supplierId, SupplyMethod.FIXED_DAYS, Arrays.asList(2), 0);
+        service.addItemToAgreement(supplierId, 1001, 101, "Frozen Item", 3.0, "Maker");
+        service.freezeAgreement(supplierId);
+
+        assertThrows(IllegalStateException.class,
+                () -> service.addItemToAgreement(supplierId, 1002, 102, "New Item", 4.0, "Maker"));
+        assertThrows(IllegalStateException.class,
+                () -> service.removeItemFromAgreement(supplierId, 1001));
+        assertThrows(IllegalStateException.class,
+                () -> service.addQuantityDiscount(supplierId, 1001, 10, 5));
+        assertThrows(IllegalStateException.class,
+                () -> service.updateSupplyMethod(supplierId, SupplyMethod.ON_ORDER));
+        assertThrows(IllegalStateException.class,
+                () -> service.setDeliveryDays(supplierId, 4));
+        assertThrows(IllegalStateException.class,
+                () -> service.addFixedSupplyDay(supplierId, 5));
+        assertThrows(IllegalStateException.class,
+                () -> service.removeFixedSupplyDay(supplierId, 2));
+        assertThrows(IllegalStateException.class,
+                () -> service.createAgreement(supplierId, SupplyMethod.ON_ORDER, null, 3));
+    }
+
+    // ---------------------------------------------------------------
+    // Test 21: Order-from-agreement flow by internal item IDs
+    // ---------------------------------------------------------------
+    @Test
+    @DisplayName("Test 21: Order from agreement by internal item IDs")
+    public void testCreateOrderFromAgreementByInternalItems() {
+        SupplierManager supplierManager = new SupplierManager();
+        OrderManager orderManager = new OrderManager();
+        ServiceLayer.SupplierService service = new ServiceLayer.SupplierService(supplierManager, orderManager);
+
+        Supplier supplier = service.addSupplier("CMP-ORDER", "Order Supplier", "bank", new PaymentTerms("Net", 45));
+        int supplierId = supplier.getSupplierId();
+        service.createAgreement(supplierId, SupplyMethod.ON_ORDER, null, 4);
+        service.addItemToAgreement(supplierId, 5001, 901, "Agreement Item", 6.0, "Maker");
+        service.addQuantityDiscount(supplierId, 5001, 10, 10);
+
+        Map<Integer, Integer> internalQuantities = new LinkedHashMap<>();
+        internalQuantities.put(901, 10);
+        SupplierOrder order = service.createOrderFromAgreementByInternalItems(supplierId, internalQuantities, true);
+
+        assertEquals(OrderStatus.SENT, order.getStatus());
+        assertTrue(order.isUrgent());
+        assertEquals(LocalDate.now().plusDays(1), order.getExpectedDeliveryDate());
+        assertEquals(1, order.getItems().size());
+        assertEquals(5001, order.getItems().get(0).getCatalogNumber());
+        assertEquals(54.0, order.getTotalPrice(), 0.001);
     }
 }

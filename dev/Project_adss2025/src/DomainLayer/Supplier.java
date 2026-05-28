@@ -9,12 +9,12 @@ public class Supplier {
     private String companyId; // Company Registration Number (ח"פ)
     private String name; // Supplier name
     private String bankAccount; // Bank account details
-    private String paymentTerms; // Payment terms (e.g. "Net 30", "Net 60+")
+    private PaymentTerms paymentTerms; // Payment terms (e.g. "Net 30", "Net 60+")
     private List<ContactPerson> contactPersons; // Contact persons for this supplier
     private SupplierAgreement agreement; // The agreement with this supplier
 
     public Supplier(int supplierId, String companyId, String name,
-            String bankAccount, String paymentTerms) {
+            String bankAccount, PaymentTerms paymentTerms) {
         if (companyId == null || companyId.isEmpty()) {
             throw new IllegalArgumentException("Company ID cannot be null or empty.");
         }
@@ -66,7 +66,7 @@ public class Supplier {
         return bankAccount;
     }
 
-    public String getPaymentTerms() {
+    public PaymentTerms getPaymentTerms() {
         return paymentTerms;
     }
 
@@ -100,7 +100,7 @@ public class Supplier {
         this.bankAccount = bankAccount;
     }
 
-    public void setPaymentTerms(String paymentTerms) {
+    public void setPaymentTerms(PaymentTerms paymentTerms) {
         this.paymentTerms = paymentTerms;
     }
 
@@ -114,6 +114,7 @@ public class Supplier {
                 "supplierId=" + supplierId +
                 ", companyId='" + companyId + '\'' +
                 ", name='" + name + '\'' +
+                ", paymentTerms=" + (paymentTerms != null ? paymentTerms.toString() : "null") +
                 ", contacts=" + contactPersons.size() +
                 ", hasAgreement=" + (agreement != null) +
                 '}';

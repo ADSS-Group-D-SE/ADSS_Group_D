@@ -2,8 +2,10 @@ package PresentationLayer;
 
 import DomainLayer.*;
 import DomainLayer.SupplierAgreement.SupplyMethod;
+import DomainLayer.SupplierOrder.OrderStatus;
 import ServiceLayer.SupplierService;
 
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class SystemInitializer {
@@ -16,12 +18,13 @@ public class SystemInitializer {
 
     /**
      * Loads sample data into the system for testing.
-     * This function is external to the domain layer — it uses the service layer
+     * This function is external to the Domain Layer — it uses the service layer
      * to make appropriate calls and does not access domain data directly.
      */
     public void loadSampleData() {
         // ── Supplier 1: "Osem" — Fixed supply days ──────────
-        Supplier s1 = service.addSupplier("510000001", "Osem Supplies", "12-345-678901", "Net 30");
+        Supplier s1 = service.addSupplier("510000001", "Osem Supplies", "12-345-678901",
+                new PaymentTerms("Net", 30));
         int s1Id = s1.getSupplierId();
 
         service.addContactPerson(s1Id, "Yossi Cohen", "050-1234567", "yossi@osem.co.il");
@@ -42,7 +45,8 @@ public class SystemInitializer {
         service.addItemToAgreement(s1Id, 1003, 103, "Ketchup 750ml", 8.90, "Osem");
 
         // ── Supplier 2: "Tnuva" — On order ─────────────────
-        Supplier s2 = service.addSupplier("520000002", "Tnuva Dairy", "12-999-888777", "Net 60");
+        Supplier s2 = service.addSupplier("520000002", "Tnuva Dairy", "12-999-888777",
+                new PaymentTerms("Net", 60));
         int s2Id = s2.getSupplierId();
 
         service.addContactPerson(s2Id, "Avi Amar", "054-1112233", "avi@tnuva.co.il");
@@ -60,7 +64,8 @@ public class SystemInitializer {
         service.addItemToAgreement(s2Id, 2003, 103, "Ketchup 750ml", 9.20, "Heinz");
 
         // ── Supplier 3: "Strauss" — Self pickup ─────────────
-        Supplier s3 = service.addSupplier("530000003", "Strauss Group", "10-555-666444", "Net 45");
+        Supplier s3 = service.addSupplier("530000003", "Strauss Group", "10-555-666444",
+                new PaymentTerms("Net", 45));
         int s3Id = s3.getSupplierId();
 
         service.addContactPerson(s3Id, "Miri Ben-David", "053-4445566", "miri@strauss.co.il");
@@ -74,8 +79,46 @@ public class SystemInitializer {
 
         service.addItemToAgreement(s3Id, 3002, 302, "Milky Pudding 4-pack", 12.50, "Strauss");
 
+        // ══════════════════════════════════════════════════════════
+        // Mock Orders (Order History)
+        // ══════════════════════════════════════════════════════════
+
+        // Order 1: Past delivered order from Osem (200 Bamba + 100 Bissli)
+        SupplierOrder order1 = service.createOrder(s1Id, false);
+        service.addItemToOrder(order1.getOrderId(), 1001, 200); // Bamba, 200 units -> 5% discount
+        service.addItemToOrder(order1.getOrderId(), 1002, 100); // Bissli, 100 units -> 3% discount
+        SupplierOrder finalized1 = service.finalizeOrder(order1.getOrderId());
+        finalized1.setOrderDate(LocalDate.now().minusDays(14)); // Backdate for history
+        finalized1.setExpectedDeliveryDate(LocalDate.now().minusDays(12));
+        finalized1.markDelivered();
+
+        // Order 2: Past delivered order from Tnuva (500 Milk)
+        SupplierOrder order2 = service.createOrder(s2Id, false);
+        service.addItemToOrder(order2.getOrderId(), 2001, 500); // Milk, 500 units -> 9% discount
+        SupplierOrder finalized2 = service.finalizeOrder(order2.getOrderId());
+        finalized2.setOrderDate(LocalDate.now().minusDays(7));
+        finalized2.setExpectedDeliveryDate(LocalDate.now().minusDays(4));
+        finalized2.markDelivered();
+
+        // Order 3: Current pending order from Osem (1000 Bamba — big order)
+        SupplierOrder order3 = service.createOrder(s1Id, false);
+        service.addItemToOrder(order3.getOrderId(), 1001, 1000); // Bamba, 1000 units -> 15% discount
+        service.addItemToOrder(order3.getOrderId(), 1003, 50);   // Ketchup, 50 units -> no discount
+        service.finalizeOrder(order3.getOrderId());
+
+        // Order 4: Urgent order from Strauss (50 Elite Coffee)
+        SupplierOrder order4 = service.createOrder(s3Id, true);
+        service.addItemToOrder(order4.getOrderId(), 3001, 50); // Coffee, 50 units -> 5% discount
+        service.finalizeOrder(order4.getOrderId());
+
+        // ══════════════════════════════════════════════════════════
+        // Freeze Strauss agreement to demonstrate the feature
+        // ══════════════════════════════════════════════════════════
+        service.freezeAgreement(s3Id);
+
         System.out.println("Sample data loaded successfully.");
         System.out.println("Loaded " + service.getSupplierCount() + " suppliers.");
+        System.out.println("Loaded " + service.getOrderCount() + " orders.");
     }
 
     /**
@@ -83,7 +126,8 @@ public class SystemInitializer {
      */
     public static void main(String[] args) {
         SupplierManager supplierManager = new SupplierManager();
-        SupplierService service = new SupplierService(supplierManager);
+        OrderManager orderManager = new OrderManager();
+        SupplierService service = new SupplierService(supplierManager, orderManager);
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("==========================================");
@@ -100,7 +144,7 @@ public class SystemInitializer {
         }
 
         System.out.println();
-        SuppliersUI ui = new SuppliersUI(service);
+        SuppliersUI ui = new SuppliersUI(service, scanner);
         ui.start();
     }
 }

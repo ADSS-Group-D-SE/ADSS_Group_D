@@ -5,7 +5,9 @@ import DomainLayer.SupplierAgreement.SupplyMethod;
 import ServiceLayer.SupplierService;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class SuppliersUI {
@@ -15,8 +17,12 @@ public class SuppliersUI {
     private SupplierService service;
 
     public SuppliersUI(SupplierService service) {
+        this(service, new Scanner(System.in));
+    }
+
+    public SuppliersUI(SupplierService service, Scanner scanner) {
         this.service = service;
-        this.scanner = new Scanner(System.in);
+        this.scanner = scanner;
         this.isRunning = false;
     }
 
@@ -44,6 +50,17 @@ public class SuppliersUI {
         System.out.println("8. Manage Agreement Items");
         System.out.println("9. Manage Quantity Discounts");
         System.out.println("10. Search Suppliers by Item");
+        System.out.println("11. Create Order from Agreement");
+        System.out.println("12. Create Urgent Order");
+        System.out.println("13. View Order Details");
+        System.out.println("14. View Order History (by Supplier)");
+        System.out.println("15. View All Orders");
+        System.out.println("16. Cancel Order");
+        System.out.println("17. Mark Order as Delivered");
+        System.out.println("18. Freeze/Unfreeze Agreement");
+        System.out.println("19. Add Item to Agreement");
+        System.out.println("20. Create Shortage Order (Best Supplier)");
+        System.out.println("21. Create Periodic Fixed-Day Order");
         System.out.println("0. Exit");
         System.out.println("========================================");
     }
@@ -80,6 +97,39 @@ public class SuppliersUI {
             case 10:
                 searchSuppliersByItem();
                 break;
+            case 11:
+                createOrder(false);
+                break;
+            case 12:
+                createOrder(true);
+                break;
+            case 13:
+                viewOrderDetails();
+                break;
+            case 14:
+                viewOrderHistory();
+                break;
+            case 15:
+                viewAllOrders();
+                break;
+            case 16:
+                cancelOrderUI();
+                break;
+            case 17:
+                markOrderDeliveredUI();
+                break;
+            case 18:
+                freezeUnfreezeAgreement();
+                break;
+            case 19:
+                addItemDirect();
+                break;
+            case 20:
+                createShortageOrderUI();
+                break;
+            case 21:
+                createPeriodicOrderUI();
+                break;
             case 0:
                 isRunning = false;
                 System.out.println("Exiting Suppliers Management System. Goodbye!");
@@ -98,10 +148,12 @@ public class SuppliersUI {
         String companyId = readString("Company ID: ");
         String name = readString("Supplier Name: ");
         String bankAccount = readString("Bank Account: ");
-        String paymentTerms = readString("Payment Terms: ");
+        String paymentMethod = readString("Payment Method (e.g. Net, Cash, Credit): ");
+        int netDays = readInt("Net Days (e.g. 30, 60): ");
 
         try {
-            Supplier supplier = service.addSupplier(companyId, name, bankAccount, paymentTerms);
+            PaymentTerms terms = new PaymentTerms(paymentMethod, netDays);
+            Supplier supplier = service.addSupplier(companyId, name, bankAccount, terms);
             System.out.println("Supplier added successfully! ID: " + supplier.getSupplierId());
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
@@ -256,8 +308,9 @@ public class SuppliersUI {
                     System.out.println("Bank Account updated.");
                     break;
                 case 4:
-                    String terms = readString("New Payment Terms: ");
-                    supplier.setPaymentTerms(terms);
+                    String method = readString("New Payment Method (e.g. Net, Cash): ");
+                    int days = readInt("New Net Days: ");
+                    supplier.setPaymentTerms(new PaymentTerms(method, days));
                     System.out.println("Payment Terms updated.");
                     break;
                 case 0:
@@ -566,6 +619,326 @@ public class SuppliersUI {
                         + " | Catalog#: " + item.getCatalogNumber()
                         + " | Price: " + item.getPrice());
             }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 11/12. Create Order from Agreement (Flow 3 & Flow 5)
+    // ══════════════════════════════════════════════════════════
+
+    private void createOrder(boolean isUrgent) {
+        System.out.println("\n--- Create " + (isUrgent ? "Urgent " : "") + "Order ---");
+        int supplierId = readInt("Enter Supplier ID: ");
+        Supplier supplier = service.getSupplier(supplierId);
+        if (supplier == null) {
+            System.out.println("Supplier not found.");
+            return;
+        }
+        if (supplier.getAgreement() == null) {
+            System.out.println("Supplier has no agreement. Cannot create order.");
+            return;
+        }
+
+        SupplierAgreement agreement = supplier.getAgreement();
+        List<SupplierItem> agrItems = agreement.getItems();
+        if (agrItems.isEmpty()) {
+            System.out.println("No items in supplier's agreement.");
+            return;
+        }
+
+        try {
+            SupplierOrder order = service.createOrder(supplierId, isUrgent);
+            System.out.println("Order #" + order.getOrderId() + " created (" + (isUrgent ? "URGENT" : "Regular") + ")");
+
+            boolean addingItems = true;
+            while (addingItems) {
+                System.out.println("\nAvailable items in agreement:");
+                for (SupplierItem item : agrItems) {
+                    System.out.println("  Catalog#: " + item.getCatalogNumber()
+                            + " | " + item.getItemDescription()
+                            + " | Price: " + item.getPrice()
+                            + " | Manufacturer: " + item.getManufacturer());
+                }
+                System.out.println();
+                int catalogNum = readInt("Enter catalog number to add (0 to finish): ");
+                if (catalogNum == 0) {
+                    addingItems = false;
+                } else {
+                    int quantity = readInt("Enter quantity: ");
+                    try {
+                        service.addItemToOrder(order.getOrderId(), catalogNum, quantity);
+                        System.out.println("Item added to order.");
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                }
+            }
+
+            if (order.getItems().isEmpty()) {
+                System.out.println("Order has no items. Cancelling.");
+                service.cancelOrder(order.getOrderId());
+                return;
+            }
+
+            System.out.println("\n--- Order Summary ---");
+            printOrderDetails(order);
+
+            String answer = readString("\nFinalize and send this order? (y/n): ").toLowerCase();
+            if (answer.equals("y") || answer.equals("yes")) {
+                SupplierOrder finalized = service.finalizeOrder(order.getOrderId());
+                System.out.println("Order #" + finalized.getOrderId() + " sent successfully!");
+                System.out.println("Expected delivery: " + finalized.getExpectedDeliveryDate());
+            } else {
+                System.out.println("Order kept as pending.");
+            }
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 13. View Order Details
+    // ══════════════════════════════════════════════════════════
+
+    private void createShortageOrderUI() {
+        System.out.println("\n--- Create Shortage Order (Best Supplier) ---");
+        int internalItemId = readInt("Internal Item ID from inventory shortage: ");
+        int quantity = readInt("Required quantity: ");
+        String urgentAnswer = readString("Is this urgent? (y/n): ").toLowerCase();
+        boolean isUrgent = urgentAnswer.equals("y") || urgentAnswer.equals("yes");
+
+        try {
+            Supplier bestSupplier = service.findBestSupplierForItem(internalItemId, quantity);
+            if (bestSupplier == null) {
+                System.out.println("No supplier found for this item.");
+                return;
+            }
+
+            SupplierItem item = bestSupplier.getAgreement().findItemByInternalId(internalItemId);
+            System.out.println("Best supplier: [" + bestSupplier.getSupplierId() + "] " + bestSupplier.getName());
+            System.out.println("Catalog#: " + item.getCatalogNumber()
+                    + " | Unit after discount: " + String.format("%.2f", item.getEffectivePrice(quantity))
+                    + " | Total: " + String.format("%.2f", item.getEffectivePrice(quantity) * quantity));
+
+            SupplierOrder order = service.createShortageOrder(internalItemId, quantity, isUrgent);
+            System.out.println("Shortage order created and sent.");
+            printOrderDetails(order);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void createPeriodicOrderUI() {
+        System.out.println("\n--- Create Periodic Fixed-Day Order ---");
+        int supplierId = readInt("Enter fixed-days Supplier ID: ");
+        Supplier supplier = service.getSupplier(supplierId);
+        if (supplier == null) {
+            System.out.println("Supplier not found.");
+            return;
+        }
+        if (supplier.getAgreement() == null) {
+            System.out.println("Supplier has no agreement. Cannot create periodic order.");
+            return;
+        }
+
+        Map<Integer, Integer> internalItemQuantities = new LinkedHashMap<>();
+        while (true) {
+            int internalItemId = readInt("Internal Item ID to order (0 to finish): ");
+            if (internalItemId == 0) {
+                break;
+            }
+            int quantity = readInt("Quantity: ");
+            internalItemQuantities.put(internalItemId, quantity);
+        }
+
+        try {
+            SupplierOrder order = service.createPeriodicOrderForSupplier(supplierId, internalItemQuantities);
+            System.out.println("Periodic order created and sent.");
+            printOrderDetails(order);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void viewOrderDetails() {
+        System.out.println("\n--- View Order Details ---");
+        int orderId = readInt("Enter Order ID: ");
+        SupplierOrder order = service.getOrder(orderId);
+        if (order == null) {
+            System.out.println("Order not found.");
+            return;
+        }
+        printOrderDetails(order);
+    }
+
+    private void printOrderDetails(SupplierOrder order) {
+        Supplier supplier = service.getSupplier(order.getSupplierId());
+        String supplierName = supplier != null ? supplier.getName() : "Unknown";
+        System.out.println("Order ID:          " + order.getOrderId());
+        System.out.println("Supplier:          [" + order.getSupplierId() + "] " + supplierName);
+        System.out.println("Order Date:        " + order.getOrderDate());
+        System.out.println("Expected Delivery: " + (order.getExpectedDeliveryDate() != null ? order.getExpectedDeliveryDate() : "(not set)"));
+        System.out.println("Status:            " + order.getStatus());
+        System.out.println("Urgent:            " + (order.isUrgent() ? "YES" : "No"));
+        System.out.println("Items:");
+        List<OrderItem> orderItems = order.getItems();
+        if (orderItems.isEmpty()) {
+            System.out.println("  (none)");
+        } else {
+            for (OrderItem oi : orderItems) {
+                System.out.println("  Catalog#: " + oi.getCatalogNumber()
+                        + " | " + oi.getItemDescription()
+                        + " | Qty: " + oi.getQuantity()
+                        + " | Unit Price: " + String.format("%.2f", oi.getUnitPrice())
+                        + " | Discount: " + oi.getDiscountPercent() + "%"
+                        + " | Line Total: " + String.format("%.2f", oi.getTotalPrice()));
+            }
+        }
+        System.out.println("Total Price:       " + String.format("%.2f", order.getTotalPrice()));
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 14. View Order History (by Supplier)
+    // ══════════════════════════════════════════════════════════
+
+    private void viewOrderHistory() {
+        System.out.println("\n--- Order History by Supplier ---");
+        int supplierId = readInt("Enter Supplier ID: ");
+        Supplier supplier = service.getSupplier(supplierId);
+        if (supplier == null) {
+            System.out.println("Supplier not found.");
+            return;
+        }
+        List<SupplierOrder> orders = service.getOrdersBySupplier(supplierId);
+        if (orders.isEmpty()) {
+            System.out.println("No orders found for supplier " + supplier.getName() + ".");
+        } else {
+            System.out.println("Orders for " + supplier.getName() + " (" + orders.size() + "):");
+            for (SupplierOrder order : orders) {
+                System.out.println("  [Order #" + order.getOrderId() + "] "
+                        + order.getOrderDate()
+                        + " | Status: " + order.getStatus()
+                        + " | Urgent: " + (order.isUrgent() ? "YES" : "No")
+                        + " | Total: " + String.format("%.2f", order.getTotalPrice()));
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 15. View All Orders
+    // ══════════════════════════════════════════════════════════
+
+    private void viewAllOrders() {
+        List<SupplierOrder> orders = service.getAllOrders();
+        if (orders.isEmpty()) {
+            System.out.println("\nNo orders in the system.");
+            return;
+        }
+        System.out.println("\n--- All Orders (" + orders.size() + ") ---");
+        for (SupplierOrder order : orders) {
+            Supplier supplier = service.getSupplier(order.getSupplierId());
+            String supplierName = supplier != null ? supplier.getName() : "Unknown";
+            System.out.println("  [Order #" + order.getOrderId() + "] "
+                    + supplierName
+                    + " | " + order.getOrderDate()
+                    + " | Status: " + order.getStatus()
+                    + " | Urgent: " + (order.isUrgent() ? "YES" : "No")
+                    + " | Total: " + String.format("%.2f", order.getTotalPrice()));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 16. Cancel Order
+    // ══════════════════════════════════════════════════════════
+
+    private void cancelOrderUI() {
+        System.out.println("\n--- Cancel Order ---");
+        int orderId = readInt("Enter Order ID to cancel: ");
+        try {
+            service.cancelOrder(orderId);
+            System.out.println("Order #" + orderId + " has been cancelled.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 17. Mark Order as Delivered
+    // ══════════════════════════════════════════════════════════
+
+    private void markOrderDeliveredUI() {
+        System.out.println("\n--- Mark Order as Delivered ---");
+        int orderId = readInt("Enter Order ID: ");
+        try {
+            service.markOrderDelivered(orderId);
+            System.out.println("Order #" + orderId + " marked as delivered.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 18. Freeze/Unfreeze Agreement
+    // ══════════════════════════════════════════════════════════
+
+    private void freezeUnfreezeAgreement() {
+        System.out.println("\n--- Freeze/Unfreeze Agreement ---");
+        int supplierId = readInt("Enter Supplier ID: ");
+        if (service.getSupplier(supplierId) == null) {
+            System.out.println("Supplier not found.");
+            return;
+        }
+        try {
+            boolean isFrozen = service.isAgreementFrozen(supplierId);
+            System.out.println("Agreement is currently: " + (isFrozen ? "FROZEN" : "ACTIVE"));
+            System.out.println("1. Freeze Agreement");
+            System.out.println("2. Unfreeze Agreement");
+            System.out.println("0. Cancel");
+            int choice = readInt("Enter your choice: ");
+            switch (choice) {
+                case 1:
+                    service.freezeAgreement(supplierId);
+                    System.out.println("Agreement frozen.");
+                    break;
+                case 2:
+                    service.unfreezeAgreement(supplierId);
+                    System.out.println("Agreement unfrozen.");
+                    break;
+                case 0:
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 19. Add Item to Agreement (direct access)
+    // ══════════════════════════════════════════════════════════
+
+    private void addItemDirect() {
+        System.out.println("\n--- Add Item to Agreement ---");
+        int id = readInt("Enter Supplier ID: ");
+        if (service.getSupplier(id) == null) {
+            System.out.println("Supplier not found.");
+            return;
+        }
+        if (service.getAgreement(id) == null) {
+            System.out.println("Supplier has no agreement. Please create one first (option 7).");
+            return;
+        }
+        try {
+            int catalogNum = readInt("Supplier Catalog Number: ");
+            int internalId = readInt("Internal Item ID: ");
+            String desc = readString("Item Description: ");
+            double price = readDouble("Price per unit: ");
+            String manufacturer = readString("Manufacturer: ");
+            service.addItemToAgreement(id, catalogNum, internalId, desc, price, manufacturer);
+            System.out.println("Item added to agreement successfully.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
