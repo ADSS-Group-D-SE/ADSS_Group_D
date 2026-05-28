@@ -34,7 +34,7 @@ public class ProductDL {
     public ProductDL(String name, String cat, String main_id, String sub_id, String subsub_id, String loc, String manu,
                      int on_shelves, int on_stock, double price_to_consumer, double price_to_supply,int minAmountAlert)
     {
-        if(main_id == null || sub_id == null || subsub_id ==null || main_id.isEmpty() || sub_id.isEmpty()||subsub_id.isEmpty())
+        if(main_id == null || sub_id == null  || main_id.isEmpty() || sub_id.isEmpty()||(subsub_id!= null && subsub_id.isEmpty()))
             throw new IllegalArgumentException("Product construction:" +cat+" ,Bad categories was sent.");
 
         this.tags = new HashMap<>();
