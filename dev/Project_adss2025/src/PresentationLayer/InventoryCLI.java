@@ -377,10 +377,18 @@ public class InventoryCLI {
 
         System.out.print("Enter Catalog Number: ");
         String catalogNumber = scanner.nextLine();
+        String subsubId = null;
+        String choice = "";
 
         CategorySL main = this.HandleMainCategoryChoice();
         CategorySL sub = this.HandleSubCategoryChoice(main);
-        CategorySL subsub = this.HandleSubCategoryChoice(sub);
+        System.out.println("Do you wish to add a sub-sub category? (y/n)");
+
+        do {
+            choice = scanner.nextLine();
+        }while(!choice.equals("y") && !choice.equals("n"));
+        if(choice.equals("y")) // allows adding product with only main and sub categories
+            subsubId= this.HandleSubCategoryChoice(sub).Id;
 
         System.out.print("Enter Storage Location (e.g., A-12): ");
         String location = scanner.nextLine();
@@ -395,7 +403,7 @@ public class InventoryCLI {
 
         System.out.println("\n[*] Sending data to system...");
 
-        Response<String> res = this.productServices.addProduct(name, catalogNumber, main.Id,sub.Id,subsub.Id, location,manu,
+        Response<String> res = this.productServices.addProduct(name, catalogNumber, main.Id,sub.Id,subsubId, location,manu,
                     amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
 
         if (res.isError()) {
