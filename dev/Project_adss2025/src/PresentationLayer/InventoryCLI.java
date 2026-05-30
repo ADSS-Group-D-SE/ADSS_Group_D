@@ -210,9 +210,9 @@ public class InventoryCLI {
     private void displayAllProducts() {
         Response<List<ProductSL>> res = this.productServices.getAllProducts();
 
-        int tableWidth = 170;
+        int tableWidth = 190;
         System.out.println("\n" + "=".repeat(tableWidth));
-        System.out.printf("| %-170s |%n", "                                                        FULL INVENTORY DETAILED REPORT");
+        System.out.printf("| %-190s |%n", "                                                        FULL INVENTORY DETAILED REPORT");
         System.out.println("=".repeat(tableWidth));
 
         if (res.isError()) {
@@ -221,16 +221,17 @@ public class InventoryCLI {
             List<ProductSL> products = res.getReturnValue();
 
             if (products == null || products.isEmpty()) {
-                System.out.printf("| %-170s |%n", "No products found in the system.");
+                System.out.printf("| %-190s |%n", "No products found in the system.");
             } else {
-                System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7s | %-7s | %-15s | %-15s | %-8s | %-12s | %-15s | %-18s |%n",
-                        "Catalog #", "Name", "Loc.", "Manufacturer", "Shelf", "Stock", "C.Price(before)", "S.Price(before)", "S.Disc","P.Disc", "Main Cat", "Sub Cat", "SubSub");
+                System.out.printf("| %-10s | %-18s | %-15s | %-8s | %-15s | %-7s | %-7s | %-15s | %-15s | %-8s | %-12s | %-15s | %-15s | %-18s |%n",
+                        "Catalog #", "Name", "Warehouse", "Loc.", "Manufacturer", "Shelf", "Stock", "C.Price(before)", "S.Price(before)", "S.Disc","P.Disc", "Main Cat", "Sub Cat", "SubSub");
                 System.out.println("-".repeat(tableWidth));
 
                 for (ProductSL p : products) {
-                    System.out.printf("| %-10s | %-18s | %-8s | %-15s | %-7d | %-7d | %-15.2f | %-15.2f | %-7.1f%% | %-7.1f%% | %-12s | %-15s | %-18s |%n",
+                    System.out.printf("| %-10s | %-18s | %-15s | %-8s | %-15s | %-7d | %-7d | %-15.2f | %-15.2f | %-7.1f%% | %-7.1f%% | %-12s | %-15s | %-18s |%n",
                             p.catalog_number,
                             truncate(p.name, 18),
+                            truncate(p.warehouse != null ? p.warehouse.getName() : "N/A", 15),
                             p.location,
                             truncate(p.manufacturer, 15),
                             p.amount_on_shelves,
@@ -238,7 +239,7 @@ public class InventoryCLI {
                             p.price_to_consumer,
                             p.price_to_supply,
                             p.supplier_discount * 100,
-                            p.product_discount *100,
+                            p.getTotalProductDiscount() * 100,
                             truncate(p.main_category_id, 12),
                             truncate(p.sub_category_id, 15),
                             truncate(p.subsub_category_id, 18)
@@ -386,9 +387,12 @@ public class InventoryCLI {
 
         do {
             choice = scanner.nextLine();
-        }while(!choice.equals("y") && !choice.equals("n"));
-        if(choice.equals("y")) // allows adding product with only main and sub categories
-            subsubId= this.HandleSubCategoryChoice(sub).Id;
+        } while(!choice.equals("y") && !choice.equals("n"));
+        if(choice.equals("y"))
+            subsubId = this.HandleSubCategoryChoice(sub).Id;
+
+        System.out.print("Enter Warehouse Name (e.g., Main Warehouse): ");
+        String warehouseName = scanner.nextLine();
 
         System.out.print("Enter Storage Location (e.g., A-12): ");
         String location = scanner.nextLine();
@@ -403,18 +407,17 @@ public class InventoryCLI {
 
         System.out.println("\n[*] Sending data to system...");
 
-        Response<String> res = this.productServices.addProduct(name, catalogNumber, main.Id,sub.Id,subsubId, location,manu,
-                    amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
+        Response<String> res = this.productServices.addProduct(name, catalogNumber, main.Id, sub.Id, subsubId, warehouseName, location, manu,
+                amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
 
         if (res.isError()) {
-                System.out.println("\n[!] FAILURE: Could not add product.");
-                System.out.println("Reason: " + res.getErrorMsg());
-                throw new RuntimeException();
+            System.out.println("\n[!] FAILURE: Could not add product.");
+            System.out.println("Reason: " + res.getErrorMsg());
+            throw new RuntimeException();
         }
         else {
-                System.out.println("\n[V] SUCCESS: Product '" + name + "' added successfully!");
+            System.out.println("\n[V] SUCCESS: Product '" + name + "' added successfully!");
         }
-
         System.out.println("-----------------------------------------");
     }
 
@@ -473,7 +476,6 @@ public class InventoryCLI {
 
 
     private void handleUpdateProduct() {
-
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Update Existing Product");
         System.out.println("-----------------------------------------");
@@ -481,18 +483,18 @@ public class InventoryCLI {
         System.out.print("Enter the Catalog Number of the product to update: ");
         String catalogNumber = scanner.nextLine();
 
-
         System.out.println("\nWhat would you like to update?");
         System.out.println("1. Product Name");
-        System.out.println("2. Storage Location");
-        System.out.println("3. Consumer Prices");
-        System.out.println("4. Supply Prices");
-        System.out.println("5. Shelves Amounts");
-        System.out.println("6. Stock Amounts");
-        System.out.println("7. Minimum Amount Alert");
+        System.out.println("2. Warehouse Name");
+        System.out.println("3. Storage Location");
+        System.out.println("4. Consumer Prices");
+        System.out.println("5. Supply Prices");
+        System.out.println("6. Shelves Amounts");
+        System.out.println("7. Stock Amounts");
+        System.out.println("8. Minimum Amount Alert");
         System.out.println("0. Cancel and return to main menu");
 
-        int updateChoice = getIntInput("\nPlease choose an option (0-7): ");
+        int updateChoice = getIntInput("\nPlease choose an option (0-8): ");
 
         switch (updateChoice){
             case 0:
@@ -502,68 +504,65 @@ public class InventoryCLI {
             case 1:
                 System.out.print("Enter New Name: ");
                 String name = scanner.nextLine();
-                this.productServices.update(catalogNumber, name, null, null, null, null, null, null);
+                this.productServices.update(catalogNumber, name, null, null, null, null, null, null, null);
                 break;
 
             case 2:
-                System.out.print("Enter New Storage Location: ");
-                String location = scanner.nextLine();
-                this.productServices.update(catalogNumber, null, location, null, null, null, null, null);
+                System.out.print("Enter New Warehouse Name: ");
+                String warehouse = scanner.nextLine();
+                this.productServices.update(catalogNumber, null, warehouse, null, null, null, null, null, null);
                 break;
 
             case 3:
-                System.out.print("Enter New Consumer Price: ");
-                double consumerPrice = scanner.nextDouble();
-                scanner.nextLine();
-                this.productServices.update(catalogNumber, null, null, consumerPrice, null, null, null, null);
+                System.out.print("Enter New Storage Location: ");
+                String location = scanner.nextLine();
+                this.productServices.update(catalogNumber, null, null, location, null, null, null, null, null);
                 break;
 
             case 4:
-                System.out.print("Enter New Supply Price: ");
-                double supplyPrice = scanner.nextDouble();
-                scanner.nextLine();
-                this.productServices.update(catalogNumber, null, null, null, supplyPrice, null, null, null);
+                double consumerPrice = getDoubleInput("Enter New Consumer Price: ");
+                this.productServices.update(catalogNumber, null, null, null, consumerPrice, null, null, null, null);
                 break;
 
             case 5:
-                System.out.print("Enter New Shelves Amount: ");
-                int shelvesAmount = scanner.nextInt();
-                scanner.nextLine();
-                this.productServices.update(catalogNumber, null, null, null, null, shelvesAmount, null, null);
+                double supplyPrice = getDoubleInput("Enter New Supply Price: ");
+                this.productServices.update(catalogNumber, null, null, null, null, supplyPrice, null, null, null);
                 break;
 
             case 6:
-                System.out.print("Enter New Stock Amount: ");
-                int stockAmount = scanner.nextInt();
-                scanner.nextLine();
-                this.productServices.update(catalogNumber, null, null, null, null, null, stockAmount, null);
+                int shelvesAmount = getIntInput("Enter New Shelves Amount: ");
+                this.productServices.update(catalogNumber, null, null, null, null, null, shelvesAmount, null, null);
                 break;
 
             case 7:
-                System.out.print("Enter New Minimum Amount Alert: ");
-                int minAlert = scanner.nextInt();
-                scanner.nextLine();
-                this.productServices.update(catalogNumber, null, null, null, null, null, null, minAlert);
+                int stockAmount = getIntInput("Enter New Stock Amount: ");
+                this.productServices.update(catalogNumber, null, null, null, null, null, null, stockAmount, null);
                 break;
 
+            case 8:
+                int minAlert = getIntInput("Enter New Minimum Amount Alert: ");
+                this.productServices.update(catalogNumber, null, null, null, null, null, null, null, minAlert);
+                break;
 
             default:
-                System.out.println("Invalid input. Please choose a number between 0 and 7.");
+                System.out.println("Invalid input. Please choose a number between 0 and 8.");
                 break;
-
         }
     }
 
     private void catDiscount()
     {
         CategorySL c = this.HandleMainCategoryChoice();
-        double discountPercentage=-1;
+        double discountPercentage = -1;
 
         do {
-            discountPercentage = getDoubleInput("Enter Discount Percentage (from 0 to 1 eg 0.5 for 50%):");
-        }while(discountPercentage <0 || discountPercentage >1);
+            discountPercentage = getDoubleInput("Enter Discount Percentage (from 0 to 1 eg 0.5 for 50%): ");
+        } while (discountPercentage < 0 || discountPercentage > 1);
 
-        Response<String> res = this.categoryServices.SetCategoryDiscount(c.Id, discountPercentage);
+        System.out.print("Enter Promotion End Date (DD/MM/YYYY): ");
+        String endDate = scanner.nextLine();
+
+        Response<String> res = this.categoryServices.SetCategoryDiscount(c.Id, discountPercentage, endDate);
 
         if (res.isError()) {
             System.out.println("[!] FAILURE: " + res.getErrorMsg());
@@ -574,17 +573,21 @@ public class InventoryCLI {
         }
         System.out.println("-----------------------------------------");
     }
+
     private void productDiscount()
     {
-        System.out.println("Please enter catalog number:");
+        System.out.print("Please enter catalog number: ");
         String cat_number = scanner.nextLine();
-        double discountPercentage=-1;
+        double discountPercentage = -1;
 
         do {
-            discountPercentage = getDoubleInput("Enter Discount Percentage (from 0 to 1 eg 0.5 for 50%):");
-        }while(discountPercentage <0 || discountPercentage >1);
+            discountPercentage = getDoubleInput("Enter Discount Percentage (from 0 to 1 eg 0.5 for 50%): ");
+        } while (discountPercentage < 0 || discountPercentage > 1);
 
-        Response<String> res = this.productServices.SetProductDiscount(cat_number, discountPercentage);
+        System.out.print("Enter Promotion End Date (DD/MM/YYYY): ");
+        String endDate = scanner.nextLine();
+
+        Response<String> res = this.productServices.SetProductDiscount(cat_number, discountPercentage, endDate);
 
         if (res.isError()) {
             System.out.println("[!] FAILURE: " + res.getErrorMsg());
@@ -595,6 +598,8 @@ public class InventoryCLI {
         }
         System.out.println("-----------------------------------------");
     }
+
+
     private void handleDiscountProduct() {
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Add Product/Category Discount");
@@ -778,7 +783,7 @@ public class InventoryCLI {
         String catName = "";
         Response<String> res;
         do {
-            choice = Integer.parseInt(scanner.nextLine());
+            choice = getIntInput("Please enter your choice: ");
             switch (choice) {
                 case 1:
                     System.out.println("Enter category name:");
@@ -786,8 +791,13 @@ public class InventoryCLI {
 
 
                     System.out.println("Enter discount (from 0 to 1 , eg 0.5 for 50%):");
-                    res = this.categoryServices.CreateCategory(catName, scanner.nextDouble());
+                    double dicount = scanner.nextDouble();
                     scanner.nextLine();
+                    System.out.print("Enter discount end date (DD/MM/YYYY): ");
+                    String endDate = scanner.nextLine();
+
+                    res = this.categoryServices.CreateCategory(catName, dicount,endDate);
+
                     if (res.isError()) {
                         System.out.println("[!] ERROR: " + res.getErrorMsg());
                         throw new RuntimeException();
@@ -800,7 +810,8 @@ public class InventoryCLI {
                     if (c == null) break;
                     System.out.println("Enter Sub-category name:");
                     catName = scanner.nextLine();
-                    res = this.categoryServices.CreateSubCategory(catName, 0, c.Id); //subcategory does not hold discount
+
+                    res = this.categoryServices.CreateSubCategory(catName, 0, null,c.Id); //subcategory does not hold discount
                     if (res.isError()) {
                         System.out.println("[!] ERROR: " + res.getErrorMsg());
                         throw new RuntimeException();
@@ -815,7 +826,7 @@ public class InventoryCLI {
                     if (sub == null) break;
                     System.out.println("Enter Sub-Sub-category name:");
                     catName = scanner.nextLine();
-                    res = this.categoryServices.CreateSubCategory(catName, 0, sub.Id); //subcategory does not hold discount
+                    res = this.categoryServices.CreateSubCategory(catName, 0,null, sub.Id); //subcategory does not hold discount
                     if (res.isError()) {
                         System.out.println("[!] ERROR: " + res.getErrorMsg());
                         throw new RuntimeException();
@@ -887,332 +898,185 @@ public class InventoryCLI {
     {
         Response<String> res;
         try {
+            String defaultEndDate = "31/12/2030";
 
-            res = this.categoryServices.CreateCategory("Beverages", 0.05);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
-
+            res = this.categoryServices.CreateCategory("Beverages", 0.05, defaultEndDate);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String beveragesId = res.getReturnValue();
 
-            res = this.categoryServices.CreateCategory("Bakery", 0.075);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
-
+            res = this.categoryServices.CreateCategory("Bakery", 0.075, defaultEndDate);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String bakeryId = res.getReturnValue();
 
-            res = this.categoryServices.CreateCategory("Household", 0.1);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateCategory("Household", 0.1, defaultEndDate);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String householdId = res.getReturnValue();
 
+
+            res = this.categoryServices.CreateCategory("aaa", 0.0, defaultEndDate);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+            String aaa = res.getReturnValue();
             /*
             Subcategories
              */
-            res =this.categoryServices.CreateSubCategory("Soft Drinks", 0, beveragesId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
 
+            res = this.categoryServices.CreateSubCategory("bbb", 0, defaultEndDate, aaa);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+            String bbb = res.getReturnValue();
+
+
+            res = this.categoryServices.CreateSubCategory("Soft Drinks", 0, defaultEndDate, beveragesId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinksId = res.getReturnValue();
 
-            res =this.categoryServices.CreateSubCategory("Juices", 0, beveragesId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Juices", 0, defaultEndDate, beveragesId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String juicesId = res.getReturnValue();
 
-
-            res = this.categoryServices.CreateSubCategory("Bread", 0, bakeryId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Bread", 0, defaultEndDate, bakeryId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String breadId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("Pastries", 0, bakeryId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Pastries", 0, defaultEndDate, bakeryId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String pastriesId = res.getReturnValue();
 
-            res =this.categoryServices.CreateSubCategory("Cleaning", 0, householdId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Cleaning", 0, defaultEndDate, householdId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String cleaningId = res.getReturnValue();
 
-            res =this.categoryServices.CreateSubCategory("Laundry", 0, householdId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Laundry", 0, defaultEndDate, householdId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundryId = res.getReturnValue();
 
             /*
-        SubSubCategories
-        Created the same way, with subcategory id as rootId
-         */
-            res = this.categoryServices.CreateSubCategory("250 ml", 0, softDrinksId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            SubSubCategories
+             */
+            res = this.categoryServices.CreateSubCategory("250 ml", 0, defaultEndDate, softDrinksId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinks250mlId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("1 L", 0, softDrinksId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, softDrinksId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinks1LId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("500 ml", 0, juicesId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("500 ml", 0, defaultEndDate, juicesId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String juices500mlId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("1 L", 0, juicesId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, juicesId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String juices1LId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("Small Loaf", 0, breadId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Small Loaf", 0, defaultEndDate, breadId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String breadSmallLoafId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("Large Loaf", 0, breadId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Large Loaf", 0, defaultEndDate, breadId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String breadLargeLoafId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("Single", 0, pastriesId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Single", 0, defaultEndDate, pastriesId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String pastriesSingleId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("Pack of 4", 0, pastriesId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("Pack of 4", 0, defaultEndDate, pastriesId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String pastriesPack4Id = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("500 ml", 0, cleaningId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("500 ml", 0, defaultEndDate, cleaningId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String cleaning500mlId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("1 L", 0, cleaningId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, cleaningId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String cleaning1LId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("1 L", 0, laundryId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, laundryId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundry1LId = res.getReturnValue();
 
-            res = this.categoryServices.CreateSubCategory("2 L", 0, laundryId);
-            if(res.isError())
-                throw new RuntimeException(res.getErrorMsg());
+
+            res = this.categoryServices.CreateSubCategory("2 L", 0, defaultEndDate, laundryId);
+            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundry2LId = res.getReturnValue();
-
-
             Response<String> pres;
 
             pres = this.productServices.addProduct(
-                    "Coca Cola",
-                    "BEV-001",
-                    beveragesId,
-                    softDrinksId,
-                    softDrinks250mlId,
-                    "A-23",
-                    "Coca Cola",
-                    30,
-                    120,
-                    2.5,
-                    4.5,
-                    20
+                    "Coca Cola", "BEV-001", beveragesId, softDrinksId, softDrinks250mlId,
+                    "Main Warehouse", "A-23", "Coca Cola", 30, 120, 2.5, 4.5, 20
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Sprite",
-                    "BEV-002",
-                    beveragesId,
-                    softDrinksId,
-                    softDrinks1LId,
-                    "A-56",
-                    "Coca Cola",
-                    25,
-                    80,
-                    4.0,
-                    6.5,
-                    15
+                    "Sprite", "BEV-002", beveragesId, softDrinksId, softDrinks1LId,
+                    "Main Warehouse", "A-56", "Coca Cola", 25, 80, 4.0, 6.5, 15
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Orange Juice",
-                    "BEV-003",
-                    beveragesId,
-                    juicesId,
-                    juices1LId,
-                    "d-23",
-                    "Tropicana",
-                    20,
-                    60,
-                    5.0,
-                    8.0,
-                    12
+                    "Orange Juice", "BEV-003", beveragesId, juicesId, juices1LId,
+                    "Main Warehouse", "d-23", "Tropicana", 20, 60, 5.0, 8.0, 12
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Apple Juice",
-                    "BEV-004",
-                    beveragesId,
-                    juicesId,
-                    juices500mlId,
-                    "g-4",
-                    "Prigat",
-                    18,
-                    50,
-                    3.5,
-                    6.0,
-                    10
+                    "Apple Juice", "BEV-004", beveragesId, juicesId, juices500mlId,
+                    "Main Warehouse", "g-4", "Prigat", 18, 50, 3.5, 6.0, 10
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "White Bread",
-                    "BAK-001",
-                    bakeryId,
-                    breadId,
-                    breadLargeLoafId,
-                    "w-65",
-                    "Angel",
-                    15,
-                    40,
-                    4.0,
-                    6.5,
-                    10
+                    "White Bread", "BAK-001", bakeryId, breadId, breadLargeLoafId,
+                    "Main Warehouse", "w-65", "Angel", 15, 40, 4.0, 6.5, 10
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Whole Wheat Bread",
-                    "BAK-002",
-                    bakeryId,
-                    breadId,
-                    breadSmallLoafId,
-                    "e-5",
-                    "Angel",
-                    12,
-                    35,
-                    3.5,
-                    5.8,
-                    8
+                    "Whole Wheat Bread", "BAK-002", bakeryId, breadId, breadSmallLoafId,
+                    "Main Warehouse", "e-5", "Angel", 12, 35, 3.5, 5.8, 8
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Butter Croissant",
-                    "BAK-003",
-                    bakeryId,
-                    pastriesId,
-                    pastriesSingleId,
-                    "c-23",
-                    "Bakery House",
-                    20,
-                    30,
-                    2.0,
-                    3.8,
-                    10
+                    "Butter Croissant", "BAK-003", bakeryId, pastriesId, pastriesSingleId,
+                    "Main Warehouse", "c-23", "Bakery House", 20, 30, 2.0, 3.8, 10
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Chocolate Muffin Pack",
-                    "BAK-004",
-                    bakeryId,
-                    pastriesId,
-                    pastriesPack4Id,
-                    "A-14",
-                    "Bakery House",
-                    10,
-                    25,
-                    6.0,
-                    10.0,
-                    6
+                    "Chocolate Muffin Pack", "BAK-004", bakeryId, pastriesId, pastriesPack4Id,
+                    "Main Warehouse", "A-14", "Bakery House", 10, 25, 6.0, 10.0, 6
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Dish Soap",
-                    "HOU-001",
-                    householdId,
-                    cleaningId,
-                    cleaning500mlId,
-                    "s-14",
-                    "Fairy",
-                    16,
-                    45,
-                    5.5,
-                    8.9,
-                    10
+                    "Dish Soap", "HOU-001", householdId, cleaningId, cleaning500mlId,
+                    "Main Warehouse", "s-14", "Fairy", 16, 45, 5.5, 8.9, 10
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Floor Cleaner",
-                    "HOU-002",
-                    householdId,
-                    cleaningId,
-                    cleaning1LId,
-                    "k-23",
-                    "Sano",
-                    14,
-                    40,
-                    7.0,
-                    11.5,
-                    8
+                    "Floor Cleaner", "HOU-002", householdId, cleaningId, cleaning1LId,
+                    "Main Warehouse", "k-23", "Sano", 14, 40, 7.0, 11.5, 8
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Laundry Detergent",
-                    "HOU-003",
-                    householdId,
-                    laundryId,
-                    laundry2LId,
-                    "y-4",
-                    "Ariel",
-                    10,
-                    35,
-                    12.0,
-                    18.5,
-                    7
+                    "Laundry Detergent", "HOU-003", householdId, laundryId, laundry2LId,
+                    "Main Warehouse", "y-4", "Ariel", 10, 35, 12.0, 18.5, 7
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
             pres = this.productServices.addProduct(
-                    "Fabric Softener",
-                    "HOU-004",
-                    householdId,
-                    laundryId,
-                    laundry1LId,
-                    "w-7",
-                    "Lenor",
-                    11,
-                    28,
-                    8.0,
-                    13.0,
-                    6
+                    "Fabric Softener", "HOU-004", householdId, laundryId, laundry1LId,
+                    "Main Warehouse", "w-7", "Lenor", 11, 28, 8.0, 13.0, 6
             );
-            if(pres.isError())
-                throw new RuntimeException(pres.getErrorMsg());
+            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+
+            System.out.println("[V] Test data loaded successfully!");
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             System.out.println("Error creating data. " + e.getMessage());
         }
     }

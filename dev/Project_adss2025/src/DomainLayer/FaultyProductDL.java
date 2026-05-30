@@ -1,5 +1,7 @@
 package DomainLayer;
 
+import CrossCuttingPackage.ShelfLocation;
+
 import java.time.LocalDateTime;
 
 public class FaultyProductDL {
@@ -8,7 +10,7 @@ public class FaultyProductDL {
 
     private final String name;
     private final String catalog_number;
-    private String location;
+    private ShelfLocation location;
     private String description;
     private LocalDateTime dateOnReport;
 
@@ -29,7 +31,7 @@ public class FaultyProductDL {
         if (!normalizedLocation.matches(locationPattern)) {
             throw new IllegalArgumentException("Invalid location format. Expected format: Letter-Number (e.g., A-12).");
         }
-        this.location = location;
+        this.location = new ShelfLocation(location);
 
         this.description = description;
         this.dateOnReport = reportTime;
@@ -52,7 +54,7 @@ public class FaultyProductDL {
         return catalog_number;
     }
 
-    public String getLocation() {
+    public ShelfLocation getLocation() {
         return location;
     }
 

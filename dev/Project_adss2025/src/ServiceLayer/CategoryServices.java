@@ -33,11 +33,11 @@ public class CategoryServices {
     The service for category creation, returns: Response with new category Id if created successfully.
     Else: return a response with Error string.
      */
-    public Response<String> CreateCategory(String name,double discountPre)
+    public Response<String> CreateCategory(String name,double discountPre,String date)
     {
         Response<String> res;
         try {
-            res = new Response<>(null,this.cFacade.AddCategory(name, discountPre));
+            res = new Response<>(null,this.cFacade.AddCategory(name, discountPre,date));
         } catch (Exception e) {
             res = new Response<>(e.getMessage());
         }
@@ -48,11 +48,11 @@ public class CategoryServices {
    The service for Sub-category creation, returns: Response with new category Id if created successfully.
    Else: return a response with Error string.
     */
-    public Response<String> CreateSubCategory(String name,double discountPre,String rootId)
+    public Response<String> CreateSubCategory(String name,double discountPre,String date,String rootId)
     {
         Response<String> res;
         try {
-            res = new Response<>(null,this.cFacade.AddSubcategory(name, discountPre,rootId));
+            res = new Response<>(null,this.cFacade.AddSubcategory(name, discountPre,date, rootId));
         } catch (Exception e) {
             res = new Response<>(e.getMessage());
         }
@@ -94,12 +94,12 @@ public class CategoryServices {
      Returns response: with null value when op was a success.
      else:Response with an error msg.
      **/
-    public Response<String> SetCategoryDiscount(String category_id,double discount)
+    public Response<String> SetCategoryDiscount(String category_id,double discount, String date)
     {
         Response<String> res = null;
         try
         {
-            this.cFacade.SetCatDiscount(category_id,discount);
+            this.cFacade.addCatDiscount(category_id,discount,date);
             res = new Response<>(null,null);
         }
         catch (Exception e)
