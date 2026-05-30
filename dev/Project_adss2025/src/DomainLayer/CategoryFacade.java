@@ -1,15 +1,16 @@
 package DomainLayer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
+import CrossCuttingPackage.Promotion;
+import CrossCuttingPackage.PromotionScope;
+
+import java.util.*;
 
 public class CategoryFacade {
 
     private static HashMap<String,CategoryDL> categories;
     private final List<CategoryDL> mainCategories;
 
+    private static int catPromoCounter = 1;
     /*
     Id method for categories
     NAME-NAME SUB- NAME SUBSUB
@@ -28,7 +29,7 @@ public class CategoryFacade {
      * @param category_id
      * @return Corresponding category object.
      */
-    public  CategoryDL FindCategoryById(String category_id)
+    public CategoryDL FindCategoryById(String category_id)
     {
         CategoryDL res = categories.get(category_id);
         if (res == null)
@@ -37,23 +38,36 @@ public class CategoryFacade {
         return res;
     }
 
+
+
+    private int generateNextId() {
+        return catPromoCounter++;
+    }
+
     /**
      *
      * @param name category name, cannot pe empty.
      * @param discountPre = a double between 0 to 1.
      * @return new categroy ID
      */
-    public String AddCategory(String name,double discountPre)
-    {
-        if(name == null || name.isEmpty())
-            throw new IllegalArgumentException("CategoryFacade - Create Category:Name is invalid.");
-        if(categories.get(name) != null)
-            throw new IllegalArgumentException ("CategoryFacade - Create Category:Name " + name +" already taken.");
-        if(discountPre <0 || discountPre>1)
-            throw new IllegalArgumentException ("CategoryFacade - Create Category:Discount is invalid.");
 
-        CategoryDL toAdd = new CategoryDL(name,name,new ArrayList<>(),discountPre, CategoryDL.CategoryType.Main); // send as null as we create a main category, also an empty list to start.
-        categories.put(name,toAdd);
+
+    public String AddCategory(String name, double discountPre,String date) {
+        if (name == null || name.isEmpty())
+            throw new IllegalArgumentException("CategoryFacade - Create Category:Name is invalid.");
+        if (categories.get(name) != null)
+            throw new IllegalArgumentException("CategoryFacade - Create Category:Name " + name + " already taken.");
+
+        Promotion initialPromo = null;
+        if (discountPre > 0) {
+            if (discountPre > 1) throw new IllegalArgumentException("CategoryFacade - Create Category:Discount is invalid.");
+            String promoId = ""+(generateNextId());
+            initialPromo = new Promotion(promoId, discountPre, date, PromotionScope.CATEGORY);
+        }
+
+        CategoryDL toAdd = new CategoryDL(name, name, new ArrayList<>(), initialPromo, CategoryDL.CategoryType.Main);
+
+        categories.put(name, toAdd);
         this.mainCategories.add(toAdd); // add to main categories list.
         return name;
     }
@@ -67,7 +81,7 @@ public class CategoryFacade {
      * @param rootId
      * @return
      */
-    public String AddSubcategory(String name,double discountPre,String rootId)
+    public String AddSubcategory(String name,double discountPre,String date,String rootId)
     {
         if(name == null || name.isEmpty())
             throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Name is invalid.");
@@ -86,7 +100,14 @@ public class CategoryFacade {
             case Subsub -> throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Cannot create a sub category to a subsub category.");
         }
 
-        CategoryDL toAdd = new CategoryDL(name,newId,new ArrayList<>(),discountPre,newType);
+        Promotion initialPromo = null;
+        if (discountPre > 0) {
+            if (discountPre > 1) throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Discount is invalid.");
+            String promoId = "" + (generateNextId() );
+            initialPromo = new Promotion(promoId, discountPre, date, PromotionScope.CATEGORY);
+        }
+
+        CategoryDL toAdd = new CategoryDL(name,newId,new ArrayList<>(),initialPromo,newType);
 
         categories.put(toAdd.getCategory_id(),toAdd);
         root.AddSubcategory(toAdd);
@@ -114,13 +135,19 @@ public class CategoryFacade {
     /**
      Method that allows setting category discount, Looks for the category in the facade and updates its discount modifier.
      **/
-    public void SetCatDiscount(String cat_id,double discount)
+    public void addCatDiscount(String cat_id,double discount,String date)
     {
         if(discount < 0 || discount > 1)
             throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:"+discount);
 
         CategoryDL cat = FindCategoryById(cat_id);
-        cat.setDiscount_pre(discount);
+        Promotion initialPromo = null;
+        if (discount > 0) {
+            if (discount > 1) throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Discount is invalid.");
+            String promoId = "" + (catPromoCounter++);
+            initialPromo = new Promotion(promoId, discount, date, PromotionScope.CATEGORY);
+        }
+        cat.addPromotion(initialPromo);
     }
 
     /**
@@ -130,9 +157,23 @@ public class CategoryFacade {
     public static Double GetCategoryDiscount(String id)
     {
         CategoryDL cat = categories.get(id);
-        if(cat!=null)
-            return cat.getDiscount_pre();
-
+        if(cat !=null) {
+            cat.removeExpiredPromotions();
+            return cat.getTotalCategoryDiscount();
+        }
         return null;
+    }
+
+    /**
+    Method that returns a list of all categoryDL in facade.
+     CAN ADD A CONDITION to filter all subsub categories in the future
+     **/
+    public List<CategoryDL> GetAllCategories() {
+        List<CategoryDL> cats = new ArrayList<>();
+        for(Map.Entry<String,CategoryDL> en:categories.entrySet())
+        {
+            cats.add(en.getValue());
+        }
+        return cats;
     }
 }

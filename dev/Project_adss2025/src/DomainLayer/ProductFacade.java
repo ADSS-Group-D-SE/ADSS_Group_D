@@ -1,6 +1,11 @@
 package DomainLayer;
 
 
+import CrossCuttingPackage.Notification;
+import CrossCuttingPackage.Promotion;
+import CrossCuttingPackage.PromotionScope;
+import CrossCuttingPackage.Report;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -9,19 +14,24 @@ import java.util.*;
 public class ProductFacade {
     private HashMap<String, ProductDL> products;
     private HashMap<Integer,FaultyProductDL> faultyProducts;
-    private HashMap<String,List<ProductDL>> mapByCategory;
 
     private int faultyProductsIdCounter=0;
+    private int promotionIdCounter = 1;
+
+
 
     public ProductFacade(){
         products=new HashMap<String, ProductDL>();
         faultyProducts=new HashMap<Integer, FaultyProductDL>();
 
-        mapByCategory = new HashMap<>();
     }
 
     private int generateNextId() {
         return faultyProductsIdCounter++;
+    }
+
+    private int generatePromotionId() {
+        return promotionIdCounter++;
     }
 
     public List<ProductDL> getAllProducts() {
@@ -46,23 +56,18 @@ public class ProductFacade {
      * @return the newly created object
      * @throws Exception Exception if the product does  exist in the system or if an error occurs while creating the product
      */
-    public String addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
-                                String location,String manu, int amountOnShelves, int amountOnStock,
-                                double consumerPrice, double supplyPrice, int minAmount) throws Exception {
+    public String addProduct(String name, String catalogNumber, String main_id, String sub_id, String subsub_id,
+                             String warehouseName, String location, String manu, int amountOnShelves, int amountOnStock,
+                             double consumerPrice, double supplyPrice, int minAmount) throws Exception {
 
-
-        if(this.products.get(catalogNumber)!=null){
+        if(this.products.get(catalogNumber) != null){
             throw new Exception("Product already exists in the system with catalog number: " + catalogNumber);
         }
-        ProductDL product=new ProductDL(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,amountOnShelves, amountOnStock, consumerPrice, supplyPrice,minAmount);
 
+        ProductDL product = new ProductDL(name, catalogNumber, main_id, sub_id, subsub_id, warehouseName, location, manu, amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
 
-        products.put(catalogNumber,product);
-        mapByCategory.putIfAbsent(main_id,new ArrayList<>()); // create a new list for the category if its new to the data.
-        mapByCategory.get(main_id).add(product); // saves in the category map as well.
-
+        products.put(catalogNumber, product);
         return product.getCatalog_number();
-
     }
 
 
@@ -80,17 +85,22 @@ public class ProductFacade {
     /**
     Method that calculates and returns a products final price based on its discounts.
      **/
-    public double GetProductPrice(String catalog_number)
-    {
+    public double GetProductPrice(String catalog_number) {
         ProductDL p = FindProductByID(catalog_number);
 
-        double res = p.getPrice_to_consumer()*(1-p.getProduct_discount()); //initial discount
+        p.removeExpiredPromotions();
+
+
+        double finalPrice = p.getPrice_to_consumer();
+
+        finalPrice = finalPrice * (1 - p.getTotalProductDiscount());
 
         Double cat_discount = CategoryFacade.GetCategoryDiscount(p.getMain_category_id());
-        if(cat_discount !=null)
-            res = res *(1-cat_discount);
+        if (cat_discount != null) {
+            finalPrice = finalPrice * (1 - cat_discount);
+        }
 
-        return res;
+        return finalPrice;
     }
 
     /**
@@ -146,7 +156,7 @@ public class ProductFacade {
     Method that iterates on the faulty product map, and adds each entry that fit the entered date range.
     construct a string reports and returns it.
      **/
-    public String CreateFaultyReport(String startdate,String enddate)
+    public Report CreateFaultyReport(String startdate,String enddate)
     {
         LocalDate datestart = LocalDate.parse(startdate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         LocalDateTime start = datestart.atStartOfDay();
@@ -154,14 +164,14 @@ public class ProductFacade {
         LocalDate dateend = LocalDate.parse(enddate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         LocalDateTime end = dateend.atTime(23, 59, 59);
 
-        String report = "Fault product reports from " + start +" to " + end +"\n===========================================\n";
+        Report report = new Report("Fault product reports from " + start +" to " + end +"\n===========================================");
         for(Map.Entry<Integer,FaultyProductDL> en: this.faultyProducts.entrySet())
         {
             FaultyProductDL p = en.getValue();
             if(!p.getDateOnReport().isAfter(end) && !p.getDateOnReport().isBefore(start)) // if the report date fits: start <+ report date <= end
             {
-                report += "Report id:" + p.getReportID() +"\nOn product:" +p.getName() + ", Catalog number:" + p.getCatalog_number() + " ,Location:" +p.getLocation() +"\n" +
-                        "Reported on:" + p.getDateOnReport().toString() +"\nDescription:\n" + p.getDescription() +"\n\n";
+                report.AddLine("Report id:" + p.getReportID() +"\nOn product:" +p.getName() + ", Catalog number:" + p.getCatalog_number() + " ,Location:" +p.getLocation() +"\n" +
+                        "Reported on:" + p.getDateOnReport().toString() +"\nDescription:\n" + p.getDescription());
             }
         }
         return report;
@@ -178,14 +188,18 @@ public class ProductFacade {
     }
 
 
-    public String update(String catalogNumber, String name, String storageLocation,
-                       Double consumerPrice, Double supplyPrice,
-                       Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
+    public String update(String catalogNumber, String name, String storageWarehouse, String storageLocation,
+                         Double consumerPrice, Double supplyPrice,
+                         Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
 
         ProductDL product = FindProductByID(catalogNumber);
 
         if (name != null) product.setName(name);
+
+        if (storageWarehouse != null) product.setWarehouse(storageWarehouse);
+
         if (storageLocation != null) product.setLocation(storageLocation);
+
         if (consumerPrice != null) product.setPrice_to_consumer(consumerPrice);
         if (supplyPrice != null) product.setPrice_to_supply(supplyPrice);
         if (shelvesAmount != null) product.setAmount_on_shelves(shelvesAmount);
@@ -200,42 +214,53 @@ public class ProductFacade {
      * Collects each one and creates a list of products that in warning range.
      */
 
-    public List<ProductDL> GetProductsWarnings() {
-        List<ProductDL> warningProducts = new ArrayList<>();
+    public List<Notification> GetProductsWarnings() {
+        List<Notification> warningProducts = new ArrayList<>();
 
-        for(Map.Entry<String,ProductDL> en:this.products.entrySet())
+        for(Map.Entry<String, ProductDL> en: this.products.entrySet())
         {
             ProductDL p = en.getValue();
             if(p.isInWarningRange())
-                warningProducts.add(p);
-
+                warningProducts.add(new Notification(p.getName(), p.getCatalog_number(), p.getLocation(), p.getMinAmountAlert(), p.getAmount_on_stock(), p.getAmount_on_shelves()));
         }
         return warningProducts;
     }
-
     /**
      * A method that creates an inventory report on the sent categories IDs.
-     * ATTENTION:if mapByCategory returns a null list, id does not mean the category not exist, it may imply that it does not have products yet.
      */
-    public String GetInventoryReportByCategory(List<String> cats)
+    public Report GetInventoryReportByCategory(List<String> cats)
     {
-        String report="Inventory report on categories:"+cats.toString();
+        Report report = new Report("Inventory report on categories:"+cats.toString());
         for(String category:cats){
-            report+="\n=================\n\n";
-            List<ProductDL> list = this.mapByCategory.get(category);
-            report+="Category " + category+":\n-----------------\n";
-            if(list == null || list.isEmpty())
-                report+="No Products\n\n";
+            report.AddLine("\n=================\n");
+            List<ProductDL> list = this.GetProductsByCategory(category);
+            report.AddLine("Category " + category+":\n-----------------");
+            if(list.isEmpty())
+                report.AddLine("No Products\n");
             else {
                 for(ProductDL p:list)
                 {
-                    report+="Product:" + p.getName() +" ,Catalog number:"+p.getCatalog_number() +" ,Location:"+p.getLocation()+" ,Amount on shelves:"+p.getAmount_on_shelves()+" ,Amount on stock:"+p.getAmount_on_stock()+"\n";
-                }
-                report+="\n\n";
+                    report.AddLine("Product:" + p.getName() + " ,Catalog number:" + p.getCatalog_number() + " ,Warehouse: " + p.getWarehouse() + " ,Location:" + p.getLocation() + " ,Amount on shelves:" + p.getAmount_on_shelves() + " ,Amount on stock:" + p.getAmount_on_stock());                }
+                report.AddLine(""); //Adds '\n'
             }
 
         }
         return report;
+    }
+
+    /*
+    Helper method that returns every product that is linked to the input category in a list.
+     */
+    private List<ProductDL> GetProductsByCategory(String category_id)
+    {
+        List<ProductDL> list = new ArrayList<>();
+        for(Map.Entry<String,ProductDL> en:this.products.entrySet())
+        {
+            ProductDL p = en.getValue();
+            if(p.getMain_category_id().equals(category_id) || p.getSub_category_id().equals(category_id) || p.getSubsub_category_id().equals(category_id))
+                list.add(p);
+        }
+        return list;
     }
 
     /**
@@ -243,10 +268,10 @@ public class ProductFacade {
      * @param id
      * @param newDisc
      */
-    public void SetProductDiscountMod(String id,double newDisc)
+    public void SetProductDiscountMod(String id,double newDisc,String time)
     {
         ProductDL p =FindProductByID(id);
-        p.setProduct_discount(newDisc);
+        p.addPromotion(new Promotion(Integer.toString(generatePromotionId()),newDisc,time, PromotionScope.PRODUCT));
     }
 
     /**
@@ -259,4 +284,6 @@ public class ProductFacade {
         ProductDL p =FindProductByID(id);
         return p.getPrice_to_supplyDiscounted();
     }
+
+
 }

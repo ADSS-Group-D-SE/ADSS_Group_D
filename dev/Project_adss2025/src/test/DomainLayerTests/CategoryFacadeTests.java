@@ -10,42 +10,41 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CategoryFacadeTests
 {
-    /*
-    Test class for category facade. Assumes FindCategoryById works, to test other methods.
-     */
     private CategoryFacade c;
+    private final String defaultDate = "31/12/2030";
+
     @BeforeEach
     public void SetUp()
     {
         c = new CategoryFacade();
     }
+
     @Test
     public void AddCategoryTest()
     {
-        String testId = c.AddCategory("TestCat",0);
-        String testId2 = c.AddCategory("Test2",0.5);
+        String testId = c.AddCategory("TestCat", 0, defaultDate);
+        String testId2 = c.AddCategory("Test2", 0.5, defaultDate);
         CategoryDL testCat = c.FindCategoryById("TestCat");
         CategoryDL testCat2 = c.FindCategoryById("Test2");
 
-        assertEquals(testCat.getCategory_id(),testId);
-        assertEquals(testCat2.getCategory_id(),testId2);
+        assertEquals(testCat.getCategory_id(), testId);
+        assertEquals(testCat2.getCategory_id(), testId2);
 
         try
         {
-            c.AddCategory(null,0.5);
-            fail();
-
-        } catch (Exception e) {
-        }
-        try
-        {
-            c.AddCategory("Test 3",15);
+            c.AddCategory(null, 0.5, defaultDate);
             fail();
         } catch (Exception e) {
         }
         try
         {
-            c.AddCategory("TestCat",0.1);
+            c.AddCategory("Test 3", 15, defaultDate);
+            fail();
+        } catch (Exception e) {
+        }
+        try
+        {
+            c.AddCategory("TestCat", 0.1, defaultDate);
             fail();
         } catch (Exception e) {
         }
@@ -54,42 +53,38 @@ public class CategoryFacadeTests
     @Test
     public void AddSubCategoryTest()
     {
-        String testId = c.AddCategory("TestCat",0); //assumes correctness
+        String testId = c.AddCategory("TestCat", 0, defaultDate);
 
-        String subTestId = c.AddSubcategory("TestCatSub",0,testId);
+        String subTestId = c.AddSubcategory("TestCatSub", 0, defaultDate, testId);
         CategoryDL sub = c.FindCategoryById("TestCat-TestCatSub");
-        assertEquals(subTestId,sub.getCategory_id());
+        assertEquals(subTestId, sub.getCategory_id());
 
-        String subsubTestId = c.AddSubcategory("TestCatSubsub",0,subTestId);
+        String subsubTestId = c.AddSubcategory("TestCatSubsub", 0, defaultDate, subTestId);
         CategoryDL subsub = c.FindCategoryById("TestCat-TestCatSub-TestCatSubsub");
-        assertEquals(subsubTestId,subsub.getCategory_id());
+        assertEquals(subsubTestId, subsub.getCategory_id());
 
         try
         {
-            c.AddSubcategory(null,0.5,testId);
+            c.AddSubcategory(null, 0.5, defaultDate, testId);
             fail();
-
         } catch (Exception e) {
         }
         try
         {
-            c.AddSubcategory("FailTest",999,testId);
+            c.AddSubcategory("FailTest", 999, defaultDate, testId);
             fail();
-
         } catch (Exception e) {
         }
         try
         {
-            c.AddSubcategory("FailTest",999,"None");
+            c.AddSubcategory("FailTest", 999, defaultDate, "None");
             fail();
-
         } catch (Exception e) {
         }
         try
         {
-            c.AddSubcategory("FailTest",0.5,subsubTestId);
+            c.AddSubcategory("FailTest", 0.5, defaultDate, subsubTestId);
             fail();
-
         } catch (Exception e) {
         }
     }
@@ -97,26 +92,27 @@ public class CategoryFacadeTests
     @Test
     public void GetSubCategoriesTest()
     {
-        String main = c.AddCategory("Main",0.5);
-        String sub1 = c.AddSubcategory("Sub1",0,main);
-        String sub2 = c.AddSubcategory("Sub2",0,main);
-        String subsub1 = c.AddSubcategory("Subsub1",0,sub1);
-        String subsub2 = c.AddSubcategory("Subsub2",0,sub2);
+        String main = c.AddCategory("Main", 0.5, defaultDate);
+        String sub1 = c.AddSubcategory("Sub1", 0, defaultDate, main);
+        String sub2 = c.AddSubcategory("Sub2", 0, defaultDate, main);
+        String subsub1 = c.AddSubcategory("Subsub1", 0, defaultDate, sub1);
+        String subsub2 = c.AddSubcategory("Subsub2", 0, defaultDate, sub2);
 
         List<CategoryDL> mList = c.GetSubcategories(main);
-        if(mList.size()!=2)
+        if(mList.size() != 2)
             fail();
-        for(CategoryDL cat:mList)
-            if(!cat.getCategory_id().equals(sub1)&&!cat.getCategory_id().equals(sub2))
+        for(CategoryDL cat : mList)
+            if(!cat.getCategory_id().equals(sub1) && !cat.getCategory_id().equals(sub2))
                 fail();
 
         mList = c.GetSubcategories(sub1);
-        if(mList.size()!=1)
+        if(mList.size() != 1)
             fail();
         if(!mList.get(0).getCategory_id().equals(subsub1))
             fail();
+
         mList = c.GetSubcategories(sub2);
-        if(mList.size()!=1)
+        if(mList.size() != 1)
             fail();
         if(!mList.get(0).getCategory_id().equals(subsub2))
             fail();
@@ -125,23 +121,24 @@ public class CategoryFacadeTests
     @Test
     public void SetCatDiscountTest()
     {
-        String main = c.AddCategory("Main",0.5);
+        String main = c.AddCategory("Main", 0.5, defaultDate);
 
-        c.SetCatDiscount(main,0.6);
-        assertEquals(0.6,c.FindCategoryById(main).getDiscount_pre());
+        c.addCatDiscount(main, 0.6, defaultDate);
+
+        assertEquals(0.8, c.GetCategoryDiscount(main));
 
         try {
-            c.SetCatDiscount(main,1111);
+            c.addCatDiscount(main, 1111, defaultDate);
             fail();
         } catch (Exception e) {
         }
         try {
-            c.SetCatDiscount(main,-1);
+            c.addCatDiscount(main, -1, defaultDate);
             fail();
         } catch (Exception e) {
         }
         try {
-            c.SetCatDiscount("None",0.5);
+            c.addCatDiscount("None", 0.5, defaultDate);
             fail();
         } catch (Exception e) {
         }
@@ -150,8 +147,9 @@ public class CategoryFacadeTests
     @Test
     public void GetCatDiscountTest()
     {
-        String main = c.AddCategory("Main",0.5);
-        assertEquals(0.5,CategoryFacade.GetCategoryDiscount(main));
-        assertEquals(null,CategoryFacade.GetCategoryDiscount("None"));
+        String main = c.AddCategory("Main", 0.5, defaultDate);
+
+        assertEquals(0.5, c.GetCategoryDiscount(main));
+        assertNull( c.GetCategoryDiscount("None"));
     }
 }
