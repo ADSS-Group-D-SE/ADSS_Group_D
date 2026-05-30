@@ -157,10 +157,10 @@ public class CategoryFacade {
     public static Double GetCategoryDiscount(String id)
     {
         CategoryDL cat = categories.get(id);
-        cat.removeExpiredPromotions();
-        if(cat !=null)
+        if(cat !=null) {
+            cat.removeExpiredPromotions();
             return cat.getTotalCategoryDiscount();
-
+        }
         return null;
     }
 
