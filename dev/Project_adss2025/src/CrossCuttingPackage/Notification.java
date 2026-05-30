@@ -4,12 +4,12 @@ public class Notification {
 
     private String pName;
     private String catalog_number;
-    private String location;
+    private ShelfLocation location;
     private int min;
     private int amountInStock;
     private int amountOnShelf;
 
-    public Notification(String name,String cat,String location ,int min,int stock, int shelf)
+    public Notification(String name,String cat,ShelfLocation location ,int min,int stock, int shelf)
     {
         this.pName = name;
         this.catalog_number = cat;
@@ -40,7 +40,7 @@ public class Notification {
         return min;
     }
 
-    public String getLocation() {
+    public ShelfLocation getLocation() {
         return location;
     }
 

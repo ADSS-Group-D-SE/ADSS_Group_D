@@ -70,13 +70,13 @@ public class ProductServices {
      * @param minAmount the minimum required quantity of the product
      * @return A Response indicating success or an error message
      */
-    public Response<String> addProduct(String name, String catalogNumber, String main_id,String sub_id,String subsub_id,
-                                        String location,String manu, int amountOnShelves, int amountOnStock,
-                                         double supplyPrice,double consumerPrice, int minAmount) {
+    public Response<String> addProduct(String name, String catalogNumber, String main_id, String sub_id, String subsub_id,
+                                       String warehouseName, String location, String manu, int amountOnShelves, int amountOnStock,
+                                       double consumerPrice,double supplyPrice, int minAmount) {
         try {
-            pFacade.addProduct(name, catalogNumber, main_id,sub_id,subsub_id, location,manu,
+            pFacade.addProduct(name, catalogNumber, main_id, sub_id, subsub_id, warehouseName, location, manu,
                     amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
-            return new Response<>(null,null);
+            return new Response<>(null, null);
         } catch (Exception e) {
             return new Response<>(e.getMessage());
         }
@@ -242,20 +242,17 @@ public class ProductServices {
 
      * @return
      */
-    public Response<String> update(String catalogNumber, String name, String storageLocation,
+    public Response<String> update(String catalogNumber, String name, String storageWarehouse, String storageLocation,
                                    Double consumerPrice, Double supplyPrice,
                                    Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
 
-
         Response<String> res = null;
         try {
-
-            res = new Response<>(null, this.pFacade.update(catalogNumber, name, storageLocation, consumerPrice, supplyPrice, shelvesAmount, stockAmount, minAmountAlert));
+            res = new Response<>(null, this.pFacade.update(catalogNumber, name, storageWarehouse, storageLocation, consumerPrice, supplyPrice, shelvesAmount, stockAmount, minAmountAlert));
         } catch (Exception e) {
             res = new Response<>(e.getMessage());
         }
         return res;
-
     }
 
     /**
@@ -299,16 +296,12 @@ public class ProductServices {
      * @param discount
      * @return
      */
-    public Response<String> SetProductDiscount(String id,double discount)
-    {
+    public Response<String> SetProductDiscount(String id, double discount, String endDateStr) {
         Response<String> res = null;
-        try
-        {
-            this.pFacade.SetProductDiscountMod(id,discount);
-            res = new Response<>(null,null);
-        }
-        catch (Exception e)
-        {
+        try {
+            this.pFacade.SetProductDiscountMod(id, discount, endDateStr);
+            res = new Response<>(null, null);
+        } catch (Exception e) {
             res = new Response<>(e.getMessage());
         }
         return res;
