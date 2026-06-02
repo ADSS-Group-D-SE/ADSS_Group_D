@@ -34,6 +34,21 @@ public class SupplierManager {
         return suppliers.remove(supplierId) != null;
     }
 
+    public void registerSupplier(Supplier supplier) {
+        if (supplier == null) {
+            throw new IllegalArgumentException("Supplier cannot be null.");
+        }
+        suppliers.put(supplier.getSupplierId(), supplier);
+        if (supplier.getSupplierId() >= nextSupplierId) {
+            nextSupplierId = supplier.getSupplierId() + 1;
+        }
+    }
+
+    public void clear() {
+        suppliers.clear();
+        nextSupplierId = 1;
+    }
+
     
      // Retrieves a supplier by its ID.      
      // return the Supplier, or null if not found.

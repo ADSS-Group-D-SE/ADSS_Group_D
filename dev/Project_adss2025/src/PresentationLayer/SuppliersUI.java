@@ -2,6 +2,7 @@ package PresentationLayer;
 
 import DomainLayer.*;
 import DomainLayer.SupplierAgreement.SupplyMethod;
+import ServiceLayer.IntegratedOrderService;
 import ServiceLayer.SupplierService;
 
 import java.util.ArrayList;
@@ -15,13 +16,19 @@ public class SuppliersUI {
     private Scanner scanner;
     private boolean isRunning;
     private SupplierService service;
+    private IntegratedOrderService integratedService;
 
     public SuppliersUI(SupplierService service) {
         this(service, new Scanner(System.in));
     }
 
     public SuppliersUI(SupplierService service, Scanner scanner) {
+        this(service, null, scanner);
+    }
+
+    public SuppliersUI(SupplierService service, IntegratedOrderService integratedService, Scanner scanner) {
         this.service = service;
+        this.integratedService = integratedService;
         this.scanner = scanner;
         this.isRunning = false;
     }
@@ -61,6 +68,12 @@ public class SuppliersUI {
         System.out.println("19. Add Item to Agreement");
         System.out.println("20. Create Shortage Order (Best Supplier)");
         System.out.println("21. Create Periodic Fixed-Day Order");
+        if (integratedService != null) {
+            System.out.println("22. View Inventory Items");
+            System.out.println("23. Update Inventory Stock");
+            System.out.println("24. Create Automatic Shortage Order from Inventory");
+            System.out.println("25. Create Periodic Order Due Tomorrow");
+        }
         System.out.println("0. Exit");
         System.out.println("========================================");
     }
@@ -129,6 +142,18 @@ public class SuppliersUI {
                 break;
             case 21:
                 createPeriodicOrderUI();
+                break;
+            case 22:
+                viewInventoryItems();
+                break;
+            case 23:
+                updateInventoryStockUI();
+                break;
+            case 24:
+                createAutomaticShortageOrderUI();
+                break;
+            case 25:
+                createPeriodicOrderDueTomorrowUI();
                 break;
             case 0:
                 isRunning = false;
@@ -940,6 +965,98 @@ public class SuppliersUI {
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println("Error: " + e.getMessage());
         }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // Assignment 2: Inventory + Suppliers integration
+    // ══════════════════════════════════════════════════════════
+
+    private void viewInventoryItems() {
+        if (!ensureIntegrationEnabled()) {
+            return;
+        }
+        List<InventoryItem> items = integratedService.getAllInventoryItems();
+        if (items.isEmpty()) {
+            System.out.println("\nNo inventory items in the database.");
+            return;
+        }
+        System.out.println("\n--- Inventory Items (" + items.size() + ") ---");
+        for (InventoryItem item : items) {
+            System.out.println("  Internal ID: " + item.getInternalItemId()
+                    + " | " + item.getName()
+                    + " | Warehouse: " + item.getWarehouseQuantity()
+                    + " | Shelf: " + item.getShelfQuantity()
+                    + " | Min: " + item.getMinimumQuantity()
+                    + " | Expected incoming: " + item.getExpectedIncomingQuantity()
+                    + " | Needed: " + item.quantityNeededToExceedMinimum());
+        }
+    }
+
+    private void updateInventoryStockUI() {
+        if (!ensureIntegrationEnabled()) {
+            return;
+        }
+        System.out.println("\n--- Update Inventory Stock ---");
+        int internalItemId = readInt("Internal Item ID: ");
+        int warehouseDelta = readInt("Warehouse quantity delta (negative allowed): ");
+        int shelfDelta = readInt("Shelf quantity delta (negative allowed): ");
+        try {
+            integratedService.updateStock(internalItemId, warehouseDelta, shelfDelta);
+            System.out.println("Inventory stock updated.");
+            InventoryItem item = integratedService.getInventoryItem(internalItemId);
+            System.out.println("Current total: " + item.getCurrentQuantity()
+                    + " | Expected after orders: " + item.getExpectedQuantityAfterOpenOrders());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void createAutomaticShortageOrderUI() {
+        if (!ensureIntegrationEnabled()) {
+            return;
+        }
+        System.out.println("\n--- Automatic Shortage Order from Inventory ---");
+        int internalItemId = readInt("Internal Item ID: ");
+        String urgentAnswer = readString("Is this urgent? (y/n): ").toLowerCase();
+        boolean isUrgent = urgentAnswer.equals("y") || urgentAnswer.equals("yes");
+        try {
+            Supplier bestSupplier = integratedService.findBestSupplierForInventoryShortage(internalItemId);
+            if (bestSupplier == null) {
+                System.out.println("No supplier found for this inventory item.");
+                return;
+            }
+            InventoryItem item = integratedService.getInventoryItem(internalItemId);
+            System.out.println("Best supplier: [" + bestSupplier.getSupplierId() + "] " + bestSupplier.getName());
+            System.out.println("Quantity needed to exceed minimum: " + item.quantityNeededToExceedMinimum());
+            SupplierOrder order = integratedService.createAutomaticShortageOrder(internalItemId, isUrgent);
+            System.out.println("Automatic shortage order created and sent.");
+            printOrderDetails(order);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void createPeriodicOrderDueTomorrowUI() {
+        if (!ensureIntegrationEnabled()) {
+            return;
+        }
+        System.out.println("\n--- Periodic Order Due Tomorrow ---");
+        int supplierId = readInt("Fixed-days Supplier ID: ");
+        try {
+            SupplierOrder order = integratedService.createPeriodicOrderOneDayBeforeDelivery(supplierId);
+            System.out.println("Periodic order created and sent.");
+            printOrderDetails(order);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private boolean ensureIntegrationEnabled() {
+        if (integratedService == null) {
+            System.out.println("Inventory integration is not available in this run.");
+            return false;
+        }
+        return true;
     }
 
     // ══════════════════════════════════════════════════════════

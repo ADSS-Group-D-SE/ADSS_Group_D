@@ -39,6 +39,21 @@ public class OrderManager {
         return orders.get(orderId);
     }
 
+    public void registerOrder(SupplierOrder order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null.");
+        }
+        orders.put(order.getOrderId(), order);
+        if (order.getOrderId() >= nextOrderId) {
+            nextOrderId = order.getOrderId() + 1;
+        }
+    }
+
+    public void clear() {
+        orders.clear();
+        nextOrderId = 1;
+    }
+
     /**
      * Returns the order history for a specific supplier.
      */

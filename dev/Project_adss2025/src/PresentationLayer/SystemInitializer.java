@@ -1,19 +1,32 @@
 package PresentationLayer;
 
+import DataAccessLayer.SuperLeeDataStore;
 import DomainLayer.*;
 import DomainLayer.SupplierAgreement.SupplyMethod;
-import DomainLayer.SupplierOrder.OrderStatus;
+import ServiceLayer.IntegratedOrderService;
+import ServiceLayer.PersistentSupplierService;
 import ServiceLayer.SupplierService;
 
+import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Scanner;
 
 public class SystemInitializer {
 
     private SupplierService service;
+    private InventoryManager inventoryManager;
+    private SuperLeeDataStore dataStore;
 
     public SystemInitializer(SupplierService service) {
+        this(service, null, null);
+    }
+
+    public SystemInitializer(SupplierService service, InventoryManager inventoryManager,
+            SuperLeeDataStore dataStore) {
         this.service = service;
+        this.inventoryManager = inventoryManager;
+        this.dataStore = dataStore;
     }
 
     /**
@@ -30,7 +43,8 @@ public class SystemInitializer {
         service.addContactPerson(s1Id, "Yossi Cohen", "050-1234567", "yossi@osem.co.il");
         service.addContactPerson(s1Id, "Dana Levy", "052-7654321", "dana@osem.co.il");
 
-        java.util.List<Integer> days1 = java.util.Arrays.asList(1, 4); // Sunday, Wednesday
+        java.util.List<Integer> days1 = java.util.Arrays.asList(
+                toProjectDay(LocalDate.now().plusDays(1).getDayOfWeek()), 4);
         service.createAgreement(s1Id, SupplyMethod.FIXED_DAYS, days1, 0);
 
         service.addItemToAgreement(s1Id, 1001, 101, "Bamba Snack 80g", 3.50, "Osem");
@@ -116,9 +130,26 @@ public class SystemInitializer {
         // ══════════════════════════════════════════════════════════
         service.freezeAgreement(s3Id);
 
+        if (inventoryManager != null) {
+            inventoryManager.addInventoryItem(101, "Bamba Snack 80g", 20, 10, 100);
+            inventoryManager.addInventoryItem(102, "Bissli Grill 200g", 80, 30, 50);
+            inventoryManager.addInventoryItem(103, "Ketchup 750ml", 2, 3, 50);
+            inventoryManager.addInventoryItem(201, "Milk 1L 3%", 15, 5, 120);
+            inventoryManager.addInventoryItem(202, "Cottage Cheese 250g", 120, 40, 80);
+            inventoryManager.addInventoryItem(301, "Elite Coffee 200g", 10, 5, 40);
+            inventoryManager.addInventoryItem(302, "Milky Pudding 4-pack", 60, 20, 45);
+        }
+
+        if (dataStore != null) {
+            dataStore.save(service, inventoryManager);
+        }
+
         System.out.println("Sample data loaded successfully.");
         System.out.println("Loaded " + service.getSupplierCount() + " suppliers.");
         System.out.println("Loaded " + service.getOrderCount() + " orders.");
+        if (inventoryManager != null) {
+            System.out.println("Loaded " + inventoryManager.getInventoryItemCount() + " inventory items.");
+        }
     }
 
     /**
@@ -127,24 +158,77 @@ public class SystemInitializer {
     public static void main(String[] args) {
         SupplierManager supplierManager = new SupplierManager();
         OrderManager orderManager = new OrderManager();
-        SupplierService service = new SupplierService(supplierManager, orderManager);
+        InventoryManager inventoryManager = new InventoryManager();
+        SuperLeeDataStore dataStore = new SuperLeeDataStore(Paths.get("superlee_db"));
+        PersistentSupplierService service = new PersistentSupplierService(
+                supplierManager, orderManager, inventoryManager, dataStore);
+        IntegratedOrderService integratedService = new IntegratedOrderService(
+                service, inventoryManager, dataStore);
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("==========================================");
-        System.out.println("  Welcome to Super-Lee Supplier System");
+        System.out.println("  Welcome to Super-Lee Integrated System");
         System.out.println("==========================================");
-        System.out.print("Load sample data? (y/n): ");
-        String answer = scanner.nextLine().trim().toLowerCase();
+        System.out.println("1. Load existing local database");
+        System.out.println("2. Reset database and load sample data");
+        System.out.println("3. Start with empty database");
+        System.out.print("Enter your choice: ");
+        String answer = scanner.nextLine().trim();
 
-        if (answer.equals("y") || answer.equals("yes")) {
-            SystemInitializer initializer = new SystemInitializer(service);
-            initializer.loadSampleData();
-        } else {
-            System.out.println("Starting with empty system.");
+        SystemInitializer initializer = new SystemInitializer(service, inventoryManager, dataStore);
+        switch (answer) {
+            case "1":
+                if (dataStore.hasData()) {
+                    dataStore.loadInto(supplierManager, orderManager, inventoryManager);
+                    System.out.println("Database loaded successfully.");
+                    System.out.println("Loaded " + service.getSupplierCount() + " suppliers.");
+                    System.out.println("Loaded " + service.getOrderCount() + " orders.");
+                    System.out.println("Loaded " + inventoryManager.getInventoryItemCount() + " inventory items.");
+                } else {
+                    System.out.println("No local database found. Starting with an empty database.");
+                    dataStore.save(service, inventoryManager);
+                }
+                break;
+            case "2":
+                supplierManager.clear();
+                orderManager.clear();
+                inventoryManager.clear();
+                dataStore.clear();
+                initializer.loadSampleData();
+                break;
+            case "3":
+                supplierManager.clear();
+                orderManager.clear();
+                inventoryManager.clear();
+                dataStore.clear();
+                dataStore.save(service, inventoryManager);
+                System.out.println("Starting with empty database.");
+                break;
+            default:
+                System.out.println("Invalid choice. Loading existing database if available.");
+                if (dataStore.hasData()) {
+                    dataStore.loadInto(supplierManager, orderManager, inventoryManager);
+                } else {
+                    initializer.loadSampleData();
+                }
+                break;
         }
 
         System.out.println();
-        SuppliersUI ui = new SuppliersUI(service, scanner);
+        SuppliersUI ui = new SuppliersUI(service, integratedService, scanner);
         ui.start();
+    }
+
+    private int toProjectDay(DayOfWeek dayOfWeek) {
+        switch (dayOfWeek) {
+            case SUNDAY: return 1;
+            case MONDAY: return 2;
+            case TUESDAY: return 3;
+            case WEDNESDAY: return 4;
+            case THURSDAY: return 5;
+            case FRIDAY: return 6;
+            case SATURDAY: return 7;
+            default: return 1;
+        }
     }
 }
