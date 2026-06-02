@@ -201,10 +201,16 @@ public class DomainLayerTests {
         agreement.addFixedSupplyDay(1);
         agreement.addFixedSupplyDay(4);
         assertEquals(2, agreement.getFixedSupplyDays().size());
+        assertTrue(agreement.getDeliveryDaySchedule().containsDay(1));
+        assertTrue(agreement.getDeliveryDaySchedule().containsDay(4));
 
         // Duplicate day should not be added twice
         agreement.addFixedSupplyDay(1);
         assertEquals(2, agreement.getFixedSupplyDays().size());
+
+        DeliveryDaySchedule scheduleCopy = agreement.getDeliveryDaySchedule();
+        scheduleCopy.addDay(6);
+        assertFalse(agreement.getDeliveryDaySchedule().containsDay(6));
 
         assertThrows(IllegalArgumentException.class, () -> agreement.addFixedSupplyDay(0));
         assertThrows(IllegalArgumentException.class, () -> agreement.addFixedSupplyDay(8));

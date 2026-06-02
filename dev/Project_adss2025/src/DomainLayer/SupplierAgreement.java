@@ -12,14 +12,14 @@ public class SupplierAgreement {
     }
 
     private SupplyMethod supplyMethod;
-    private List<Integer> fixedSupplyDays; // Days of the week (1=Sunday … 7=Saturday), relevant only for FIXED_DAYS
+    private DeliveryDaySchedule deliveryDaySchedule; // Relevant only for FIXED_DAYS
     private int deliveryDays; // Estimated days from order to delivery (relevant for ON_ORDER)
     private List<SupplierItem> items; // Items included in this agreement
     private boolean frozen; // Whether this agreement is frozen (no modifications allowed)
 
     public SupplierAgreement(SupplyMethod supplyMethod) {
         this.supplyMethod = supplyMethod;
-        this.fixedSupplyDays = new ArrayList<>();
+        this.deliveryDaySchedule = new DeliveryDaySchedule();
         this.deliveryDays = 0;
         this.items = new ArrayList<>();
         this.frozen = false;
@@ -58,17 +58,12 @@ public class SupplierAgreement {
 
     public void addFixedSupplyDay(int day) {
         ensureMutable();
-        if (day < 1 || day > 7) {
-            throw new IllegalArgumentException("Day must be between 1 (Sunday) and 7 (Saturday).");
-        }
-        if (!fixedSupplyDays.contains(day)) {
-            fixedSupplyDays.add(day);
-        }
+        deliveryDaySchedule.addDay(day);
     }
 
     public void removeFixedSupplyDay(int day) {
         ensureMutable();
-        fixedSupplyDays.remove(Integer.valueOf(day));
+        deliveryDaySchedule.removeDay(day);
     }
 
     public SupplyMethod getSupplyMethod() {
@@ -76,7 +71,11 @@ public class SupplierAgreement {
     }
 
     public List<Integer> getFixedSupplyDays() {
-        return new ArrayList<>(fixedSupplyDays);
+        return deliveryDaySchedule.getDays();
+    }
+
+    public DeliveryDaySchedule getDeliveryDaySchedule() {
+        return new DeliveryDaySchedule(deliveryDaySchedule.getDays());
     }
 
     public int getDeliveryDays() {
@@ -134,7 +133,7 @@ public class SupplierAgreement {
     public String toString() {
         return "SupplierAgreement{" +
                 "supplyMethod=" + supplyMethod +
-                ", fixedSupplyDays=" + fixedSupplyDays +
+                ", deliveryDaySchedule=" + deliveryDaySchedule +
                 ", deliveryDays=" + deliveryDays +
                 ", itemCount=" + items.size() +
                 ", frozen=" + frozen +

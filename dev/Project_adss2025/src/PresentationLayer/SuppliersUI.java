@@ -451,7 +451,7 @@ public class SuppliersUI {
                     default:
                         System.out.println("Invalid choice.");
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IllegalStateException e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
@@ -480,7 +480,7 @@ public class SuppliersUI {
         try {
             service.createAgreement(supplierId, method, fixedDays, deliveryDays);
             System.out.println("Agreement created successfully.");
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -568,7 +568,7 @@ public class SuppliersUI {
                 default:
                     System.out.println("Invalid choice.");
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -596,7 +596,7 @@ public class SuppliersUI {
         try {
             service.addQuantityDiscount(id, catalogNum, minQty, discountPercent);
             System.out.println("Quantity discount added successfully.");
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
