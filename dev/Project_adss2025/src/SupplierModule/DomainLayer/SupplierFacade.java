@@ -65,17 +65,12 @@ public class SupplierFacade {
      */
     public String AddSupplier(String supplierId,String regNum, String name, String bankAccount, String PayingTerms,HashMap<String,Double> itemsToPrices)
     {
-        try {
-            if(suppliers.containsKey(supplierId))
-                throw new RuntimeException("SupplierFacade-AddSupplier:Supplier already exist in system.");
+        if(suppliers.containsKey(supplierId))
+            throw new RuntimeException("SupplierFacade-AddSupplier:Supplier already exist in system.");
+        Supplier toAdd = new Supplier(supplierId,name,bankAccount,new PaymentTerms(PayingTerms),regNum,itemsToPrices);
+        suppliers.put(supplierId,toAdd);
+        return toAdd.getSupplierId();
 
-            Supplier toAdd = new Supplier(supplierId,name,bankAccount,new PaymentTerms(PayingTerms),regNum,itemsToPrices);
-
-            suppliers.put(supplierId,toAdd);
-            return toAdd.getSupplierId();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
     }
 
