@@ -1,4 +1,4 @@
-package CrossCuttingPackage;
+package InventoryModule.DomainLayer;
 
 public enum PromotionScope {
     PRODUCT,

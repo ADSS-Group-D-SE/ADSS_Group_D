@@ -1,13 +1,8 @@
-package DomainLayer;
-
-import CrossCuttingPackage.Promotion;
-import CrossCuttingPackage.ShelfLocation;
-import CrossCuttingPackage.Warehouse;
+package InventoryModule.DomainLayer;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

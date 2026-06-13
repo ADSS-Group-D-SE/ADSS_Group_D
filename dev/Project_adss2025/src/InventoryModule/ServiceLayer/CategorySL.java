@@ -1,6 +1,6 @@
-package ServiceLayer;
+package InventoryModule.ServiceLayer;
 
-import DomainLayer.CategoryDL;
+import InventoryModule.DomainLayer.CategoryDL;
 
 import java.util.ArrayList;
 import java.util.List;

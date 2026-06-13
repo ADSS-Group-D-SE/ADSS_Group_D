@@ -1,7 +1,7 @@
-package ServiceLayer;
+package InventoryModule.ServiceLayer;
 
-import DomainLayer.CategoryFacade;
-import DomainLayer.ProductFacade;
+import CrossCuttingPackage.Response;
+import InventoryModule.DomainLayer.CategoryFacade;
 
 import java.util.List;
 
@@ -30,10 +30,10 @@ public class CategoryServices {
     }
 
     /*
-    The service for category creation, returns: Response with new category Id if created successfully.
+    The service for category creation, returns: CrossCuttingPackage.Response with new category Id if created successfully.
     Else: return a response with Error string.
      */
-    public Response<String> CreateCategory(String name,double discountPre,String date)
+    public Response<String> CreateCategory(String name, double discountPre, String date)
     {
         Response<String> res;
         try {
@@ -45,10 +45,10 @@ public class CategoryServices {
     }
 
     /*
-   The service for Sub-category creation, returns: Response with new category Id if created successfully.
+   The service for Sub-category creation, returns: CrossCuttingPackage.Response with new category Id if created successfully.
    Else: return a response with Error string.
     */
-    public Response<String> CreateSubCategory(String name,double discountPre,String date,String rootId)
+    public Response<String> CreateSubCategory(String name, double discountPre, String date, String rootId)
     {
         Response<String> res;
         try {
@@ -61,8 +61,8 @@ public class CategoryServices {
 
     /*
     The service to get the list of currently existing main categories.
-    Returns:Response with list of categoriesSL if op was a success.
-    Else:Response with an error.
+    Returns:CrossCuttingPackage.Response with list of categoriesSL if op was a success.
+    Else:CrossCuttingPackage.Response with an error.
      */
     public Response<List<CategorySL>> GetMainCategories()
     {
@@ -76,8 +76,8 @@ public class CategoryServices {
     }
     /*
     The service to get the list of subcategories of the input category ID.
-    Returns:Response with Subcategory list of categoriesSL if op was a success.
-    Else:Response with an error.
+    Returns:CrossCuttingPackage.Response with Subcategory list of categoriesSL if op was a success.
+    Else:CrossCuttingPackage.Response with an error.
     */
     public Response<List<CategorySL>> GetSubCategories(String category_id)
     {
@@ -92,9 +92,9 @@ public class CategoryServices {
     /**
      The category discount setup service.
      Returns response: with null value when op was a success.
-     else:Response with an error msg.
+     else:CrossCuttingPackage.Response with an error msg.
      **/
-    public Response<String> SetCategoryDiscount(String category_id,double discount, String date)
+    public Response<String> SetCategoryDiscount(String category_id, double discount, String date)
     {
         Response<String> res = null;
         try
@@ -112,7 +112,7 @@ public class CategoryServices {
     /**
      * Service that handles the get all categories request.
      * Returns: a list of categorySL objects if op was a success, else
-     * A Response with error msg.
+     * A CrossCuttingPackage.Response with error msg.
      * @return
      */
     public Response<List<CategorySL>> GetAllCategories()
@@ -125,4 +125,5 @@ public class CategoryServices {
         }
         return res;
     }
+
 }

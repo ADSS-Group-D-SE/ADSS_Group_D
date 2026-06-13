@@ -1,10 +1,9 @@
-package ServiceLayer;
+package InventoryModule.ServiceLayer;
 
-import CrossCuttingPackage.Promotion;
-import CrossCuttingPackage.ShelfLocation;
-import CrossCuttingPackage.Warehouse;
-import DomainLayer.CategoryDL;
-import DomainLayer.ProductDL;
+import InventoryModule.DomainLayer.Promotion;
+import InventoryModule.DomainLayer.ShelfLocation;
+import InventoryModule.DomainLayer.Warehouse;
+import InventoryModule.DomainLayer.ProductDL;
 
 import java.util.ArrayList;
 import java.util.List;

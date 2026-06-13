@@ -1,6 +1,4 @@
-package DomainLayer;
-
-import CrossCuttingPackage.Promotion;
+package InventoryModule.DomainLayer;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

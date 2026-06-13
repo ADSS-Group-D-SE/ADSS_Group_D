@@ -1,11 +1,11 @@
-package PresentationLayer;
+package InventoryModule.PresentationLayer;
 
 import CrossCuttingPackage.Notification;
 import CrossCuttingPackage.Report;
-import ServiceLayer.*;
+import CrossCuttingPackage.Response;
+import InventoryModule.ServiceLayer.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 

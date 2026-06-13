@@ -1,14 +1,13 @@
-package ServiceLayer;
+package InventoryModule.ServiceLayer;
 
 import CrossCuttingPackage.Notification;
 import CrossCuttingPackage.Report;
-import DomainLayer.ProductDL;
-import DomainLayer.ProductFacade;
+import CrossCuttingPackage.Response;
+import InventoryModule.DomainLayer.ProductDL;
+import InventoryModule.DomainLayer.ProductFacade;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static ServiceLayer.ProductSL.convert;
 
 
 /**
@@ -68,11 +67,11 @@ public class ProductServices {
      * @param supplyPrice the supplier price of the product
      * @param consumerPrice the consumer price of the product
      * @param minAmount the minimum required quantity of the product
-     * @return A Response indicating success or an error message
+     * @return A CrossCuttingPackage.Response indicating success or an error message
      */
     public Response<String> addProduct(String name, String catalogNumber, String main_id, String sub_id, String subsub_id,
                                        String warehouseName, String location, String manu, int amountOnShelves, int amountOnStock,
-                                       double consumerPrice,double supplyPrice, int minAmount) {
+                                       double consumerPrice, double supplyPrice, int minAmount) {
         try {
             pFacade.addProduct(name, catalogNumber, main_id, sub_id, subsub_id, warehouseName, location, manu,
                     amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
@@ -86,7 +85,7 @@ public class ProductServices {
      * Updates the supplier discount for a specific product.
      * @param catalogNumber unique identifier of the product
      * @param SupplierDiscount discount the discount value to be applied to the product
-     * @return A Response indicating success or an error message
+     * @return A CrossCuttingPackage.Response indicating success or an error message
      */
     public Response<String> setSupplierDiscount(String catalogNumber, double SupplierDiscount){
         try {
@@ -100,7 +99,7 @@ public class ProductServices {
     /**
      * The price calculation service.
      * Returns a response: With the entered product final price.
-     * Else:Response with an error msg.
+     * Else:CrossCuttingPackage.Response with an error msg.
      */
     public Response<Double> GetProductPrice(String catalog_number)
     {
@@ -119,7 +118,7 @@ public class ProductServices {
     /**
      * The supply price calculation service.
      * Returns a response: With the entered product final supply price.
-     * Else:Response with an error msg.
+     * Else:CrossCuttingPackage.Response with an error msg.
      */
     public Response<Double> GetProductSupplyPrice(String catalog_number)
     {
@@ -141,7 +140,7 @@ public class ProductServices {
     Returns response: with report ID if operation was successful
                       else, return response with error msg.
      **/
-    public Response<Integer> ReportFaultyProduct(String catalog_number,String locationProduct, String description)
+    public Response<Integer> ReportFaultyProduct(String catalog_number, String locationProduct, String description)
     {
         Response<Integer> res = null;
         try
@@ -157,7 +156,7 @@ public class ProductServices {
 
     /**
     Service that allows removing a faulty product report by its id.
-    Returns: Response with null value if operation was successful.
+    Returns: CrossCuttingPackage.Response with null value if operation was successful.
              else: returns a response with error msg.
      **/
     public Response<String> RemoveFaultyReport(int report_id)
@@ -181,7 +180,7 @@ public class ProductServices {
                       else, returns error msg.
 
      **/
-    public Response<Report> CreateFaultyProductReport(String start,String end)
+    public Response<Report> CreateFaultyProductReport(String start, String end)
     {
         Response<Report> res = null;
         try
@@ -221,7 +220,7 @@ public class ProductServices {
     Returns response: with null value if operation was successful.
     else : with error msg.
      **/
-    public Response<String> PurchaseProduct(String catalog_number,int shelves,int stock)
+    public Response<String> PurchaseProduct(String catalog_number, int shelves, int stock)
     {
         Response<String> res = null;
         try
@@ -238,7 +237,7 @@ public class ProductServices {
 
     /**
      * Service to update the details of the entered product.
-     * Returns Response with success message if op was a success, else returns a response with error string.
+     * Returns CrossCuttingPackage.Response with success message if op was a success, else returns a response with error string.
 
      * @return
      */
@@ -257,8 +256,8 @@ public class ProductServices {
 
     /**
      * Service that operates the product notification report
-     * Returns:Response with product warning report in string if was a success
-     * Else:Response with an error string
+     * Returns:CrossCuttingPackage.Response with product warning report in string if was a success
+     * Else:CrossCuttingPackage.Response with an error string
      */
     public Response<List<Notification>> getLowStockAlerts() {
         try {
@@ -302,6 +301,24 @@ public class ProductServices {
             this.pFacade.SetProductDiscountMod(id, discount, endDateStr);
             res = new Response<>(null, null);
         } catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    /*
+    Service to use by UI to verify the the item catalogs exist in inventory.
+     */
+    public Response<String> VerifyItemCatalogs(List<String> items)
+    {
+        Response<String> res = null;
+        try
+        {
+            this.pFacade.VerifyItems(items);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e)
+        {
             res = new Response<>(e.getMessage());
         }
         return res;

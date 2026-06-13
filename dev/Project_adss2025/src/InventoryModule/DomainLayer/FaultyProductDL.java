@@ -1,6 +1,4 @@
-package DomainLayer;
-
-import CrossCuttingPackage.ShelfLocation;
+package InventoryModule.DomainLayer;
 
 import java.time.LocalDateTime;
 

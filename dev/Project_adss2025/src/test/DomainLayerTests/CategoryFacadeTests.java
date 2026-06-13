@@ -1,6 +1,6 @@
 package DomainLayerTests;
-import DomainLayer.CategoryDL;
-import DomainLayer.CategoryFacade;
+import InventoryModule.DomainLayer.CategoryDL;
+import InventoryModule.DomainLayer.CategoryFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
