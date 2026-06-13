@@ -94,6 +94,26 @@ public class SupplierFacade {
         return res;
     }
 
+    public SupplierAgreement GetAgreement(String supId)
+    {
+        Supplier s = FindSupplier(supId);
+        return s.getAgreement();
+    }
+    /*
+    Note - must be used before creating an order
+     */
+    public HashMap<String,Double> GetPricesFromAgreement(String supId,HashMap<String,Integer> itemsToQuan)
+    {
+        SupplierAgreement agreement= GetAgreement(supId);
+        if(!agreement.getItemsCatalogs().equals(itemsToQuan.keySet()))
+            throw new RuntimeException("OrderFacade:GetPricesFromAgreement Items sent to order differ from agreement.");
+        HashMap<String,Double> res = new HashMap<>();
+
+        for(String item:agreement.getItemsCatalogs())
+            res.put(item,agreement.GetEffectivePrice(item,itemsToQuan.get(item)));
+
+        return res;
+    }
     /*
     ====================
     Method that operates Update contact and supplier fields.
@@ -161,5 +181,21 @@ public class SupplierFacade {
     public static boolean IsSupplierExist(String supId)
     {
         return suppliers.containsKey(supId);
+    }
+
+    public static boolean IsSupplierOnFixedDays(String supId)
+    {
+        if(IsSupplierExist(supId))
+            return suppliers.get(supId).HasFixedDeliveryDays();
+        return false;
+    }
+
+    public static boolean IsDayInSchedule(String supId,DayOfWeek d)
+    {
+        if(IsSupplierExist(supId))
+        {
+            return suppliers.get(supId).GetFixedDays().contains(d);
+        }
+        return false;
     }
 }

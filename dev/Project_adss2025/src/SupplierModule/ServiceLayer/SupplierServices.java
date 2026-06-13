@@ -1,25 +1,25 @@
-package SupplierModule.DomainLayer;
+package SupplierModule.ServiceLayer;
 
 import CrossCuttingPackage.Report;
 import CrossCuttingPackage.Response;
+import SupplierModule.DomainLayer.SupplierFacade;
 
-import javax.swing.plaf.PanelUI;
 import java.time.DayOfWeek;
 import java.util.HashMap;
 
 public class SupplierServices {
 
-    private SupplierServices INSTANCE;
+    private static SupplierServices INSTANCE;
     private final SupplierFacade sf;
 
     private SupplierServices(){this.sf = new SupplierFacade();}
 
-    public SupplierServices getInstance()
+    public static SupplierServices getInstance()
     {
-        if(this.INSTANCE == null)
+        if(INSTANCE == null)
             INSTANCE= new SupplierServices();
 
-        return this.INSTANCE;
+        return INSTANCE;
     }
 
     public Response<String> AddSupplier(String supId, String regNumber, String name, String bank, String pt, HashMap<String,Double> itemsToPrices)
@@ -194,6 +194,21 @@ public class SupplierServices {
         try {
             sf.RemoveFixedDelDay(supId,d);
             res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    /*
+    Service that must be used before creating an order!
+     */
+    public Response<HashMap<String,Double>> GetAgreementPrices(String supId, HashMap<String,Integer> itemsToAmounts)
+    {
+        Response<HashMap<String,Double>> res;
+        try {
+            res = new Response<>(null,sf.GetPricesFromAgreement(supId,itemsToAmounts));
         }
         catch (Exception e) {
             res = new Response<>(e.getMessage());
