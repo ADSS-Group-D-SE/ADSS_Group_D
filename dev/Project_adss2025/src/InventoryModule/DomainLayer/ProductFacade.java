@@ -1,9 +1,7 @@
-package DomainLayer;
+package InventoryModule.DomainLayer;
 
 
 import CrossCuttingPackage.Notification;
-import CrossCuttingPackage.Promotion;
-import CrossCuttingPackage.PromotionScope;
 import CrossCuttingPackage.Report;
 
 import java.time.LocalDate;
@@ -283,6 +281,15 @@ public class ProductFacade {
     {
         ProductDL p =FindProductByID(id);
         return p.getPrice_to_supplyDiscounted();
+    }
+
+    /**
+    Throws if one was not find. -Use in UI to verify item list before creating agreement.
+     */
+    public void VerifyItems(List<String> items)
+    {
+        for(String cat:items)
+            FindProductByID(cat);
     }
 
 

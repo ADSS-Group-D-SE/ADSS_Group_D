@@ -1,9 +1,9 @@
 package DomainLayerTests;
 
-import DomainLayer.CategoryFacade;
+import InventoryModule.DomainLayer.CategoryFacade;
 import CrossCuttingPackage.Notification;
-import DomainLayer.ProductDL;
-import DomainLayer.ProductFacade;
+import InventoryModule.DomainLayer.ProductDL;
+import InventoryModule.DomainLayer.ProductFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

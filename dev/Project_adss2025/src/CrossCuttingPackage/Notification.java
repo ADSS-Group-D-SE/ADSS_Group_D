@@ -1,5 +1,7 @@
 package CrossCuttingPackage;
 
+import InventoryModule.DomainLayer.ShelfLocation;
+
 public class Notification {
 
     private String pName;

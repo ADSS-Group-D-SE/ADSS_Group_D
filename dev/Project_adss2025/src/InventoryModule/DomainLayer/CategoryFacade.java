@@ -1,7 +1,4 @@
-package DomainLayer;
-
-import CrossCuttingPackage.Promotion;
-import CrossCuttingPackage.PromotionScope;
+package InventoryModule.DomainLayer;
 
 import java.util.*;
 

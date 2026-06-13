@@ -1,4 +1,4 @@
-package CrossCuttingPackage;
+package InventoryModule.DomainLayer;
 
 public class ShelfLocation {
     private String aisle;
