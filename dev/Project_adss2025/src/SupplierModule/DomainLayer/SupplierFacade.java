@@ -4,7 +4,6 @@ import CrossCuttingPackage.Report;
 
 import java.time.DayOfWeek;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -14,6 +13,35 @@ public class SupplierFacade {
 
     public SupplierFacade()
     {}
+
+
+
+    public void AddItemToAgreement(String supId, String itemCatalog, Double price) {
+        Supplier supplier = this.suppliers.get(supId);
+        if (supplier == null) throw new RuntimeException("Supplier not found");
+        supplier.getAgreement().AddItem(itemCatalog, price);
+    }
+
+    public void RemoveItemFromAgreement(String supId, String itemCatalog) {
+        Supplier supplier = this.suppliers.get(supId);
+        if (supplier == null) throw new RuntimeException("Supplier not found");
+        supplier.getAgreement().RemoveItem(itemCatalog);
+    }
+
+    public void UpdateItemPriceInAgreement(String supId, String itemCatalog, Double newPrice) {
+        Supplier supplier = this.suppliers.get(supId);
+        if (supplier == null) {
+            throw new IllegalArgumentException("Supplier with ID " + supId + " does not exist.");
+        }
+        SupplierAgreement agreement = supplier.getAgreement();
+        if (agreement == null) {
+            throw new RuntimeException("No agreement found for supplier " + supId);
+        }
+        if (!agreement.getItemsInAgreement().containsKey(itemCatalog)) {
+            throw new RuntimeException("Cannot update price. Item " + itemCatalog + " is not included in the agreement.");
+        }
+        agreement.AddItem(itemCatalog, newPrice);
+    }
 
     /**
     Method that searches for supplier id in facade and returns its supplier object,
@@ -37,13 +65,18 @@ public class SupplierFacade {
      */
     public String AddSupplier(String supplierId,String regNum, String name, String bankAccount, String PayingTerms,HashMap<String,Double> itemsToPrices)
     {
-        if(suppliers.containsKey(supplierId))
-            throw new RuntimeException("SupplierFacade-AddSupplier:Supplier already exist in system.");
+        try {
+            if(suppliers.containsKey(supplierId))
+                throw new RuntimeException("SupplierFacade-AddSupplier:Supplier already exist in system.");
 
-        Supplier toAdd = new Supplier(supplierId,name,bankAccount,new PaymentTerms(PayingTerms),regNum,itemsToPrices);
+            Supplier toAdd = new Supplier(supplierId,name,bankAccount,new PaymentTerms(PayingTerms),regNum,itemsToPrices);
 
-        suppliers.put(supplierId,toAdd);
-        return toAdd.getSupplierId();
+            suppliers.put(supplierId,toAdd);
+            return toAdd.getSupplierId();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     /**

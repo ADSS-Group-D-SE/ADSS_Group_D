@@ -37,6 +37,8 @@ public class Supplier {
         this.agreement = new SupplierAgreement(this.supplierId,itemsToPrice);
     }
 
+
+
     public void AddContact(String name,String email, String phoneNumber) {
         contactPersons.put(name,new ContactInfo(name,email,phoneNumber));
     }
@@ -80,6 +82,11 @@ public class Supplier {
         ContactInfo c = FindContact(name);
         c.setPhoneNumber(p);
     }
+
+    public SupplierAgreement getAgreement() {
+        return agreement;
+    }
+
 
     public void AddFixedDay(DayOfWeek d){this.ddc.addDay(d);}
 

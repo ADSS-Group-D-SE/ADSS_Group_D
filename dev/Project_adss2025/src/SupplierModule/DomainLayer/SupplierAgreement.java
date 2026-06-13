@@ -1,6 +1,5 @@
 package SupplierModule.DomainLayer;
 
-import java.time.DayOfWeek;
 import java.util.*;
 
 public class SupplierAgreement {
