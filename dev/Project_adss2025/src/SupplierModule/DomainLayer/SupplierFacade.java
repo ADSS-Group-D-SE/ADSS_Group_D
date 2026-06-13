@@ -40,7 +40,7 @@ public class SupplierFacade {
         if (!agreement.getItemsInAgreement().containsKey(itemCatalog)) {
             throw new RuntimeException("Cannot update price. Item " + itemCatalog + " is not included in the agreement.");
         }
-        agreement.AddItem(itemCatalog, newPrice);
+        agreement.UpdateItemPrice(itemCatalog, newPrice);
     }
 
     /**

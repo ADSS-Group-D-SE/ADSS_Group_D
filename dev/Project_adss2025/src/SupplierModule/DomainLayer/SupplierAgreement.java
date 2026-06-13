@@ -106,4 +106,17 @@ public class SupplierAgreement {
 
     public Set<String> getItemsCatalogs(){return this.catalogsToPrice.keySet();}
 
+    public void UpdateItemPrice(String item, Double newPrice) {
+        if (item == null || item.isEmpty()) {
+            throw new IllegalArgumentException("Item catalog number cannot be null or empty.");
+        }
+        if (newPrice <= 0) {
+            throw new IllegalArgumentException("Item price must be positive.");
+        }
+        if (!this.catalogsToPrice.containsKey(item)) {
+            throw new RuntimeException("Cannot update price - item " + item + " is not in the agreement.");
+        }
+
+        this.catalogsToPrice.put(item, newPrice);
+    }
 }
