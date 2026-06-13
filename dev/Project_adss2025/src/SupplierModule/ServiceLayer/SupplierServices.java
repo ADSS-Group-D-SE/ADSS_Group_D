@@ -22,6 +22,47 @@ public class SupplierServices {
         return INSTANCE;
     }
 
+
+    public Response<String> AddItemToAgreement(String supId, String itemCatalog, Double price)
+    {
+        Response<String> res;
+        try {
+            sf.AddItemToAgreement(supId, itemCatalog, price);
+            res = new Response<>(null, "Item added/updated successfully");
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> RemoveItemFromAgreement(String supId, String itemCatalog)
+    {
+        Response<String> res;
+        try {
+            sf.RemoveItemFromAgreement(supId, itemCatalog);
+            res = new Response<>(null, null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> UpdateItemPriceInAgreement(String supId, String itemCatalog, Double newPrice)
+    {
+        Response<String> res;
+        try {
+            sf.UpdateItemPriceInAgreement(supId, itemCatalog, newPrice);
+            res = new Response<>(null, "Item price updated successfully");
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+
     public Response<String> AddSupplier(String supId, String regNumber, String name, String bank, String pt, HashMap<String,Double> itemsToPrices)
     {
         Response<String> res;
