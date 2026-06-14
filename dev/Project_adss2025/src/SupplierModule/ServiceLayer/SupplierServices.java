@@ -242,4 +242,19 @@ public class SupplierServices {
         return res;
     }
 
+    /*
+    Service that must be used before creating an order!
+     */
+    public Response<HashMap<String,Double>> GetAgreementPrices(String supId, HashMap<String,Integer> itemsToAmounts)
+    {
+        Response<HashMap<String,Double>> res;
+        try {
+            res = new Response<>(null,sf.GetPricesFromAgreement(supId,itemsToAmounts));
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
 }

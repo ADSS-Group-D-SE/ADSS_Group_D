@@ -11,6 +11,8 @@ import java.util.Map;
  */
 public class SupplierOrder {
 
+
+
     public enum OrderStatus {
         PENDING,    // Order created but not yet sent
         SENT,       // Order sent to supplier
@@ -20,36 +22,38 @@ public class SupplierOrder {
     }
 
     private String orderId;
+    private String supplierId;
     private LocalDate orderDate;
     private List<SupplierItem> items;
     private OrderStatus status;
 
-    private SupplierAgreement agreement; //ref for the agreement.
-
-    public SupplierOrder(HashMap<String,Integer> quantities,SupplierAgreement agreement) {
 
 
-        if(agreement == null)
-            throw new RuntimeException("Agreement must not be null to create an order.");
+    public SupplierOrder(String supId,HashMap<String,Integer> quantities,HashMap<String,Double> prices) {
 
-        this.agreement = agreement;
+        if(quantities == null || prices == null)
+            throw new RuntimeException("Bad quantities or prices sent.");
+        if(supId == null || supId.isEmpty())
+            throw new IllegalArgumentException("SupplierID must not be null or empty.");
+
+        this.supplierId = supId;
         this.orderDate = LocalDate.now();
-        this.orderId = agreement.getSupId() +"-" +this.orderDate;
+        this.orderId = supId +"-" +this.orderDate;
         this.status = OrderStatus.PENDING;
-        this.items = CreateItems(quantities);
+        this.items = CreateItems(quantities,prices);
     }
 
     /**
     Helper method that creates the list of items from agreement, given order quantities.
      */
-    private List<SupplierItem> CreateItems(HashMap<String,Integer> quantities)
+    private List<SupplierItem> CreateItems(HashMap<String,Integer> quantities,HashMap<String,Double> prices)
     {
         List<SupplierItem> res = new ArrayList<>();
         for(Map.Entry<String,Integer> en:quantities.entrySet())
         {
             String item = en.getKey();
             int amount = en.getValue();
-            res.add(new SupplierItem(item,agreement.GetEffectivePrice(item,amount),amount));
+            res.add(new SupplierItem(item,prices.get(item),amount));
         }
         return res;
     }
@@ -106,11 +110,24 @@ public class SupplierOrder {
         this.status = OrderStatus.PREP;
     }
 
+    public String Summary()
+    {
+        StringBuilder res = new StringBuilder();
+        for(int i=0;i<this.items.size();i++)
+        {
+            SupplierItem item =items.get(i);
+            res.append("Item " + (i+1) +":Catalog:" + item.getCatalogNumber() + ", Amount:" +item.getAmount() +", Total price:" + item.getPrice() +"\n");
+        }
+        return res.toString();
+    }
     // Getters
     public String getOrderId() { return orderId; }
     public LocalDate getOrderDate() { return orderDate; }
     public List<SupplierItem> getItems() { return new ArrayList<>(items); }
     public OrderStatus getStatus() { return status; }
 
+    public String getSupplierId() {
+        return supplierId;
+    }
     
 }

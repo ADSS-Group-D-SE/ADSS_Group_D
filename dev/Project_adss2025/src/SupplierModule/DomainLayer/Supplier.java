@@ -83,11 +83,6 @@ public class Supplier {
         c.setPhoneNumber(p);
     }
 
-    public SupplierAgreement getAgreement() {
-        return agreement;
-    }
-
-
     public void AddFixedDay(DayOfWeek d){this.ddc.addDay(d);}
 
     public void RemoveFixedDay(DayOfWeek d){ this.ddc.removeDay(d);}
@@ -159,4 +154,7 @@ public class Supplier {
         }
     }
 
+    public SupplierAgreement getAgreement() {
+        return agreement;
+    }
 }

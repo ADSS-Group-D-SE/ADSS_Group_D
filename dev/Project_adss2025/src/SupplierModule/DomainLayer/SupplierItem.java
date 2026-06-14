@@ -20,9 +20,9 @@ public class SupplierItem {
         return catalogNumber;
     }
 
-    public double getPrice() {
-        return price;
-    }
+    public double getPrice() {return price*amount;}
+
+    public double getRawPrice() { return this.price;}
 
     public int getAmount() {
         return amount;

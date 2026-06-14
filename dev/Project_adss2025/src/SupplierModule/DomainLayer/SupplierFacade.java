@@ -17,22 +17,17 @@ public class SupplierFacade {
 
 
     public void AddItemToAgreement(String supId, String itemCatalog, Double price) {
-        Supplier supplier = this.suppliers.get(supId);
-        if (supplier == null) throw new RuntimeException("Supplier not found");
+        Supplier supplier = FindSupplier(supId);
         supplier.getAgreement().AddItem(itemCatalog, price);
     }
 
     public void RemoveItemFromAgreement(String supId, String itemCatalog) {
-        Supplier supplier = this.suppliers.get(supId);
-        if (supplier == null) throw new RuntimeException("Supplier not found");
+        Supplier supplier = FindSupplier(supId);
         supplier.getAgreement().RemoveItem(itemCatalog);
     }
 
     public void UpdateItemPriceInAgreement(String supId, String itemCatalog, Double newPrice) {
-        Supplier supplier = this.suppliers.get(supId);
-        if (supplier == null) {
-            throw new IllegalArgumentException("Supplier with ID " + supId + " does not exist.");
-        }
+        Supplier supplier = FindSupplier(supId);
         SupplierAgreement agreement = supplier.getAgreement();
         if (agreement == null) {
             throw new RuntimeException("No agreement found for supplier " + supId);
@@ -122,6 +117,26 @@ public class SupplierFacade {
         return res;
     }
 
+    public SupplierAgreement GetAgreement(String supId)
+    {
+        Supplier s = FindSupplier(supId);
+        return s.getAgreement();
+    }
+    /*
+    Note - must be used before creating an order
+     */
+    public HashMap<String,Double> GetPricesFromAgreement(String supId,HashMap<String,Integer> itemsToQuan)
+    {
+        SupplierAgreement agreement= GetAgreement(supId);
+        if(!agreement.getItemsCatalogs().containsAll(itemsToQuan.keySet()))
+            throw new RuntimeException("OrderFacade:GetPricesFromAgreement Items sent to order are not in the agreement.");
+        HashMap<String,Double> res = new HashMap<>();
+
+        for(String item:agreement.getItemsCatalogs())
+            res.put(item,agreement.GetEffectivePrice(item,itemsToQuan.get(item)));
+
+        return res;
+    }
     /*
     ====================
     Method that operates Update contact and supplier fields.
@@ -189,5 +204,21 @@ public class SupplierFacade {
     public static boolean IsSupplierExist(String supId)
     {
         return suppliers.containsKey(supId);
+    }
+
+    public static boolean IsSupplierOnFixedDays(String supId)
+    {
+        if(IsSupplierExist(supId))
+            return suppliers.get(supId).HasFixedDeliveryDays();
+        return false;
+    }
+
+    public static boolean IsDayInSchedule(String supId,DayOfWeek d)
+    {
+        if(IsSupplierExist(supId))
+        {
+            return suppliers.get(supId).GetFixedDays().contains(d);
+        }
+        return false;
     }
 }
