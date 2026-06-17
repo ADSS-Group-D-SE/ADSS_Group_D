@@ -1,5 +1,7 @@
 package SupplierModule.DomainLayer;
 
+import CrossCuttingPackage.ContactDTO;
+
 public class ContactInfo {
     private String name;
     private String phoneNumber;
@@ -13,6 +15,15 @@ public class ContactInfo {
         this.setPhoneNumber(phoneNumber);
         this.setEmail(email);
     }
+
+    public ContactInfo(ContactDTO c)
+    {
+        setName(c.name);
+        setEmail(c.email);
+        setPhoneNumber(c.phoneNumber);
+    }
+
+    public ContactDTO toDTO() {return new ContactDTO(this.name,this.email,this.phoneNumber);}
 
     public String getName() {
         return name;
@@ -60,7 +71,6 @@ public class ContactInfo {
     private static boolean isValidEmail(String email) {
         if (email == null)
             return false;
-
 
         return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     }
