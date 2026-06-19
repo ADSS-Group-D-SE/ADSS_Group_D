@@ -7,7 +7,7 @@ public class ContactInfo {
     private String phoneNumber;
     private String email;
 
-    public ContactInfo(String name, String phoneNumber, String email) {
+    public ContactInfo(String name, String email, String phoneNumber) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Contact person name cannot be null or empty.");
         }
