@@ -466,7 +466,7 @@ public class supplierCLI {
         System.out.println("1. Supplier Name");
         System.out.println("2. Bank Details");
         System.out.println("3. Payment Terms");
-        System.out.println("4. Registration Number (ח\"פ)");
+        System.out.println("4. Registration Number");
         System.out.print("Your choice: ");
         String choice = scanner.nextLine();
 
