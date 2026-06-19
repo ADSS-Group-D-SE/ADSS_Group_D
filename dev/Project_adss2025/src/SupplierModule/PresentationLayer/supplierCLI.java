@@ -2,19 +2,24 @@ package SupplierModule.PresentationLayer;
 
 import CrossCuttingPackage.Report;
 import CrossCuttingPackage.Response;
+import SupplierModule.ServiceLayer.OrderServices;
 import SupplierModule.ServiceLayer.SupplierServices;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class supplierCLI {
     private final Scanner scanner;
     private final SupplierServices supplierServices;
+    private final OrderServices orderServices;
 
     public supplierCLI(){
         this.scanner = new Scanner(System.in);
         this.supplierServices = SupplierServices.getInstance();
+        this.orderServices = OrderServices.getInstance();
     }
 
     public void start() {
@@ -50,6 +55,8 @@ public class supplierCLI {
         System.out.println("10. Add Item to Agreement");
         System.out.println("11. Remove Item from Agreement");
         System.out.println("12. Update Item Price in Agreement");
+        System.out.println("13. Order Management Menu");
+        System.out.println("14. Load Supplier Test Data");
         System.out.println("0.  Exit");
         System.out.print("Please enter your choice: ");
     }
@@ -92,11 +99,246 @@ public class supplierCLI {
             case "12":
                 handleUpdateItemPriceInAgreement();
                 break;
+            case "13":
+                handleOrderMenu();
+                break;
+            case "14":
+                CreateSupplierTestData();
+                break;
             default:
                 System.out.println("Invalid input. Please choose a number between 0 and 9.");
                 break;
         }
     }
+
+    private void handleOrderMenu() {
+        while (true) {
+            System.out.println("\n=========================================");
+            System.out.println(">>> Order Management Menu");
+            System.out.println("=========================================");
+            System.out.println("1. Create New Order");
+            System.out.println("2. Remove/Delete Order");
+            System.out.println("3. View All System Orders");
+            System.out.println("4. View Orders By Supplier ID");
+            System.out.println("5. View Orders By Date Range");
+            System.out.println("6. Update Order Status (Prepare/Cancel/Deliver)");
+            System.out.println("0. Back to Supplier Main Menu");
+            System.out.print("Please enter your choice: ");
+
+            String choice = scanner.nextLine();
+            if (choice.equals("0")) {
+                break;
+            }
+
+            handleOrderChoice(choice);
+        }
+    }
+
+
+    private void handleOrderChoice(String choice) {
+        switch (choice) {
+            case "1":
+                handleCreateOrder();
+                break;
+            case "2":
+                handleRemoveOrder();
+                break;
+            case "3":
+                handleViewAllOrders();
+                break;
+            case "4":
+                handleViewOrdersBySupplier();
+                break;
+            case "5":
+                handleViewOrdersByDateRange();
+                break;
+            case "6":
+                handleUpdateOrderStatusMenu();
+                break;
+            default:
+                System.out.println("[!] Invalid choice. Please select 0-6.");
+                break;
+        }
+    }
+
+    private void handleCreateOrder() {
+        System.out.println("\n--- Create New Order ---");
+        System.out.print("Enter Supplier ID: ");
+        String supId = scanner.nextLine();
+
+        Response<HashMap<String, Double>> itemsRes = supplierServices.getSupplierItems(supId);
+
+        if (itemsRes.isError() || itemsRes.getReturnValue() == null || itemsRes.getReturnValue().isEmpty()) {
+            System.out.println("[!] ERROR: Could not find items for this supplier: " + itemsRes.getErrorMsg());
+            return;
+        }
+
+        HashMap<String, Double> catalogMap = itemsRes.getReturnValue();
+
+        ArrayList<String> availableItems = new ArrayList<>(catalogMap.keySet());
+
+        System.out.print("Is this order urgent? (yes/no): ");
+        boolean isUrgent = scanner.nextLine().equalsIgnoreCase("yes");
+
+        HashMap<String, Integer> amounts = new HashMap<>();
+        HashMap<String, Double> prices = new HashMap<>();
+
+        System.out.println("\n--- Available Items for Supplier " + supId + " ---");
+
+        while (true) {
+            System.out.println("Select an item by its number (or type 'done' to finish):");
+            for (int i = 0; i < availableItems.size(); i++) {
+                String itemId = availableItems.get(i);
+                double itemPrice = catalogMap.get(itemId);
+
+                System.out.println((i + 1) + ". " + itemId + " - Price: " + itemPrice);
+            }
+
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            if (choice.equalsIgnoreCase("done")) {
+                if (amounts.isEmpty()) {
+                    System.out.println("[!] You must add at least one item to create an order.");
+                    continue;
+                }
+                break;
+            }
+
+            int itemIndex;
+            try {
+                itemIndex = Integer.parseInt(choice) - 1;
+                if (itemIndex < 0 || itemIndex >= availableItems.size()) {
+                    System.out.println("[!] Invalid option. Please select a number from the list.");
+                    continue;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid input. Please enter a number or 'done'.");
+                continue;
+            }
+
+            String itemId = availableItems.get(itemIndex);
+
+            if (amounts.containsKey(itemId)) {
+                System.out.println("[!] This item is already in your order. Overwriting existing details.");
+            }
+
+            System.out.print("Enter Quantity for " + itemId + ": ");
+            int amount;
+            try {
+                amount = Integer.parseInt(scanner.nextLine());
+                if (amount <= 0) {
+                    System.out.println("[!] Quantity must be greater than 0. Item not added.");
+                    continue;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid quantity format. Item not added.");
+                continue;
+            }
+
+            double price = catalogMap.get(itemId);
+
+            amounts.put(itemId, amount);
+            prices.put(itemId, price);
+            System.out.println("[V] Added " + amount + " units of " + itemId + " to the order.\n");
+        }
+
+        Response<String> res = orderServices.CreateOrder(supId, isUrgent, amounts, prices);
+        if (res.isError()) {
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
+        } else {
+            System.out.println("[V] SUCCESS: Order created! Order ID: " + res.getReturnValue());
+        }
+    }
+
+    private void handleRemoveOrder() {
+        System.out.println("\n--- Remove Order ---");
+        System.out.print("Enter Order ID to remove: ");
+        String orderId = scanner.nextLine();
+
+        Response<String> res = orderServices.RemoveOrder(orderId);
+        printOrderResponseResult(res, "Order removed successfully!");
+    }
+
+    private void handleViewAllOrders() {
+        System.out.println("\n--- View All System Orders ---");
+        Response<Report> res = orderServices.ViewAllOrders();
+        printReportResult(res);
+    }
+
+    private void handleViewOrdersBySupplier() {
+        System.out.println("\n--- View Orders By Supplier ---");
+        System.out.print("Enter Supplier ID: ");
+        String supId = scanner.nextLine();
+
+        Response<Report> res = orderServices.ViewOrdersBySupplier(supId);
+        printReportResult(res);
+    }
+
+    private void handleViewOrdersByDateRange() {
+        System.out.println("\n--- View Orders By Date Range ---");
+        try {
+            System.out.print("Enter Start Date (YYYY-MM-DD): ");
+            LocalDate start = LocalDate.parse(scanner.nextLine());
+            System.out.print("Enter End Date (YYYY-MM-DD): ");
+            LocalDate end = LocalDate.parse(scanner.nextLine());
+
+            Response<Report> res = orderServices.ViewOrdersByDateRange(start, end);
+            printReportResult(res);
+        } catch (Exception e) {
+            System.out.println("[!] Invalid date format. Please use YYYY-MM-DD.");
+        }
+    }
+
+    private void handleUpdateOrderStatusMenu() {
+        System.out.println("\n--- Update Order Status ---");
+        System.out.print("Enter Order ID: ");
+        String orderId = scanner.nextLine();
+
+        System.out.println("Select New Status:");
+        System.out.println("1. Prepare");
+        System.out.println("2. Cancel");
+        System.out.println("3. Deliver");
+        System.out.print("Your choice: ");
+        String statusChoice = scanner.nextLine();
+
+        Response<String> res;
+        switch (statusChoice) {
+            case "1":
+                res = orderServices.PrepareOrder(orderId);
+                printOrderResponseResult(res, "Order status updated to PREPARE!");
+                break;
+            case "2":
+                res = orderServices.CancelOrder(orderId);
+                printOrderResponseResult(res, "Order successfully CANCELED!");
+                break;
+            case "3":
+                res = orderServices.DeliverOrder(orderId);
+                printOrderResponseResult(res, "Order status updated to DELIVERED!");
+                break;
+            default:
+                System.out.println("[!] Invalid status choice. Operation aborted.");
+                break;
+        }
+    }
+
+    private void printOrderResponseResult(Response<String> res, String successMessage) {
+        if (res.isError()) {
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
+        } else {
+            System.out.println("[V] SUCCESS: " + successMessage);
+        }
+    }
+
+    private void printReportResult(Response<Report> res) {
+        if (res.isError()) {
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
+        } else {
+            System.out.println("\n--- Orders Report ---");
+            System.out.println(res.getReturnValue().GetReport());
+        }
+    }
+
 
     private void handleAddSupplier() {
         System.out.println("\n--- Add New Supplier ---");
@@ -357,6 +599,187 @@ public class supplierCLI {
             if (res.getReturnValue() != null && !res.getReturnValue().isEmpty()) {
                 System.out.println("Details: " + res.getReturnValue());
             }
+        }
+    }
+
+
+
+    private void CreateSupplierTestData() {
+        System.out.println("\n==================================================");
+        System.out.println(">>> [!] Initializing Comprehensive Supplier & Order Test Data...");
+        System.out.println("==================================================");
+
+        Response<String> res;
+        try {
+
+            String sup1Id = "SUP-001";
+            HashMap<String, Double> beveragesCatalog = new HashMap<>();
+
+            beveragesCatalog.put("BEV-001", 2.10);
+            beveragesCatalog.put("BEV-002", 4.20);
+            beveragesCatalog.put("BEV-003", 5.80);
+            beveragesCatalog.put("BEV-004", 3.20);
+
+            System.out.println("[->] Registering Supplier: Beverage Distributors Ltd (SUP-001)...");
+            res = this.supplierServices.AddSupplier(
+                    sup1Id, "511234567", "Beverage Distributors Ltd",
+                    "Bank Leumi (10), Branch 800, Account 123456", "Net30", beveragesCatalog
+            );
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 1 base profile: " + res.getErrorMsg());
+
+            this.supplierServices.AddContact(sup1Id, "Dan Drinker", "0501112223", "dan.d@bevdist.co.il");
+            this.supplierServices.AddContact(sup1Id, "Maya Soda", "0501112224", "maya.s@bevdist.co.il");
+            this.supplierServices.AddDelvDay(sup1Id, DayOfWeek.SUNDAY);
+            this.supplierServices.AddDelvDay(sup1Id, DayOfWeek.WEDNESDAY);
+
+            System.out.println("[V] SUP-001 loaded with 4 items, 2 contacts, and 2 delivery days.");
+
+
+            String sup2Id = "SUP-002";
+            HashMap<String, Double> bakeryCatalog = new HashMap<>();
+
+            bakeryCatalog.put("BAK-001", 3.15);
+            bakeryCatalog.put("BAK-002", 2.90);
+            bakeryCatalog.put("BAK-003", 1.65);
+            bakeryCatalog.put("BAK-004", 5.50);
+
+            System.out.println("[->] Registering Supplier: Angel & Sons Bakery (SUP-002)...");
+            res = this.supplierServices.AddSupplier(
+                    sup2Id, "512345678", "Angel & Sons Bakery",
+                    "Bank Hapoalim (12), Branch 612, Account 789101", "Cash", bakeryCatalog
+            );
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 2 base profile: " + res.getErrorMsg());
+
+            this.supplierServices.AddContact(sup2Id, "Ronny Rollingpin", "0524445556", "ronny@angel-bakery.co.il");
+            this.supplierServices.AddContact(sup2Id, "Beni Baker", "0524445557", "orders@angel-bakery.co.il");
+            this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.MONDAY);
+            this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.TUESDAY);
+            this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.THURSDAY);
+
+            System.out.println("[V] SUP-002 loaded with 4 items, 2 contacts, and 3 delivery days.");
+
+
+
+            String sup3Id = "SUP-003";
+            HashMap<String, Double> householdCatalog = new HashMap<>();
+
+            householdCatalog.put("HOU-001", 4.80);
+            householdCatalog.put("HOU-002", 6.50);
+            householdCatalog.put("HOU-003", 11.20);
+            householdCatalog.put("HOU-004", 7.50);
+
+            System.out.println("[->] Registering Supplier: Clean & Bright Wholesale (SUP-003)...");
+            res = this.supplierServices.AddSupplier(
+                    sup3Id, "513456789", "Clean & Bright Wholesale Logistics",
+                    "Bank Discount (11), Branch 110, Account 456789", "Net60", householdCatalog
+            );
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 3 base profile: " + res.getErrorMsg());
+
+            this.supplierServices.AddContact(sup3Id, "Sara Soap", "0547778889", "sara.s@cleanbright.com");
+            this.supplierServices.AddContact(sup3Id, "Gabi Glanz", "039201144", "office@cleanbright.com");
+            this.supplierServices.AddDelvDay(sup3Id, DayOfWeek.TUESDAY);
+
+            System.out.println("[V] SUP-003 loaded with 4 items, 2 contacts, and 1 delivery day.");
+
+
+            String sup4Id = "SUP-004";
+            HashMap<String, Double> boutiqueCatalog = new HashMap<>();
+            boutiqueCatalog.put("BAK-003", 2.50);
+
+            System.out.println("[->] Registering Supplier: Express Boutique Food (SUP-004)...");
+            res = this.supplierServices.AddSupplier(
+                    sup4Id, "514567890", "Express Boutique Food",
+                    "Bank Yahav (04), Branch 112, Account 998877", "Net15", boutiqueCatalog
+            );
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 4 base profile: " + res.getErrorMsg());
+
+            this.supplierServices.AddContact(sup4Id, "Avi Express", "0556667778", "avi@expressboutique.co.il");
+            this.supplierServices.AddDelvDay(sup4Id, DayOfWeek.FRIDAY);
+
+            System.out.println("[V] SUP-004 loaded with 1 item, 1 contact, and 1 delivery day.");
+
+
+
+            System.out.println("\n[->] Generating Sample Orders across different statuses...");
+
+            HashMap<String, Integer> order1Amounts = new HashMap<>();
+            HashMap<String, Double> order1Prices = new HashMap<>();
+            order1Amounts.put("BEV-001", 50);
+            order1Prices.put("BEV-001", beveragesCatalog.get("BEV-001"));
+            order1Amounts.put("BEV-002", 30);
+            order1Prices.put("BEV-002", beveragesCatalog.get("BEV-002"));
+
+            res = this.orderServices.CreateOrder(sup1Id, false, order1Amounts, order1Prices);
+            if (res.isError()) throw new RuntimeException("Failed to create Order 1: " + res.getErrorMsg());
+            System.out.println("[V] Created Order ID: " + res.getReturnValue() + " (Pending - SUP-001)");
+
+
+            HashMap<String, Integer> order2Amounts = new HashMap<>();
+            HashMap<String, Double> order2Prices = new HashMap<>();
+            order2Amounts.put("BAK-003", 100);
+            order2Prices.put("BAK-003", bakeryCatalog.get("BAK-003"));
+            order2Amounts.put("BAK-004", 20);
+            order2Prices.put("BAK-004", bakeryCatalog.get("BAK-004"));
+
+            res = this.orderServices.CreateOrder(sup2Id, true, order2Amounts, order2Prices);
+            if (res.isError()) throw new RuntimeException("Failed to create Order 2: " + res.getErrorMsg());
+            String order2Id = res.getReturnValue();
+
+            Response<String> statusRes = this.orderServices.PrepareOrder(order2Id);
+            if (statusRes.isError()) throw new RuntimeException("Failed to update Order 2 to Prepare: " + statusRes.getErrorMsg());
+            System.out.println("[V] Created Order ID: " + order2Id + " (Status: PREPARE [Urgent] - SUP-002)");
+
+
+            HashMap<String, Integer> order3Amounts = new HashMap<>();
+            HashMap<String, Double> order3Prices = new HashMap<>();
+            order3Amounts.put("BAK-001", 40);
+            order3Prices.put("BAK-001", bakeryCatalog.get("BAK-001"));
+            order3Amounts.put("BAK-002", 25);
+            order3Prices.put("BAK-002", bakeryCatalog.get("BAK-002"));
+
+            res = this.orderServices.CreateOrder(sup2Id, false, order3Amounts, order3Prices);
+            if (res.isError()) throw new RuntimeException("Failed to create Order 3: " + res.getErrorMsg());
+            String order3Id = res.getReturnValue();
+
+            statusRes = this.orderServices.PrepareOrder(order3Id);
+            if (statusRes.isError()) throw new RuntimeException("Failed to update Order 3 to Prepare: " + statusRes.getErrorMsg());
+            System.out.println("[V] Created Order ID: " + order3Id + " (Status: PREPARE - SUP-002)");
+
+
+            HashMap<String, Integer> order4Amounts = new HashMap<>();
+            HashMap<String, Double> order4Prices = new HashMap<>();
+            order4Amounts.put("HOU-003", 15);
+            order4Prices.put("HOU-003", householdCatalog.get("HOU-003"));
+            order4Amounts.put("HOU-004", 20);
+            order4Prices.put("HOU-004", householdCatalog.get("HOU-004"));
+
+            res = this.orderServices.CreateOrder(sup3Id, false, order4Amounts, order4Prices);
+            if (res.isError()) throw new RuntimeException("Failed to create Order 4: " + res.getErrorMsg());
+            String order4Id = res.getReturnValue();
+
+            statusRes = this.orderServices.CancelOrder(order4Id);
+            if (statusRes.isError()) throw new RuntimeException("Failed to cancel Order 4: " + statusRes.getErrorMsg());
+            System.out.println("[V] Created Order ID: " + order4Id + " (Status: CANCELED - SUP-003)");
+
+
+            HashMap<String, Integer> order5Amounts = new HashMap<>();
+            HashMap<String, Double> order5Prices = new HashMap<>();
+            order5Amounts.put("BAK-003", 10);
+            order5Prices.put("BAK-003", boutiqueCatalog.get("BAK-003"));
+
+            res = this.orderServices.CreateOrder(sup4Id, false, order5Amounts, order5Prices);
+            if (res.isError()) throw new RuntimeException("Failed to create Order 5: " + res.getErrorMsg());
+            System.out.println("[V] Created Order ID: " + res.getReturnValue() + " (Pending - SUP-004)");
+
+            System.out.println("\n==================================================");
+            System.out.println("[V] SUCCESS: All Supplier & Order Test Data Loaded!");
+            System.out.println("==================================================");
+        }
+        catch (Exception e) {
+            System.out.println("\n==================================================");
+            System.out.println("[!] FATAL SYSTEM ERROR CREATING SUPPLIER/ORDER TEST DATA");
+            System.out.println("Context/Message: " + e.getMessage());
+            System.out.println("==================================================");
         }
     }
 }

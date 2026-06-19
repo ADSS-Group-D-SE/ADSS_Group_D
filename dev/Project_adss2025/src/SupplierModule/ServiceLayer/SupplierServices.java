@@ -5,6 +5,7 @@ import CrossCuttingPackage.Response;
 import SupplierModule.DomainLayer.SupplierFacade;
 
 import java.time.DayOfWeek;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class SupplierServices {
@@ -28,7 +29,7 @@ public class SupplierServices {
         Response<String> res;
         try {
             sf.AddItemToAgreement(supId, itemCatalog, price);
-            res = new Response<>(null, "Item added/updated successfully");
+            res = new Response<>(null, "Item added successfully");
         }
         catch (Exception e) {
             res = new Response<>(e.getMessage());
@@ -257,4 +258,14 @@ public class SupplierServices {
         return res;
     }
 
+    public Response<HashMap<String,Double>> getSupplierItems(String supId) {
+        Response<HashMap<String,Double>> res;
+        try {
+            res = new Response<>(null,this.sf.getProductfromSupplier(supId));
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
 }

@@ -27,7 +27,7 @@ public class SupplierOrder {
     private List<SupplierItem> items;
     private OrderStatus status;
 
-
+    private static int orderSequence = 0;
 
     public SupplierOrder(String supId,HashMap<String,Integer> quantities,HashMap<String,Double> prices) {
 
@@ -38,7 +38,7 @@ public class SupplierOrder {
 
         this.supplierId = supId;
         this.orderDate = LocalDate.now();
-        this.orderId = supId +"-" +this.orderDate;
+        this.orderId = supId +"-" +this.orderDate+ "-" + (orderSequence++);
         this.status = OrderStatus.PENDING;
         this.items = CreateItems(quantities,prices);
     }
