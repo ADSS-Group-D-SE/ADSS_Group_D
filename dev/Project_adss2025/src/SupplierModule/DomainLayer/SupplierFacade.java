@@ -3,6 +3,7 @@ package SupplierModule.DomainLayer;
 import CrossCuttingPackage.Report;
 
 import java.time.DayOfWeek;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -220,5 +221,25 @@ public class SupplierFacade {
             return suppliers.get(supId).GetFixedDays().contains(d);
         }
         return false;
+    }
+
+    public HashMap<String,Double> getProductfromSupplier(String supId) {
+        if (supId == null || supId.trim().isEmpty()) {
+            throw new RuntimeException("Supplier ID cannot be empty.");
+        }
+
+        Supplier supplier = suppliers.get(supId);
+
+        if (supplier == null) {
+            throw new RuntimeException("Supplier with ID " + supId + " does not exist.");
+        }
+
+        HashMap<String,Double> items = supplier.getAgreement().getItemsInAgreement();
+
+        if (items == null || items.isEmpty()) {
+            throw new RuntimeException("Supplier " + supId + " has no items in their catalog.");
+        }
+
+        return items;
     }
 }

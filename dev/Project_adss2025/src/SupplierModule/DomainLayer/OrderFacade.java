@@ -26,7 +26,7 @@ public class OrderFacade {
      */
     public String CreateOrder(String supId,boolean isUrgent,HashMap<String,Integer> itemsToQuan,HashMap<String,Double> prices)
     {
-        if(prices.keySet().equals(itemsToQuan.keySet()))
+        if(!prices.keySet().equals(itemsToQuan.keySet()))
             throw new RuntimeException("OrderFacade:CreateOrder - Items sets is different between prices and amounts.");
         if(!isUrgent && SupplierFacade.IsSupplierOnFixedDays(supId) && !SupplierFacade.IsDayInSchedule(supId,LocalDate.now().getDayOfWeek()))
             throw new RuntimeException("OrderFacade:CreateOrder - Supplier " + supId +" accepts does not accept non urgent orders today.");
