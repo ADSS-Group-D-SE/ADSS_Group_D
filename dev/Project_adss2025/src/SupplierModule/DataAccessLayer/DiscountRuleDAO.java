@@ -8,7 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class DiscountRuleDAO {
@@ -33,18 +35,29 @@ public class DiscountRuleDAO {
         }
     }
 
-    public void Remove(String supplierId, String name) {
-        String q = "DELETE FROM DiscountRules WHERE supplierId = ? AND name = ?";
+    public void InsertRules(String supId, HashMap<String,List<DiscountRuleDTO>> discounts)
+    {
+        for (Map.Entry<String,List<DiscountRuleDTO>> en: discounts.entrySet())
+        {
+            String cat = en.getKey();
+            List<DiscountRuleDTO> list = en.getValue();
+
+            for(DiscountRuleDTO r:list)
+                Insert(supId,r.ruleName,cat,r.discountPercent,r.minQuantity);
+        }
+
+    }
+
+    public void Remove(String supplierId,String cat, String name) {
+        String q = "DELETE FROM DiscountRules WHERE supplierId = ? AND name = ? AND catalog_number = ?";
 
         try (Connection conn = DriverManager.getConnection(url);PreparedStatement qu = conn.prepareStatement(q)) {
 
             qu.setString(1, supplierId);
             qu.setString(2, name);
+            qu.setString(3, cat);
 
-            int rowsDeleted = qu.executeUpdate();
-
-            if (rowsDeleted <= 0)
-                throw new RuntimeException("DiscountRuleDAO:Remove - failed to find discount rule: " + name + " belonging to supplier: " + supplierId);
+            qu.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("DiscountRuleDAO:Remove - " + e.getMessage());
@@ -58,10 +71,22 @@ public class DiscountRuleDAO {
 
             qu.setString(1, supplierId);
 
-            int rowsDeleted = qu.executeUpdate();
+            qu.executeUpdate();
 
-            if (rowsDeleted <= 0)
-                throw new RuntimeException("DiscountRuleDAO:RemoveBySupplierId - failed to find discount rules belonging to supplier: " + supplierId);
+        } catch (SQLException e) {
+            throw new RuntimeException("DiscountRuleDAO:RemoveBySupplierId - " + e.getMessage());
+        }
+    }
+
+    public void RemoveBySupplierIdAndCatalog(String supplierId,String cat) {
+        String q = "DELETE FROM DiscountRules WHERE supplierId = ? and catalog_number = ?";
+
+        try (Connection conn = DriverManager.getConnection(url);PreparedStatement qu = conn.prepareStatement(q)) {
+
+            qu.setString(1, supplierId);
+            qu.setString(2, supplierId);
+
+            qu.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("DiscountRuleDAO:RemoveBySupplierId - " + e.getMessage());
@@ -89,32 +114,30 @@ public class DiscountRuleDAO {
         }
     }
 
-    public List<DiscountRuleDTO> Select(String supplierId) {
+    public HashMap<String,List<DiscountRuleDTO>> Select(String supplierId) {
         String q = "SELECT supplierId, name, catalog_number, discount_pre, minAmount FROM DiscountRules WHERE supplierId = ?";
-        List<DiscountRuleDTO> res = new ArrayList<>();
+        HashMap<String,List<DiscountRuleDTO>> map = new HashMap<>();
 
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(q)) {
 
             qu.setString(1, supplierId);
 
             ResultSet rs = qu.executeQuery();
-            boolean found = false;
 
             while (rs.next()) {
-                found = true;
 
-                res.add(new DiscountRuleDTO(rs.getString("name"),
-                        rs.getString("catalog_number"),
+                String catalog = rs.getString("catalog_number");
+                map.putIfAbsent(catalog,new ArrayList<DiscountRuleDTO>());
+
+                map.get(catalog).add(new DiscountRuleDTO(rs.getString("name"),
                         rs.getInt("minAmount"),
                         rs.getDouble("discount_pre")));
             }
-            if (!found)
-                throw new RuntimeException("DiscountRuleDAO:Select - failed to find discount rules belonging to supplier: " + supplierId);
 
         } catch (SQLException e) {
             throw new RuntimeException("DiscountRuleDAO:Select - " + e.getMessage());
         }
-        return res;
+        return map;
     }
 
     public void Clean() {

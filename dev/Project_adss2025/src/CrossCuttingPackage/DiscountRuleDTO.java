@@ -2,7 +2,6 @@ package CrossCuttingPackage;
 
 public class DiscountRuleDTO {
     public String ruleName;
-    public String catalog_number;
     public int minQuantity;
     public double discountPercent;
 
@@ -12,10 +11,9 @@ public class DiscountRuleDTO {
      * @param min
      * @param pre
      */
-    public DiscountRuleDTO(String name,String catalog_number,int min,double pre){
+    public DiscountRuleDTO(String name,int min,double pre){
         this.ruleName = name;
         this.minQuantity =min;
         this.discountPercent = pre;
-        this.catalog_number = catalog_number;
     }
 }

@@ -109,11 +109,37 @@ public class OrderServices {
         return res;
     }
 
+    public Response<String> SendOrder(String orderId)
+    {
+        Response<String> res;
+        try {
+            this.of.SendOrder(orderId);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
     public Response<String> DeliverOrder(String orderId)
     {
         Response<String> res;
         try {
             this.of.DeliverOrder(orderId);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> Clean()
+    {
+        Response<String> res;
+        try {
+            this.of.CleanData();
             res = new Response<>(null,null);
         }
         catch (Exception e) {

@@ -1,4 +1,5 @@
 package SupplierModule.DataAccessLayer;
+import CrossCuttingPackage.DiscountRuleDTO;
 import CrossCuttingPackage.SupplierAgreementDTO;
 
 import java.sql.Connection;
@@ -7,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SupplierAgreementDAO {
@@ -31,9 +33,10 @@ public class SupplierAgreementDAO {
         }
     }
 
-    public void InsertItems(String supplierId, HashMap<String,Double> itemsToPrices)
+    public void InsertItems(String supplierId, SupplierAgreementDTO agDTO)
     {
-        for(Map.Entry<String,Double> en: itemsToPrices.entrySet())
+        discountRuleDAO.InsertRules(supplierId,agDTO.rules);
+        for(Map.Entry<String,Double> en: agDTO.agreement.entrySet())
             this.InsertItem(supplierId,en.getKey(),en.getValue());
     }
 
@@ -62,6 +65,8 @@ public class SupplierAgreementDAO {
 
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(q)) {
 
+            discountRuleDAO.RemoveBySupplierIdAndCatalog(supplierId,catalogNumber); // removes discountRule Aswell.
+
             qu.setString(1, supplierId);
             qu.setString(2, catalogNumber);
 
@@ -70,7 +75,7 @@ public class SupplierAgreementDAO {
             if (rowsDeleted <= 0)
                 throw new RuntimeException("SupplierAgreementDAO:RemoveItem - failed to find an agreement belonging to supplier: " + supplierId);
 
-            discountRuleDAO.Remove(supplierId,catalogNumber); // removes discountRule Aswell.
+
 
         } catch (SQLException e) {
             throw new RuntimeException("SupplierAgreementDAO:RemoveItem - " + e.getMessage());
@@ -82,14 +87,10 @@ public class SupplierAgreementDAO {
 
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(q)) {
 
+            discountRuleDAO.RemoveBySupplierId(supplierId); // deletes all supplierAgreement discountRule.
             qu.setString(1, supplierId);
 
-            int rowsDeleted = qu.executeUpdate();
-
-            if(rowsDeleted <= 0)
-                throw new RuntimeException("SupplierAgreementDAO:DeleteAgreement - failed to find an agreement belonging to supplier: " + supplierId);
-
-            discountRuleDAO.RemoveBySupplierId(supplierId); // deletes all supplierAgreement discountRule.
+            qu.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("SupplierAgreementDAO:DeleteAgreement - " + e.getMessage());
@@ -118,7 +119,7 @@ public class SupplierAgreementDAO {
         } catch (SQLException e) {
             throw new RuntimeException("SupplierAgreementDAO:SelectAgreement - " + e.getMessage());
         }
-        return new SupplierAgreementDTO(temp,discountRuleDAO.Select(supplierId));
+        return new SupplierAgreementDTO(supplierId,temp,discountRuleDAO.Select(supplierId));
     }
 
     public void Clean() {
@@ -126,8 +127,9 @@ public class SupplierAgreementDAO {
 
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(q)) {
 
+            discountRuleDAO.Clean();
             qu.executeUpdate();
-            discountRuleDAO.Clean(); // clean all the discountRules linked to agreements.
+             // clean all the discountRules linked to agreements.
 
         } catch (SQLException e) {
             throw new RuntimeException("SupplierAgreementDAO:Clean - " + e.getMessage());

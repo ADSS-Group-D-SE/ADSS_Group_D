@@ -1,4 +1,5 @@
 package SupplierModule.DataAccessLayer;
+
 import CrossCuttingPackage.SupplierDTO;
 
 import java.sql.Connection;
@@ -16,17 +17,18 @@ public class SupplierDAO {
     private static final SupplierAgreementDAO agreementDAO = new SupplierAgreementDAO();
     private static final ContactDAO contactDAO = new ContactDAO();
 
-    public void Insert(String supId,String reg,String name,String bankAcc,String paymentTerms,String ddc)
+    public void Insert(SupplierDTO sup)
     {
         String q = "INSERT INTO Suppliers (supplierId, name, regNumber, bankAccount, payTerms, ddc) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(url);PreparedStatement qu = conn.prepareStatement(q)) {
 
-            qu.setString(1, supId);qu.setString(2, name);
-            qu.setString(3, reg);
-            qu.setString(4, bankAcc);
-            qu.setString(5, paymentTerms);
-            qu.setString(6, ddc);
+            agreementDAO.InsertItems(sup.supplierId,sup.agreement);
+            qu.setString(1, sup.supplierId);qu.setString(2, sup.name);
+            qu.setString(3, sup.regNumber);
+            qu.setString(4, sup.bankAccount);
+            qu.setString(5, sup.paymentTerms);
+            qu.setString(6, sup.ddc);
 
             qu.executeUpdate();
 
@@ -45,13 +47,14 @@ Method that removes a supplier from db.
 
         qu.setString(1, supplierId);
 
+        agreementDAO.DeleteAgreement(supplierId);
+        contactDAO.RemoveSupplier(supplierId); // deletes supplier's data from all tables.
+
         int rowsDeleted = qu.executeUpdate();
 
         if (rowsDeleted <= 0)
             throw new RuntimeException("SuppliersDAO:RemoveSupplier - no such supplier was found in db:"+supplierId);
 
-        agreementDAO.DeleteAgreement(supplierId);
-        contactDAO.RemoveSupplier(supplierId); // deletes supplier's data from all tables.
 
         } catch (SQLException e) {
             throw  new RuntimeException("SuppliersDAO:RemoveSupplier - " + e.getMessage());
@@ -140,9 +143,10 @@ Method that removes a supplier from db.
 
         try (Connection conn = DriverManager.getConnection(url);PreparedStatement qu = conn.prepareStatement(q)) {
 
-            qu.executeUpdate();
             agreementDAO.Clean();
             contactDAO.Clean();
+            qu.executeUpdate();
+
 
         } catch (SQLException e) {
             throw  new RuntimeException("SuppliersDAO:Clean - " + e.getMessage());

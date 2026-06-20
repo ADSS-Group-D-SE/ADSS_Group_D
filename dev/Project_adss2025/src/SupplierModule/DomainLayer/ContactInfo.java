@@ -1,28 +1,47 @@
 package SupplierModule.DomainLayer;
 
 import CrossCuttingPackage.ContactDTO;
+import SupplierModule.DataAccessLayer.ContactDAO;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ContactInfo {
     private String name;
     private String phoneNumber;
     private String email;
+    private static final ContactDAO dao = new ContactDAO();
 
     public ContactInfo(String name, String email, String phoneNumber) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Contact person name cannot be null or empty.");
-        }
-        this.setName(name);
-        this.setPhoneNumber(phoneNumber);
-        this.setEmail(email);
+        setName(name);
+        setEmail(email);
+        setPhoneNumber(phoneNumber);
     }
 
     public ContactInfo(ContactDTO c)
     {
-        setName(c.name);
-        setEmail(c.email);
-        setPhoneNumber(c.phoneNumber);
+        this(c.name,c.email, c.phoneNumber);
     }
 
+    public static List<ContactDTO> convert(HashMap<String,ContactInfo> map)
+    {
+        List<ContactDTO> res = new ArrayList<>();
+        for(Map.Entry<String,ContactInfo> en: map.entrySet())
+        {
+            res.add(en.getValue().toDTO());
+        }
+        return res;
+    }
+
+    public static HashMap<String,ContactInfo> convert(List<ContactDTO> list)
+    {
+        HashMap<String,ContactInfo> res = new HashMap<>();
+        for(ContactDTO c : list)
+            res.put(c.name,new ContactInfo(c));
+        return res;
+    }
     public ContactDTO toDTO() {return new ContactDTO(this.name,this.email,this.phoneNumber);}
 
     public String getName() {
@@ -61,9 +80,9 @@ public class ContactInfo {
 
     @Override
     public String toString() {
-        return "Name='" + name + '\'' +
+        return "[Name='" + name + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
-                ", email='" + email + '\'';
+                ", email='" + email +"]" + '\'';
     }
     /**
      Helper methods to verify

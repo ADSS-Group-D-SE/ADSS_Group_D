@@ -42,7 +42,7 @@ public class ContactDAO {
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(q)) {
 
             qu.setString(1, supplierId);
-            qu.setString(1, name);
+            qu.setString(2, name);
 
             int rowsDeleted = qu.executeUpdate();
 
@@ -61,10 +61,7 @@ public class ContactDAO {
 
             qu.setString(1, supplierId);
 
-            int rowsDeleted = qu.executeUpdate();
-
-            if (rowsDeleted <= 0)
-                throw new RuntimeException("ContactInfoDAO:RemoveSupplier - failed to find contact info belonging to supplier: " + supplierId);
+            qu.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException("ContactInfoDAO:RemoveSupplier - " + e.getMessage());
@@ -79,14 +76,10 @@ public class ContactDAO {
             qu.setString(1, supplierId);
 
             try (ResultSet rs = qu.executeQuery()) {
-                boolean found = false;
 
                 while (rs.next()) {
-                    found = true;
                     res.add(new ContactDTO(rs.getString("name"),rs.getString("email"),rs.getString("phoneNumber")));
                 }
-                if (!found)
-                    throw new RuntimeException("ContactInfoDAO:Select - failed to find contact info belonging to supplier: " + supplierId);
             }
         } catch (SQLException e) {
             throw new RuntimeException("ContactInfoDAO:Select - " + e.getMessage());
