@@ -1,15 +1,16 @@
 package SupplierModule.DomainLayer;
 
 import CrossCuttingPackage.Report;
+import CrossCuttingPackage.SupplierDTO;
+import SupplierModule.DataAccessLayer.SupplierAgreementDAO;
+import SupplierModule.DataAccessLayer.SupplierDAO;
 
 import java.time.DayOfWeek;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class SupplierFacade {
 
+    private static final SupplierDAO supDao = new SupplierDAO();
     private static final HashMap<String,Supplier> suppliers = new HashMap<>();
 
     public SupplierFacade()
@@ -36,6 +37,7 @@ public class SupplierFacade {
         if (!agreement.getItemsInAgreement().containsKey(itemCatalog)) {
             throw new RuntimeException("Cannot update price. Item " + itemCatalog + " is not included in the agreement.");
         }
+
         agreement.UpdateItemPrice(itemCatalog, newPrice);
     }
 
@@ -64,10 +66,11 @@ public class SupplierFacade {
         if(suppliers.containsKey(supplierId))
             throw new RuntimeException("SupplierFacade-AddSupplier:Supplier already exist in system.");
         Supplier toAdd = new Supplier(supplierId,name,bankAccount,new PaymentTerms(PayingTerms),regNum,itemsToPrices);
+
+        supDao.Insert(toAdd.toDTO()); // saves in db.
+
         suppliers.put(supplierId,toAdd);
         return toAdd.getSupplierId();
-
-
     }
 
     /**
@@ -78,6 +81,7 @@ public class SupplierFacade {
     public void RemoveSupplier(String supplierId)
     {
         Supplier toRemove = FindSupplier(supplierId);
+        supDao.Delete(supplierId);
         suppliers.remove(toRemove.getSupplierId());
     }
 
@@ -133,9 +137,22 @@ public class SupplierFacade {
             throw new RuntimeException("OrderFacade:GetPricesFromAgreement Items sent to order are not in the agreement.");
         HashMap<String,Double> res = new HashMap<>();
 
-        for(String item:agreement.getItemsCatalogs())
+        for(String item:itemsToQuan.keySet())
             res.put(item,agreement.GetEffectivePrice(item,itemsToQuan.get(item)));
 
+        return res;
+    }
+
+    public Report ViewAllSuppliers()
+    {
+        Report res = new Report("Suppliers report\n");
+        res.AddLine("===========================");
+        for (Map.Entry<String,Supplier> en : suppliers.entrySet())
+        {
+            Supplier s = en.getValue();
+            res.AddLine(s.Summary());
+            res.AddLine("");
+        }
         return res;
     }
     /*
@@ -162,21 +179,29 @@ public class SupplierFacade {
     public void UpdateSupplierName(String supId,String name)
     {
         Supplier s = FindSupplier(supId);
+
+        supDao.UpdateSupplier(s.getSupplierId(),name,s.getRegNumber(),s.getBankAccount(),s.getPaymentTerms().toString(),s.getDDC().toString());
         s.setName(name);
     }
     public void UpdateSupplierBank(String supId,String bankAccount)
     {
         Supplier s = FindSupplier(supId);
+
+        supDao.UpdateSupplier(s.getSupplierId(),s.getName(),s.getRegNumber(),bankAccount,s.getPaymentTerms().toString(),s.getDDC().toString());
         s.setBankAccount(bankAccount);
     }
     public void UpdateSupplierPaymentTerms(String supId,String pt)
     {
         Supplier s = FindSupplier(supId);
+
+        supDao.UpdateSupplier(s.getSupplierId(),s.getName(),s.getRegNumber(),s.getBankAccount(),pt,s.getDDC().toString());
         s.setPaymentTerms(pt);
     }
     public void UpdateSupplierRegNumber(String supId,String reg)
     {
         Supplier s = FindSupplier(supId);
+
+        supDao.UpdateSupplier(s.getSupplierId(),s.getName(),reg,s.getBankAccount(),s.getPaymentTerms().toString(),s.getDDC().toString());
         s.setRegNumber(reg);
     }
 
@@ -188,12 +213,20 @@ public class SupplierFacade {
     public void AddFixedDelDay(String supId,DayOfWeek d)
     {
         Supplier s = FindSupplier(supId);
+        DeliveryDaySchedule temp =new DeliveryDaySchedule(s.getDDC().getDays());
+        temp.addDay(d);
+
+        supDao.UpdateSupplier(s.getSupplierId(),s.getName(),s.getRegNumber(),s.getBankAccount(),s.getPaymentTerms().toString(),temp.toString());
         s.AddFixedDay(d);
     }
 
     public void RemoveFixedDelDay(String supId,DayOfWeek d)
     {
         Supplier s = FindSupplier(supId);
+        DeliveryDaySchedule temp =new DeliveryDaySchedule(s.getDDC().getDays());
+        temp.removeDay(d);
+
+        supDao.UpdateSupplier(s.getSupplierId(),s.getName(),s.getRegNumber(),s.getBankAccount(),s.getPaymentTerms().toString(),temp.toString());
         s.RemoveFixedDay(d);
     }
     /*
@@ -241,5 +274,74 @@ public class SupplierFacade {
         }
 
         return items;
+    }
+
+    public void AddDiscountRule(String supId,String cat,String name,double disc,int min){
+
+        Supplier s = FindSupplier(supId);
+        SupplierAgreement agreement = s.getAgreement();
+
+        if (agreement == null) {
+            throw new RuntimeException("No agreement found for supplier " + supId);
+        }
+
+        agreement.AddDiscountRule(cat,name,min,disc);
+    }
+
+    public void RemoveDiscountRule(String supId,String cat,String name){
+
+        Supplier s = FindSupplier(supId);
+        SupplierAgreement agreement = s.getAgreement();
+
+        if (agreement == null) {
+            throw new RuntimeException("No agreement found for supplier " + supId);
+        }
+
+        agreement.RemoveDiscountRule(cat,name);
+    }
+
+    public void UpdateDiscountRuleMin(String supId,String cat,String name,int min){
+
+        Supplier s = FindSupplier(supId);
+        SupplierAgreement agreement = s.getAgreement();
+
+        if (agreement == null) {
+            throw new RuntimeException("No agreement found for supplier " + supId);
+        }
+
+        DiscountRule rule = agreement.FindDRule(cat,name);
+
+        rule.setMinQuantity(supId,cat,min);
+    }
+
+    public void UpdateDiscountRuleDiscount(String supId,String cat,String name,double d){
+
+        Supplier s = FindSupplier(supId);
+        SupplierAgreement agreement = s.getAgreement();
+
+        if (agreement == null) {
+            throw new RuntimeException("No agreement found for supplier " + supId);
+        }
+
+        DiscountRule rule = agreement.FindDRule(cat,name);
+
+        rule.setDiscountPercent(supId,cat,d);
+    }
+
+    public void CleanData()
+    {
+        supDao.Clean(); //clears data in db in suppliers.
+    }
+
+    /*
+    Builds facade from data from DB in a list of DTOs.
+     */
+    public void LoadData()
+    {
+        List<SupplierDTO> sups = supDao.SelectAll();
+        for(SupplierDTO s:sups)
+        {
+            suppliers.put(s.supplierId,new Supplier(s));
+        }
     }
 }

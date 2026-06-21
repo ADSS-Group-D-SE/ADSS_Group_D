@@ -1,6 +1,10 @@
 package SupplierModule.DomainLayer;
 
+import CrossCuttingPackage.SupplierOrderDTO;
+
+import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +31,6 @@ public class SupplierOrder {
     private List<SupplierItem> items;
     private OrderStatus status;
 
-    private static int orderSequence = 0;
 
     public SupplierOrder(String supId,HashMap<String,Integer> quantities,HashMap<String,Double> prices) {
 
@@ -38,9 +41,40 @@ public class SupplierOrder {
 
         this.supplierId = supId;
         this.orderDate = LocalDate.now();
-        this.orderId = supId +"-" +this.orderDate+ "-" + (orderSequence++);
+        this.orderId = supId +"-" + LocalDateTime.now(); // unique id as seconds are counted.
         this.status = OrderStatus.PENDING;
         this.items = CreateItems(quantities,prices);
+    }
+
+    public SupplierOrder(SupplierOrderDTO dto)
+    {
+        this.supplierId = dto.supplierId;
+        this.orderId = dto.orderId;
+        this.orderDate = dto.orderDate;
+        this.status = dto.status;
+        this.items = SupplierItem.convertToItems(dto.items);
+    }
+
+    public SupplierOrderDTO toDTO()
+    {
+        return new SupplierOrderDTO(this.orderId,this.supplierId,this.orderDate,SupplierItem.convertToDTO(this.items),this.status);
+    }
+
+    public static OrderStatus MapOrderStatus(String status) {
+        switch (status.toUpperCase()) {
+            case "PENDING":
+                return OrderStatus.PENDING;
+            case "SENT":
+                return OrderStatus.SENT;
+            case "DELIVERED":
+                return OrderStatus.DELIVERED;
+            case "CANCELLED":
+                return OrderStatus.CANCELLED;
+            case "PREP":
+                return OrderStatus.PREP;
+            default:
+                throw new RuntimeException("Invalid order status: " + status);
+        }
     }
 
     /**
@@ -128,6 +162,14 @@ public class SupplierOrder {
 
     public String getSupplierId() {
         return supplierId;
+    }
+
+    public static List<SupplierOrder> convertToOrders(List<SupplierOrderDTO> list)
+    {
+        List<SupplierOrder> res = new ArrayList<>();
+        for(SupplierOrderDTO o:list)
+            res.add(new SupplierOrder(o));
+        return res;
     }
     
 }

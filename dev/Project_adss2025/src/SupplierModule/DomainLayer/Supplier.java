@@ -1,9 +1,14 @@
 package SupplierModule.DomainLayer;
 
+import CrossCuttingPackage.SupplierDTO;
+import SupplierModule.DataAccessLayer.ContactDAO;
+import SupplierModule.DataAccessLayer.SupplierDAO;
+
 import java.time.DayOfWeek;
 import java.util.*;
 
 public class Supplier {
+    private static final ContactDAO conDao = new ContactDAO();
 
     private final String supplierId;
     private String regNumber;// Company Registration Number (ח"פ)
@@ -37,10 +42,32 @@ public class Supplier {
         this.agreement = new SupplierAgreement(this.supplierId,itemsToPrice);
     }
 
+    public Supplier(SupplierDTO dto)
+    {
+        this.supplierId = dto.supplierId;
 
+        this.setRegNumber(dto.regNumber);
+        this.setName(dto.name);
+        this.setBankAccount(dto.bankAccount);
+        this.setPaymentTerms(dto.paymentTerms);
+        this.contactPersons = ContactInfo.convert(dto.contactPersons);
+        this.ddc = new DeliveryDaySchedule(dto.ddc);
+        this.agreement = new SupplierAgreement(dto.agreement);
+    }
+
+
+    public SupplierDTO toDTO()
+    {
+        return new SupplierDTO(this.supplierId,this.regNumber,this.name,this.bankAccount,this.paymentTerms.getPaymentMethod()
+                ,ContactInfo.convert(this.contactPersons),ddc.toString(),agreement.toDTO());
+    }
 
     public void AddContact(String name,String email, String phoneNumber) {
-        contactPersons.put(name,new ContactInfo(name,email,phoneNumber));
+
+        ContactInfo toAdd = new ContactInfo(name,email,phoneNumber);
+
+        conDao.Insert(supplierId,name,email,phoneNumber);
+        contactPersons.put(name,toAdd);
     }
 
     public ContactInfo FindContact(String name)
@@ -52,6 +79,7 @@ public class Supplier {
     public void RemoveContact(String name) {
 
         ContactInfo toRemove = FindContact(name);
+        conDao.RemoveContact(this.supplierId,toRemove.getName());
         contactPersons.remove(toRemove.getName());
     }
 
@@ -74,18 +102,20 @@ public class Supplier {
     public void UpdateEmail(String name,String email)
     {
         ContactInfo c = FindContact(name);
+        conDao.Update(this.supplierId,c.getName(),email,c.getPhoneNumber());
         c.setEmail(email);
     }
 
     public void UpdatePhone(String name,String p)
     {
         ContactInfo c = FindContact(name);
+        conDao.Update(this.supplierId,c.getName(),c.getEmail(),p);
         c.setPhoneNumber(p);
     }
 
     public void AddFixedDay(DayOfWeek d){this.ddc.addDay(d);}
 
-    public void RemoveFixedDay(DayOfWeek d){ this.ddc.removeDay(d);}
+    public void RemoveFixedDay(DayOfWeek d){this.ddc.removeDay(d);}
 
     public boolean HasFixedDeliveryDays() { return !this.ddc.getDays().isEmpty();}
 
@@ -94,7 +124,6 @@ public class Supplier {
     /*
     Returns null if wasnt found
      */
-    public ContactInfo FindContactByName(String name) {return this.contactPersons.get(name);}
 
     public HashMap<String,ContactInfo> getContactPersons (){return this.contactPersons;}
 
@@ -114,10 +143,13 @@ public class Supplier {
         return paymentTerms;
     }
 
+    public DeliveryDaySchedule getDDC() { return this.ddc;}
+
     public void setName(String name) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Supplier name cannot be null or empty.");
         }
+
         this.name = name;
     }
 
@@ -125,6 +157,7 @@ public class Supplier {
         if (bankAccount == null || bankAccount.isEmpty()) {
             throw new IllegalArgumentException("Supplier bank account cannot be null or empty.");
         }
+
         this.bankAccount = bankAccount;
     }
 
@@ -132,16 +165,15 @@ public class Supplier {
         if (paymentTerms == null || paymentTerms.isEmpty()) {
             throw new IllegalArgumentException("Payment terms cannot be null or empty");
         }
+
         this.paymentTerms = new PaymentTerms(paymentTerms);
     }
 
-    public String getRegNumber() {
-        return regNumber;
-    }
 
     public void setRegNumber(String regNumber) {
         if(regNumber == null || regNumber.isEmpty())
             throw new IllegalArgumentException("Cannot set registration number - bad argument");
+
         this.regNumber = regNumber;
     }
 
@@ -154,8 +186,19 @@ public class Supplier {
         }
     }
 
+    public String getRegNumber() {
+        return regNumber;
+    }
+
     public SupplierAgreement getAgreement() {
         return agreement;
+    }
+
+    public String Summary()
+    {
+        return "Supplier:"+this.supplierId+"\n-----------------\nRegistration number:" + this.regNumber +"\nName:" + this.name
+                + "\n" +"Bank Account" + this.bankAccount +"\nPaymentTerms:" + this.paymentTerms.toString() +"\nContacts:" +contactPersons.toString() +
+                "\nAgreement:" + this.agreement.getItemsInAgreement().toString()+"\nDiscount Rules:" + this.agreement.getDiscounts().toString();
     }
 
 

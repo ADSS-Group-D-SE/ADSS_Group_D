@@ -243,6 +243,58 @@ public class SupplierServices {
         return res;
     }
 
+    public Response<String> AddDiscountRule(String supId,String cat,String name,double d,int min)
+    {
+        Response<String> res;
+        try {
+            sf.AddDiscountRule(supId,cat,name,d,min);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> RemoveDiscountRule(String supId,String cat,String name)
+    {
+        Response<String> res;
+        try {
+            sf.RemoveDiscountRule(supId,cat,name);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> UpdateDiscountRuleMin(String supId,String cat,String name,int min)
+    {
+        Response<String> res;
+        try {
+            sf.UpdateDiscountRuleMin(supId,cat,name,min);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> UpdateDiscountRuleDisc(String supId,String cat,String name,double d)
+    {
+        Response<String> res;
+        try {
+            sf.UpdateDiscountRuleDiscount(supId,cat,name,d);
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
     /*
     Service that must be used before creating an order!
      */
@@ -251,6 +303,18 @@ public class SupplierServices {
         Response<HashMap<String,Double>> res;
         try {
             res = new Response<>(null,sf.GetPricesFromAgreement(supId,itemsToAmounts));
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<Report> ViewAllSuppliers()
+    {
+        Response<Report> res;
+        try {
+            res = new Response<>(null,sf.ViewAllSuppliers());
         }
         catch (Exception e) {
             res = new Response<>(e.getMessage());
@@ -268,4 +332,31 @@ public class SupplierServices {
         }
         return res;
     }
+
+    public Response<String> Clean()
+    {
+        Response<String> res;
+        try {
+            sf.CleanData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> Load()
+    {
+        Response<String> res;
+        try {
+            sf.LoadData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
 }
+

@@ -16,12 +16,23 @@ public class supplierCLI {
     private final SupplierServices supplierServices;
     private final OrderServices orderServices;
 
-    public supplierCLI(){
+    public supplierCLI(Boolean shouldLoad){
         this.scanner = new Scanner(System.in);
         this.supplierServices = SupplierServices.getInstance();
         this.orderServices = OrderServices.getInstance();
+        if(shouldLoad)
+        {
+            Response<String> res= supplierServices.Load();
+            if(res.isError())
+                throw new RuntimeException("Could not build data - " + res.getErrorMsg());
+        }
     }
 
+    public void Clean()
+    {
+        supplierServices.Clean();
+        orderServices.Clean();
+    }
     public void start() {
         System.out.println("--- Welcome to ADSS Supplier Management System ---");
         while (true) {
@@ -57,6 +68,8 @@ public class supplierCLI {
         System.out.println("12. Update Item Price in Agreement");
         System.out.println("13. Order Management Menu");
         System.out.println("14. Load Supplier Test Data");
+        System.out.println("15. Discount Rule Menu");
+        System.out.println("16. View All Suppliers");
         System.out.println("0.  Exit");
         System.out.print("Please enter your choice: ");
     }
@@ -105,6 +118,12 @@ public class supplierCLI {
             case "14":
                 CreateSupplierTestData();
                 break;
+            case "15":
+                HandleDiscountMenu();
+                break;
+            case "16":
+                HandleSuppliersReport();
+                break;
             default:
                 System.out.println("Invalid input. Please choose a number between 0 and 9.");
                 break;
@@ -121,7 +140,7 @@ public class supplierCLI {
             System.out.println("3. View All System Orders");
             System.out.println("4. View Orders By Supplier ID");
             System.out.println("5. View Orders By Date Range");
-            System.out.println("6. Update Order Status (Prepare/Cancel/Deliver)");
+            System.out.println("6. Update Order Status (Prepare/Send/Cancel/Deliver)");
             System.out.println("0. Back to Supplier Main Menu");
             System.out.print("Please enter your choice: ");
 
@@ -181,7 +200,6 @@ public class supplierCLI {
         boolean isUrgent = scanner.nextLine().equalsIgnoreCase("yes");
 
         HashMap<String, Integer> amounts = new HashMap<>();
-        HashMap<String, Double> prices = new HashMap<>();
 
         System.out.println("\n--- Available Items for Supplier " + supId + " ---");
 
@@ -236,14 +254,19 @@ public class supplierCLI {
                 continue;
             }
 
-            double price = catalogMap.get(itemId);
-
             amounts.put(itemId, amount);
-            prices.put(itemId, price);
             System.out.println("[V] Added " + amount + " units of " + itemId + " to the order.\n");
         }
+        Response<HashMap<String,Double>> effectivePrices = supplierServices.GetAgreementPrices(supId,amounts); //Finds prices with amounts Including discount rules!
+        if(effectivePrices.isError())
+        {
+            System.out.println("[!] ERROR: Could not figure prices for items selected - " + effectivePrices.getErrorMsg());
+            return;
+        }
 
-        Response<String> res = orderServices.CreateOrder(supId, isUrgent, amounts, prices);
+        Response<String> res = orderServices.CreateOrder(supId, isUrgent, amounts, effectivePrices.getReturnValue());
+
+
         if (res.isError()) {
             System.out.println("[!] ERROR: " + res.getErrorMsg());
         } else {
@@ -298,7 +321,8 @@ public class supplierCLI {
         System.out.println("Select New Status:");
         System.out.println("1. Prepare");
         System.out.println("2. Cancel");
-        System.out.println("3. Deliver");
+        System.out.println("3 .Send");
+        System.out.println("4. Deliver");
         System.out.print("Your choice: ");
         String statusChoice = scanner.nextLine();
 
@@ -312,8 +336,12 @@ public class supplierCLI {
                 res = orderServices.CancelOrder(orderId);
                 printOrderResponseResult(res, "Order successfully CANCELED!");
                 break;
-            case "3":
+            case "4":
                 res = orderServices.DeliverOrder(orderId);
+                printOrderResponseResult(res, "Order status updated to SENT!");
+                break;
+            case "3":
+                res = orderServices.SendOrder(orderId);
                 printOrderResponseResult(res, "Order status updated to DELIVERED!");
                 break;
             default:
@@ -780,6 +808,108 @@ public class supplierCLI {
             System.out.println("[!] FATAL SYSTEM ERROR CREATING SUPPLIER/ORDER TEST DATA");
             System.out.println("Context/Message: " + e.getMessage());
             System.out.println("==================================================");
+        }
+    }
+
+    public void HandleDiscountMenu()
+    {
+        System.out.println("\nChoose an option:");
+        System.out.println("1.  Add New DiscountRule");
+        System.out.println("2.  Remove DiscountRule");
+        System.out.println("3.  Change DiscountRule condition.");
+        System.out.println("4.  Change DiscountRule discount.");
+
+        String choice = scanner.nextLine();
+        String supId ="";
+        String cat = "";
+        String name="";
+        String min="";
+        String disc="";
+        Response<String> res = null;
+        switch (choice)
+        {
+            case "1":
+                System.out.println("Enter supplier ID:");
+                supId = scanner.nextLine();
+                System.out.println("Enter item catalog number:");
+                cat= scanner.nextLine();
+                System.out.println("Enter rule name:");
+                name = scanner.nextLine();
+                System.out.println("Enter rule minimal amount:");
+                min = scanner.nextLine();
+                System.out.println("Enter discount% (0-1 eg 0.5 for 50%):");
+                disc = scanner.nextLine();
+
+                res = this.supplierServices.AddDiscountRule(supId,cat,name,Double.parseDouble(disc),Integer.parseInt(min));
+                if(res.isError()) {
+                    System.out.println("ERROR-" + res.getErrorMsg());
+                    break;
+                }
+                System.out.println("Rule was added successfully!");
+                break;
+            case "2":
+                System.out.println("Enter supplier ID:");
+                supId = scanner.nextLine();
+                System.out.println("Enter item catalog number:");
+                cat = scanner.nextLine();
+                System.out.println("Enter rule name:");
+                name = scanner.nextLine();
+
+                res = this.supplierServices.RemoveDiscountRule(supId,cat,name);
+                if(res.isError()) {
+                    System.out.println("ERROR-" + res.getErrorMsg());
+                    break;
+                }
+                System.out.println("Rule was removed successfully!");
+                break;
+            case "3":
+                System.out.println("Enter supplier ID:");
+                supId = scanner.nextLine();
+                System.out.println("Enter item catalog number:");
+                cat = scanner.nextLine();
+                System.out.println("Enter rule name:");
+                name = scanner.nextLine();
+                System.out.println("Enter rule new minimal amount:");
+                min = scanner.nextLine();
+                res = this.supplierServices.UpdateDiscountRuleMin(supId,cat,name,Integer.parseInt(min));
+                if(res.isError()) {
+                    System.out.println("ERROR-" + res.getErrorMsg());
+                    break;
+                }
+                System.out.println("Rule was modified successfully, minimal amount was changed!");
+                break;
+            case "4":
+                System.out.println("Enter supplier ID:");
+                supId = scanner.nextLine();
+                System.out.println("Enter item catalog number:");
+                cat = scanner.nextLine();
+                System.out.println("Enter rule name:");
+                name = scanner.nextLine();
+                System.out.println("Enter rule new discount% (0-1):");
+                disc = scanner.nextLine();
+                res = this.supplierServices.UpdateDiscountRuleDisc(supId,cat,name,Double.parseDouble(disc));
+                if(res.isError()) {
+                    System.out.println("ERROR-" + res.getErrorMsg());
+                    break;
+                }
+                System.out.println("Rule was modified successfully, discount was changed!");
+                break;
+            default:
+                System.out.println("Invalid choice - choose between 1-4.");
+
+        }
+    }
+
+    public void HandleSuppliersReport()
+    {
+        System.out.println("\n--- View Suppliers Report ---");
+
+        Response<Report> res = supplierServices.ViewAllSuppliers();
+        if (res.isError()) {
+            System.out.println("[!] ERROR: " + res.getErrorMsg());
+        } else {
+            System.out.println("\n--- Suppliers Report ---");
+            System.out.println(res.getReturnValue().GetReport());
         }
     }
 }
