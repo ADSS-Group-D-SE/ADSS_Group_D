@@ -1,7 +1,10 @@
 package InventoryModule.DomainLayer;
 
+import CrossCuttingPackage.promotionDTO;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 
 public class Promotion {
@@ -26,6 +29,40 @@ public class Promotion {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid date format. Please use DD/MM/YYYY");
         }
+    }
+
+    public Promotion(promotionDTO p) {
+        this.id = p.getId();
+        this.discountPercentage = p.getDiscountPercentage();
+
+        try {
+            this.endDate = LocalDate.parse(p.getEndDate(), FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format in DTO. Use DD/MM/YYYY");
+        }
+
+        try {
+            this.scope = PromotionScope.valueOf(p.getScope());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid scope value: " + p.getScope());
+        }
+
+        if (discountPercentage < 0 || discountPercentage > 1) {
+            throw new IllegalArgumentException("Discount percentage must be between 0 and 1");
+        }
+    }
+
+    public promotionDTO toDTO() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String formattedDate = (this.endDate != null) ? this.endDate.format(formatter) : null;
+        String scopeStr = (this.scope != null) ? this.scope.name() : null;
+
+        return new promotionDTO(
+                this.id,
+                this.discountPercentage,
+                formattedDate,
+                scopeStr
+        );
     }
 
     public boolean isActiveNow() {

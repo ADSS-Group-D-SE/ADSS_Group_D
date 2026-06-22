@@ -29,6 +29,19 @@ public class CategoryServices {
         return INSTANCE;
     }
 
+    public Response<String> Clean()
+    {
+        Response<String> res;
+        try {
+            cFacade.CleanData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
     /*
     The service for category creation, returns: CrossCuttingPackage.Response with new category Id if created successfully.
     Else: return a response with Error string.
@@ -126,4 +139,15 @@ public class CategoryServices {
         return res;
     }
 
+    public Response<String> Load() {
+        Response<String> res;
+        try {
+            cFacade.LoadData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
 }

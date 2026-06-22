@@ -1,5 +1,12 @@
 package InventoryModule.DomainLayer;
 
+import CrossCuttingPackage.SupplierDTO;
+import CrossCuttingPackage.categoryDTO;
+import CrossCuttingPackage.promotionDTO;
+import SupplierModule.DomainLayer.ContactInfo;
+import SupplierModule.DomainLayer.DeliveryDaySchedule;
+import SupplierModule.DomainLayer.SupplierAgreement;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -39,6 +46,59 @@ public class CategoryDL {
         if (initialPromotion != null) {
             this.discount_pre.add(initialPromotion);
         }
+    }
+
+    public CategoryDL(categoryDTO dto) {
+        this.name = dto.getName();
+        this.category_id = dto.getCategoryId();
+
+        this.type = CategoryType.valueOf(dto.getType());
+
+        this.subCategory = new ArrayList<>();
+        if (dto.getSubCategoryIds() != null) {
+            for (categoryDTO subDto : dto.getSubCategoryIds()) {
+                this.subCategory.add(new CategoryDL(subDto));
+            }
+        }
+
+        this.discount_pre = new ArrayList<>();
+        if (dto.getDiscountIds() != null) {
+            for (promotionDTO pDto : dto.getDiscountIds()) {
+                this.discount_pre.add(new Promotion(pDto));
+            }
+        }
+    }
+
+    public categoryDTO toDTO() {
+        return new categoryDTO(
+                this.name,
+                this.category_id,
+                (this.type != null) ? this.type.name() : null,
+                convertCategoryList(subCategory),
+                convertPromotionsToDTO(discount_pre)
+        );
+    }
+
+    private static List<promotionDTO> convertPromotionsToDTO(List<Promotion> promotions) {
+        List<promotionDTO> dtos = new ArrayList<>();
+        if (promotions != null) {
+            for (Promotion p : promotions) {
+                dtos.add(p.toDTO());
+            }
+        }
+        return dtos;
+    }
+
+    public List<categoryDTO> convertCategoryList(List<CategoryDL> domainList) {
+        List<categoryDTO> dtoList = new ArrayList<>();
+
+        if (domainList != null) {
+            for (CategoryDL category : domainList) {
+                dtoList.add(category.toDTO());
+            }
+        }
+
+        return dtoList;
     }
 
     /*
