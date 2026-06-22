@@ -1,5 +1,8 @@
 package InventoryModule.DomainLayer;
 
+import CrossCuttingPackage.productDTO;
+import CrossCuttingPackage.promotionDTO;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -68,6 +71,73 @@ public class ProductDL {
         this.product_discounts = new ArrayList<>();
     }
 
+    public ProductDL(productDTO p) {
+
+        this.tags = new HashMap<>();
+
+        this.tags.put(0, p.getMain_category_id());
+        this.tags.put(1, p.getSub_category_id());
+        this.tags.put(2, p.getSubsub_category_id());
+
+        this.name = p.getName();
+        this.catalog_number = p.getCatalogNumber();
+
+        this.warehouse = new Warehouse(p.getWarehouseName());
+        this.location = new ShelfLocation(p.getShelfLocation());
+
+        this.manufacturer = p.getManufacturer();
+
+        this.amount_on_shelves = p.getAmountOnShelves();
+        this.amount_on_stock = p.getAmountOnStock();
+
+        this.price_to_consumer = p.getPriceToConsumer();
+        this.price_to_supply = p.getPriceToSupply();
+        this.supplier_discount = p.getSupplierDiscount();
+
+        this.minAmountAlert = p.getMinAmountAlert();
+
+        this.product_discounts = new ArrayList<>();
+        if (p.getProductDiscounts() != null) {
+            for (promotionDTO dto : p.getProductDiscounts()) {
+                this.product_discounts.add(new Promotion(dto));
+            }
+        }
+    }
+
+    public productDTO toDTO() {
+
+
+        String whName =this.warehouse.getName() ;
+        String shelfLoc = this.location.toString();
+
+        return new productDTO(
+                this.name,
+                this.catalog_number,
+                this.tags.get(0),
+                this.tags.get(1),
+                this.tags.get(2),
+                whName,
+                shelfLoc,
+                this.manufacturer,
+                this.amount_on_shelves,
+                this.amount_on_stock,
+                convertPromotionsToDTO(this.product_discounts),
+                this.price_to_consumer,
+                this.price_to_supply,
+                this.supplier_discount,
+                this.minAmountAlert
+        );
+    }
+
+    private static List<promotionDTO> convertPromotionsToDTO(List<Promotion> promotions) {
+        List<promotionDTO> dtos = new ArrayList<>();
+        if (promotions != null) {
+            for (Promotion p : promotions) {
+                dtos.add(p.toDTO());
+            }
+        }
+        return dtos;
+    }
     /*
      Method for testing, allows "purchasing" and changing amounts on shelves and stocks.
      input a positive amount for amount decrease, negative for increase.

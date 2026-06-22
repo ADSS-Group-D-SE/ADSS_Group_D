@@ -39,6 +39,21 @@ public class ProductServices {
         return INSTANCE;
     }
 
+
+
+    public Response<String> Clean()
+    {
+        Response<String> res;
+        try {
+            pFacade.CleanData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
     public Response<List<ProductSL>> getAllProducts() {
         try {
             List<ProductDL> dlProducts = pFacade.getAllProducts();
@@ -319,6 +334,18 @@ public class ProductServices {
         }
         catch (Exception e)
         {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public Response<String> Load() {
+        Response<String> res;
+        try {
+            pFacade.LoadData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
             res = new Response<>(e.getMessage());
         }
         return res;

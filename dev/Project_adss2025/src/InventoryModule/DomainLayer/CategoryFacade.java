@@ -1,11 +1,22 @@
 package InventoryModule.DomainLayer;
 
+import CrossCuttingPackage.categoryDTO;
+import CrossCuttingPackage.productDTO;
+import InventoryModule.DataLayer.CategoryDAO;
+import InventoryModule.DataLayer.CategoryHierarchyDAO;
+import InventoryModule.DataLayer.ProductDAO;
+
 import java.util.*;
 
 public class CategoryFacade {
 
     private static HashMap<String,CategoryDL> categories;
     private final List<CategoryDL> mainCategories;
+
+
+    private static final CategoryDAO categoryDAO = new CategoryDAO();
+    private static final CategoryHierarchyDAO categoryHierarchyDAO = new CategoryHierarchyDAO();
+
 
     private static int catPromoCounter = 1;
     /*
@@ -63,7 +74,7 @@ public class CategoryFacade {
         }
 
         CategoryDL toAdd = new CategoryDL(name, name, new ArrayList<>(), initialPromo, CategoryDL.CategoryType.Main);
-
+        categoryDAO.Insert(toAdd.toDTO());
         categories.put(name, toAdd);
         this.mainCategories.add(toAdd); // add to main categories list.
         return name;
@@ -105,7 +116,8 @@ public class CategoryFacade {
         }
 
         CategoryDL toAdd = new CategoryDL(name,newId,new ArrayList<>(),initialPromo,newType);
-
+        categoryDAO.Insert(toAdd.toDTO());
+        categoryHierarchyDAO.InsertSingleLink(rootId, toAdd.getCategory_id());
         categories.put(toAdd.getCategory_id(),toAdd);
         root.AddSubcategory(toAdd);
 
@@ -145,6 +157,7 @@ public class CategoryFacade {
             initialPromo = new Promotion(promoId, discount, date, PromotionScope.CATEGORY);
         }
         cat.addPromotion(initialPromo);
+        categoryDAO.UpdateCategory(cat.toDTO());
     }
 
     /**
@@ -173,4 +186,29 @@ public class CategoryFacade {
         }
         return cats;
     }
+
+    public void CleanData()
+    {
+        categoryDAO.Clean();
+    }
+
+    public void LoadData() {
+        List<categoryDTO> categoryDTOS = categoryDAO.SelectAll();
+        if (this.mainCategories != null) {
+            this.mainCategories.clear();
+        }
+
+        for (categoryDTO dto : categoryDTOS) {
+            CategoryDL category = new CategoryDL(dto);
+
+            this.categories.put(category.getCategory_id(), category);
+
+            if (category.getType() == CategoryDL.CategoryType.Main) {
+                this.mainCategories.add(category);
+            }
+        }
+
+        System.out.println("[V] Database data loaded successfully. Main categories initialized!");
+    }
+
 }

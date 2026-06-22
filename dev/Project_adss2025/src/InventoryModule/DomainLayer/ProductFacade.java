@@ -1,8 +1,11 @@
 package InventoryModule.DomainLayer;
 
 
-import CrossCuttingPackage.Notification;
-import CrossCuttingPackage.Report;
+import CrossCuttingPackage.*;
+import InventoryModule.DataLayer.FaultyReportDAO;
+import InventoryModule.DataLayer.ProductDAO;
+import SupplierModule.DataAccessLayer.SupplierDAO;
+import SupplierModule.DomainLayer.Supplier;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,16 +14,19 @@ import java.util.*;
 
 public class ProductFacade {
     private HashMap<String, ProductDL> products;
-    private HashMap<Integer,FaultyProductDL> faultyProducts;
+//    private HashMap<Integer,FaultyProductDL> faultyProducts;
 
     private int faultyProductsIdCounter=0;
     private int promotionIdCounter = 1;
 
 
+    private static final ProductDAO productDAO = new ProductDAO();
+    private static final FaultyReportDAO faultyReportDAO = new FaultyReportDAO();
+
+
 
     public ProductFacade(){
         products=new HashMap<String, ProductDL>();
-        faultyProducts=new HashMap<Integer, FaultyProductDL>();
 
     }
 
@@ -39,6 +45,8 @@ public class ProductFacade {
         }
         return results;
     }
+
+
 
     /**
      *
@@ -63,6 +71,8 @@ public class ProductFacade {
         }
 
         ProductDL product = new ProductDL(name, catalogNumber, main_id, sub_id, subsub_id, warehouseName, location, manu, amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
+        productDAO.Insert(product.toDTO());
+
 
         products.put(catalogNumber, product);
         return product.getCatalog_number();
@@ -77,7 +87,13 @@ public class ProductFacade {
      */
     public void setSupplierDiscount(String catalogNumber, double discount) throws Exception{
         ProductDL product = FindProductByID(catalogNumber);
+
         product.setSupplier_discount(discount);
+        try {
+            productDAO.UpdateProduct(product.toDTO());
+        } catch (Exception e) {
+            throw new Exception("Failed to update supplier discount in database: " + e.getMessage());
+        }
     }
 
     /**
@@ -119,7 +135,7 @@ public class ProductFacade {
      **/
     public FaultyProductDL FindProductByReportId(int report_id)
     {
-        FaultyProductDL p = this.faultyProducts.get(report_id);
+        FaultyProductDL p = faultyReportDAO.findbyid(report_id);
         if(p == null)
             throw new NoSuchElementException("Report:"+ report_id +" ,No such report was found in facade");
         return p;
@@ -135,8 +151,7 @@ public class ProductFacade {
         ProductDL toFaulty = FindProductByID(catalog_number);
         LocalDateTime dateOnReport = LocalDateTime.now();
         FaultyProductDL toAdd = new FaultyProductDL(toFaulty,generateNextId(),locationProduct,description,dateOnReport);
-
-        this.faultyProducts.put(toAdd.getReportID(), toAdd);
+        faultyReportDAO.Insert(toAdd.toDTO());
         return toAdd.getReportID();
     }
 
@@ -147,7 +162,7 @@ public class ProductFacade {
     public void RemoveFaultyReport(int report_id)
     {
         FaultyProductDL p = FindProductByReportId(report_id);
-        this.faultyProducts.remove(p.getReportID());
+        this.faultyReportDAO.deleteby(p.toDTO());
     }
 
     /**
@@ -156,22 +171,28 @@ public class ProductFacade {
      **/
     public Report CreateFaultyReport(String startdate,String enddate)
     {
-        LocalDate datestart = LocalDate.parse(startdate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        LocalDateTime start = datestart.atStartOfDay();
+        DateTimeFormatter uiFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate datestart = LocalDate.parse(startdate, uiFormatter);
+        LocalDate dateend = LocalDate.parse(enddate, uiFormatter);
 
-        LocalDate dateend = LocalDate.parse(enddate, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        LocalDateTime end = dateend.atTime(23, 59, 59);
+        Report report = new Report("Fault product reports from " + datestart + " to " + dateend +
+                "\n===========================================");
 
-        Report report = new Report("Fault product reports from " + start +" to " + end +"\n===========================================");
-        for(Map.Entry<Integer,FaultyProductDL> en: this.faultyProducts.entrySet())
+        List<FaultyProductDL> faultyProductsInRange = faultyReportDAO.SelectByDateRange(datestart, dateend);
+
+        for (FaultyProductDL p : faultyProductsInRange)
         {
-            FaultyProductDL p = en.getValue();
-            if(!p.getDateOnReport().isAfter(end) && !p.getDateOnReport().isBefore(start)) // if the report date fits: start <+ report date <= end
-            {
-                report.AddLine("Report id:" + p.getReportID() +"\nOn product:" +p.getName() + ", Catalog number:" + p.getCatalog_number() + " ,Location:" +p.getLocation() +"\n" +
-                        "Reported on:" + p.getDateOnReport().toString() +"\nDescription:\n" + p.getDescription());
-            }
+            String reportDateStr = p.getDateOnReport().toString();
+
+            report.AddLine("Report id: " + p.getReportID() +
+                    "\nOn product: " + p.getName() +
+                    ", Catalog number: " + p.getCatalog_number() +
+                    ", Location: " + p.getLocation() +
+                    "\nReported on: " + reportDateStr +
+                    "\nDescription:\n" + p.getDescription() +
+                    "\n-------------------------------------------");
         }
+
         return report;
     }
 
@@ -183,6 +204,7 @@ public class ProductFacade {
     {
         ProductDL p = FindProductByID(catalog_number);
         p.Purchase(shelves,stock);
+        productDAO.UpdateProduct(p.toDTO());
     }
 
 
@@ -191,7 +213,6 @@ public class ProductFacade {
                          Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
 
         ProductDL product = FindProductByID(catalogNumber);
-
         if (name != null) product.setName(name);
 
         if (storageWarehouse != null) product.setWarehouse(storageWarehouse);
@@ -203,6 +224,7 @@ public class ProductFacade {
         if (shelvesAmount != null) product.setAmount_on_shelves(shelvesAmount);
         if (stockAmount != null) product.setAmount_on_stock(stockAmount);
         if (minAmountAlert != null) product.setMinAmountAlert(minAmountAlert);
+        productDAO.UpdateProduct(product.toDTO());
 
         return "Product updated successfully!";
     }
@@ -270,6 +292,7 @@ public class ProductFacade {
     {
         ProductDL p =FindProductByID(id);
         p.addPromotion(new Promotion(Integer.toString(generatePromotionId()),newDisc,time, PromotionScope.PRODUCT));
+        productDAO.UpdateProduct(p.toDTO());
     }
 
     /**
@@ -293,4 +316,21 @@ public class ProductFacade {
     }
 
 
+    public void CleanData() {
+        productDAO.Clean();
+        faultyReportDAO.Clean();
+    }
+
+
+    public void LoadData() {
+        List<productDTO> productDTOs = productDAO.SelectAll();
+
+        for (productDTO dto : productDTOs) {
+
+            ProductDL productDomain = new ProductDL(dto);
+            this.products.put(productDomain.getCatalog_number(), productDomain);
+        }
+
+        System.out.println("[V] Database data loaded into Facade memory successfully!");
+    }
 }

@@ -9,7 +9,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         Boolean shouldLoad = shouldLoadFromDatabase(scanner);
 
-        InventoryCLI inventory = new InventoryCLI(); // add the boolean later when db func is finished
+        InventoryCLI inventory = new InventoryCLI(shouldLoad); // add the boolean later when db func is finished
         supplierCLI supplier = new supplierCLI(shouldLoad);
         System.out.println("====== Welcome to ADSS Management System ======");
 
@@ -33,7 +33,7 @@ public class Main {
                 System.out.println("Shutting down ADSS System. Goodbye!");
                 break;
             } else if (choice.equals("3")) {
-                //inventory.clean()
+                inventory.Clean();
                 supplier.Clean();
                 break;
             }

@@ -15,10 +15,18 @@ public class InventoryCLI {
     private final ProductServices productServices;
     private final CategoryServices categoryServices;
 
-    public InventoryCLI(){
+    public InventoryCLI(Boolean shouldLoad){
         this.scanner = new Scanner(System.in);
-        this.productServices = ProductServices.getInstance();
         this.categoryServices=CategoryServices.GetInstance();
+
+        this.productServices = ProductServices.getInstance();
+        if(shouldLoad)
+        {
+            Response<String> res= productServices.Load();
+            Response<String> res1= categoryServices.Load();
+            if(res.isError()||res1.isError())
+                throw new RuntimeException("Could not build data - " + res.getErrorMsg());
+        }
     }
 
     public void start() {
@@ -42,6 +50,12 @@ public class InventoryCLI {
                     System.out.println("Client error:" + e.getMessage()); //catches client errors with scanner for instance
             }
         }
+    }
+
+    public void Clean()
+    {
+        productServices.Clean();
+        categoryServices.Clean();
     }
 
     private void displayMenu(){
@@ -496,6 +510,7 @@ public class InventoryCLI {
 
         int updateChoice = getIntInput("\nPlease choose an option (0-8): ");
 
+        Response<String> res=null;
         switch (updateChoice){
             case 0:
                 System.out.println("Returning to main menu...");
@@ -504,49 +519,53 @@ public class InventoryCLI {
             case 1:
                 System.out.print("Enter New Name: ");
                 String name = scanner.nextLine();
-                this.productServices.update(catalogNumber, name, null, null, null, null, null, null, null);
+                res = this.productServices.update(catalogNumber, name, null, null, null, null, null, null, null);
                 break;
 
             case 2:
                 System.out.print("Enter New Warehouse Name: ");
                 String warehouse = scanner.nextLine();
-                this.productServices.update(catalogNumber, null, warehouse, null, null, null, null, null, null);
+                res = this.productServices.update(catalogNumber, null, warehouse, null, null, null, null, null, null);
                 break;
 
             case 3:
                 System.out.print("Enter New Storage Location: ");
                 String location = scanner.nextLine();
-                this.productServices.update(catalogNumber, null, null, location, null, null, null, null, null);
+                res = this.productServices.update(catalogNumber, null, null, location, null, null, null, null, null);
                 break;
 
             case 4:
                 double consumerPrice = getDoubleInput("Enter New Consumer Price: ");
-                this.productServices.update(catalogNumber, null, null, null, consumerPrice, null, null, null, null);
+                res = this.productServices.update(catalogNumber, null, null, null, consumerPrice, null, null, null, null);
                 break;
 
             case 5:
                 double supplyPrice = getDoubleInput("Enter New Supply Price: ");
-                this.productServices.update(catalogNumber, null, null, null, null, supplyPrice, null, null, null);
+               res =  this.productServices.update(catalogNumber, null, null, null, null, supplyPrice, null, null, null);
                 break;
 
             case 6:
                 int shelvesAmount = getIntInput("Enter New Shelves Amount: ");
-                this.productServices.update(catalogNumber, null, null, null, null, null, shelvesAmount, null, null);
+                res = this.productServices.update(catalogNumber, null, null, null, null, null, shelvesAmount, null, null);
                 break;
 
             case 7:
                 int stockAmount = getIntInput("Enter New Stock Amount: ");
-                this.productServices.update(catalogNumber, null, null, null, null, null, null, stockAmount, null);
+               res=  this.productServices.update(catalogNumber, null, null, null, null, null, null, stockAmount, null);
                 break;
 
             case 8:
                 int minAlert = getIntInput("Enter New Minimum Amount Alert: ");
-                this.productServices.update(catalogNumber, null, null, null, null, null, null, null, minAlert);
+                res = this.productServices.update(catalogNumber, null, null, null, null, null, null, null, minAlert);
                 break;
 
             default:
                 System.out.println("Invalid input. Please choose a number between 0 and 8.");
                 break;
+        }
+        if(res.isError()){
+            System.out.println("[!] FAILURE: " + res.getErrorMsg());
+            System.out.println("-----------------------------------------");
         }
     }
 
