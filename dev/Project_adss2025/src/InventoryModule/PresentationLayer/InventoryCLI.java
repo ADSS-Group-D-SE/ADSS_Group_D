@@ -7,6 +7,7 @@ import InventoryModule.ServiceLayer.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class InventoryCLI {
@@ -15,10 +16,10 @@ public class InventoryCLI {
     private final ProductServices productServices;
     private final CategoryServices categoryServices;
 
-    public InventoryCLI(Boolean shouldLoad){
-        this.scanner = new Scanner(System.in);
-        this.categoryServices=CategoryServices.GetInstance();
 
+    public InventoryCLI(Boolean shouldLoad,Scanner scanner){
+        this.scanner = scanner;
+        this.categoryServices=CategoryServices.GetInstance();
         this.productServices = ProductServices.getInstance();
         if(shouldLoad)
         {
@@ -37,12 +38,14 @@ public class InventoryCLI {
                 displayMenu();
 
                 String choice = scanner.nextLine();
+
                 if (choice.equals("0")) {
                     System.out.println("Exiting system");
                     break;
                 } else {
                     handleChoice(choice);
                 }
+
             }
             catch (Exception e)
             {

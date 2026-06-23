@@ -1,18 +1,32 @@
+import CrossCuttingPackage.Notification;
+import CrossCuttingPackage.Response;
 import InventoryModule.PresentationLayer.InventoryCLI;
+import InventoryModule.ServiceLayer.ProductServices;
 import SupplierModule.PresentationLayer.supplierCLI;
+import SupplierModule.ServiceLayer.OrderServices;
+import SupplierModule.ServiceLayer.SupplierServices;
+import kotlin.jvm.Synchronized;
+import org.junit.jupiter.api.Order;
 
 import javax.swing.text.StyledEditorKit;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Main {
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Boolean shouldLoad = shouldLoadFromDatabase(scanner);
 
-        InventoryCLI inventory = new InventoryCLI(shouldLoad); // add the boolean later when db func is finished
-        supplierCLI supplier = new supplierCLI(shouldLoad);
+        InventoryCLI inventory = new InventoryCLI(shouldLoad,scanner); // add the boolean later when db func is finished
+        supplierCLI supplier = new supplierCLI(shouldLoad,scanner);
         System.out.println("====== Welcome to ADSS Management System ======");
 
+        Thread automaticOrdersThread = new Thread(Main::HandleAutomaticOrders);
+
+        automaticOrdersThread.start();
 
 
         while (true) {
@@ -21,7 +35,6 @@ public class Main {
             System.out.println("2. Supplier Management System");
             System.out.println("3. Clear saved data.");
             System.out.println("0. Exit Application");
-            System.out.print("Your choice: ");
 
             String choice = scanner.nextLine();
 
@@ -35,6 +48,7 @@ public class Main {
             } else if (choice.equals("3")) {
                 inventory.Clean();
                 supplier.Clean();
+                System.out.println("Shutting down, re-start system");
                 break;
             }
             else {
@@ -42,6 +56,7 @@ public class Main {
             }
         }
 
+        automaticOrdersThread.interrupt();
         scanner.close();
     }
 
@@ -61,6 +76,78 @@ public class Main {
             }
 
             System.out.println("Please enter yes or no.");
+        }
+    }
+
+    private static void HandleAutomaticOrders() {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                HandleBuyOrders();
+                HandleNotifications();
+            } catch (Exception e) {
+                System.out.println("Error in automaticOrderThread: " + e.getMessage());
+            }
+            try {
+                Thread.sleep(12*60 * 60 * 1000L); // 12 hour
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    }
+
+    private static void HandleBuyOrders()
+    {
+        OrderServices os = OrderServices.getInstance();
+        System.out.println("Creating orders from buy orders:");
+
+        Response<List<String>> res= os.CreateOrdersFromBuyOrders();
+        if(res.isError())
+            throw new RuntimeException(res.getErrorMsg());
+        if(!res.getReturnValue().isEmpty()) {
+            System.out.println("Orders Created:");
+            for (String id : res.getReturnValue())
+                System.out.println(id);
+        }
+        else
+            System.out.println("No orders were created from buy orders.");
+
+    }
+
+    private static void HandleNotifications()
+    {
+        SupplierServices supServices = SupplierServices.getInstance();
+        ProductServices productServices = ProductServices.getInstance();
+        OrderServices orderServices = OrderServices.getInstance();
+
+        System.out.println("Handling notifications:");
+
+        Response<List<Notification>> res = productServices.getLowStockAlerts();
+        if(res.isError())
+            throw new RuntimeException(res.getErrorMsg());
+
+        List<Notification> notifications = res.getReturnValue();
+
+        if (notifications.isEmpty())
+            System.out.println("No notification for shortage were received.");
+
+        for(Notification n:notifications)
+        {
+            Response<String> supRes = supServices.FindBestSupplier(n);
+            if(supRes.isError()) {
+                System.out.println("Cannot find a supplier that sells:" + n.getCatalog_number());
+                continue;
+            }
+
+            String supId = supRes.getReturnValue();
+            HashMap<String,Integer> toOrder = new HashMap<>();
+            toOrder.put(n.getCatalog_number(),n.HowManyToRestock());
+
+            Response<String> oIdRes = orderServices.CreateOrder(supId,true,toOrder);
+            if(oIdRes.isError())
+                throw new RuntimeException(oIdRes.getErrorMsg());
+
+            System.out.println("Order:" + oIdRes.getReturnValue() + " Was created to supplier:"+supId);
         }
     }
 }

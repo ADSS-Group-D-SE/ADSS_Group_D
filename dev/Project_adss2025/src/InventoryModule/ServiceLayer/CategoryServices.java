@@ -6,7 +6,7 @@ import InventoryModule.DomainLayer.CategoryFacade;
 import java.util.List;
 
 public class CategoryServices {
-    private static CategoryServices INSTANCE;
+    private static final CategoryServices INSTANCE = new CategoryServices();
     private final CategoryFacade cFacade;
 
     /*
@@ -23,13 +23,10 @@ public class CategoryServices {
      */
     public static CategoryServices GetInstance()
     {
-        if(INSTANCE==null){
-            INSTANCE= new CategoryServices();
-        }
         return INSTANCE;
     }
 
-    public Response<String> Clean()
+    public synchronized Response<String> Clean()
     {
         Response<String> res;
         try {
@@ -46,7 +43,7 @@ public class CategoryServices {
     The service for category creation, returns: CrossCuttingPackage.Response with new category Id if created successfully.
     Else: return a response with Error string.
      */
-    public Response<String> CreateCategory(String name, double discountPre, String date)
+    public synchronized Response<String> CreateCategory(String name, double discountPre, String date)
     {
         Response<String> res;
         try {
@@ -61,7 +58,7 @@ public class CategoryServices {
    The service for Sub-category creation, returns: CrossCuttingPackage.Response with new category Id if created successfully.
    Else: return a response with Error string.
     */
-    public Response<String> CreateSubCategory(String name, double discountPre, String date, String rootId)
+    public synchronized Response<String> CreateSubCategory(String name, double discountPre, String date, String rootId)
     {
         Response<String> res;
         try {
@@ -77,7 +74,7 @@ public class CategoryServices {
     Returns:CrossCuttingPackage.Response with list of categoriesSL if op was a success.
     Else:CrossCuttingPackage.Response with an error.
      */
-    public Response<List<CategorySL>> GetMainCategories()
+    public synchronized Response<List<CategorySL>> GetMainCategories()
     {
         Response<List<CategorySL>> res;
         try {
@@ -92,7 +89,7 @@ public class CategoryServices {
     Returns:CrossCuttingPackage.Response with Subcategory list of categoriesSL if op was a success.
     Else:CrossCuttingPackage.Response with an error.
     */
-    public Response<List<CategorySL>> GetSubCategories(String category_id)
+    public synchronized Response<List<CategorySL>> GetSubCategories(String category_id)
     {
         Response<List<CategorySL>> res;
         try {
@@ -107,7 +104,7 @@ public class CategoryServices {
      Returns response: with null value when op was a success.
      else:CrossCuttingPackage.Response with an error msg.
      **/
-    public Response<String> SetCategoryDiscount(String category_id, double discount, String date)
+    public synchronized Response<String> SetCategoryDiscount(String category_id, double discount, String date)
     {
         Response<String> res = null;
         try
@@ -128,7 +125,7 @@ public class CategoryServices {
      * A CrossCuttingPackage.Response with error msg.
      * @return
      */
-    public Response<List<CategorySL>> GetAllCategories()
+    public synchronized Response<List<CategorySL>> GetAllCategories()
     {
         Response<List<CategorySL>> res;
         try {
@@ -139,7 +136,7 @@ public class CategoryServices {
         return res;
     }
 
-    public Response<String> Load() {
+    public synchronized Response<String> Load() {
         Response<String> res;
         try {
             cFacade.LoadData();

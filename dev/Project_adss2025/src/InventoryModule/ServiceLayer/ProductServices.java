@@ -7,6 +7,7 @@ import InventoryModule.DomainLayer.ProductDL;
 import InventoryModule.DomainLayer.ProductFacade;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -18,7 +19,7 @@ import java.util.List;
 public class ProductServices {
 
 
-    private static ProductServices INSTANCE;
+    private static final ProductServices INSTANCE = new ProductServices();
     private final ProductFacade pFacade;
 
     /**
@@ -33,15 +34,13 @@ public class ProductServices {
      * @return the single instance of ProductServices
      */
     public static ProductServices getInstance(){
-        if(INSTANCE==null){
-            INSTANCE= new ProductServices();
-        }
+
         return INSTANCE;
     }
 
 
 
-    public Response<String> Clean()
+    public synchronized Response<String> Clean()
     {
         Response<String> res;
         try {
@@ -54,7 +53,7 @@ public class ProductServices {
         return res;
     }
 
-    public Response<List<ProductSL>> getAllProducts() {
+    public synchronized Response<List<ProductSL>> getAllProducts() {
         try {
             List<ProductDL> dlProducts = pFacade.getAllProducts();
             List<ProductSL> slProducts = new ArrayList<>();
@@ -84,7 +83,7 @@ public class ProductServices {
      * @param minAmount the minimum required quantity of the product
      * @return A CrossCuttingPackage.Response indicating success or an error message
      */
-    public Response<String> addProduct(String name, String catalogNumber, String main_id, String sub_id, String subsub_id,
+    public synchronized Response<String> addProduct(String name, String catalogNumber, String main_id, String sub_id, String subsub_id,
                                        String warehouseName, String location, String manu, int amountOnShelves, int amountOnStock,
                                        double consumerPrice, double supplyPrice, int minAmount) {
         try {
@@ -102,7 +101,7 @@ public class ProductServices {
      * @param SupplierDiscount discount the discount value to be applied to the product
      * @return A CrossCuttingPackage.Response indicating success or an error message
      */
-    public Response<String> setSupplierDiscount(String catalogNumber, double SupplierDiscount){
+    public synchronized Response<String> setSupplierDiscount(String catalogNumber, double SupplierDiscount){
         try {
             pFacade.setSupplierDiscount(catalogNumber,SupplierDiscount);
             return new Response<>(null,null);
@@ -116,7 +115,7 @@ public class ProductServices {
      * Returns a response: With the entered product final price.
      * Else:CrossCuttingPackage.Response with an error msg.
      */
-    public Response<Double> GetProductPrice(String catalog_number)
+    public synchronized Response<Double> GetProductPrice(String catalog_number)
     {
         Response<Double> res = null;
         try
@@ -135,7 +134,7 @@ public class ProductServices {
      * Returns a response: With the entered product final supply price.
      * Else:CrossCuttingPackage.Response with an error msg.
      */
-    public Response<Double> GetProductSupplyPrice(String catalog_number)
+    public synchronized Response<Double> GetProductSupplyPrice(String catalog_number)
     {
         Response<Double> res = null;
         try
@@ -155,7 +154,7 @@ public class ProductServices {
     Returns response: with report ID if operation was successful
                       else, return response with error msg.
      **/
-    public Response<Integer> ReportFaultyProduct(String catalog_number, String locationProduct, String description)
+    public synchronized Response<Integer> ReportFaultyProduct(String catalog_number, String locationProduct, String description)
     {
         Response<Integer> res = null;
         try
@@ -174,7 +173,7 @@ public class ProductServices {
     Returns: CrossCuttingPackage.Response with null value if operation was successful.
              else: returns a response with error msg.
      **/
-    public Response<String> RemoveFaultyReport(int report_id)
+    public synchronized Response<String> RemoveFaultyReport(int report_id)
     {
         Response<String> res = null;
         try
@@ -195,7 +194,7 @@ public class ProductServices {
                       else, returns error msg.
 
      **/
-    public Response<Report> CreateFaultyProductReport(String start, String end)
+    public synchronized Response<Report> CreateFaultyProductReport(String start, String end)
     {
         Response<Report> res = null;
         try
@@ -216,7 +215,7 @@ public class ProductServices {
      * @param cats
      * @return
      */
-    public Response<Report> GetInventoryReport(List<String> cats)
+    public synchronized Response<Report> GetInventoryReport(List<String> cats)
     {
         Response<Report> res = null;
         try
@@ -235,7 +234,7 @@ public class ProductServices {
     Returns response: with null value if operation was successful.
     else : with error msg.
      **/
-    public Response<String> PurchaseProduct(String catalog_number, int shelves, int stock)
+    public synchronized Response<String> PurchaseProduct(String catalog_number, int shelves, int stock)
     {
         Response<String> res = null;
         try
@@ -256,7 +255,7 @@ public class ProductServices {
 
      * @return
      */
-    public Response<String> update(String catalogNumber, String name, String storageWarehouse, String storageLocation,
+    public synchronized Response<String> update(String catalogNumber, String name, String storageWarehouse, String storageLocation,
                                    Double consumerPrice, Double supplyPrice,
                                    Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
 
@@ -274,7 +273,7 @@ public class ProductServices {
      * Returns:CrossCuttingPackage.Response with product warning report in string if was a success
      * Else:CrossCuttingPackage.Response with an error string
      */
-    public Response<List<Notification>> getLowStockAlerts() {
+    public synchronized Response<List<Notification>> getLowStockAlerts() {
         try {
 
             return new Response<List<Notification>>(null, this.pFacade.GetProductsWarnings());
@@ -290,7 +289,7 @@ public class ProductServices {
      * @param catalogNum
      * @return
      */
-    public Response<ProductSL> getProductByCatalogNumber(String catalogNum) {
+    public synchronized Response<ProductSL> getProductByCatalogNumber(String catalogNum) {
         try {
             ProductDL dlProducts = this.pFacade.FindProductByID(catalogNum);
 
@@ -310,7 +309,7 @@ public class ProductServices {
      * @param discount
      * @return
      */
-    public Response<String> SetProductDiscount(String id, double discount, String endDateStr) {
+    public synchronized Response<String> SetProductDiscount(String id, double discount, String endDateStr) {
         Response<String> res = null;
         try {
             this.pFacade.SetProductDiscountMod(id, discount, endDateStr);
@@ -324,7 +323,7 @@ public class ProductServices {
     /*
     Service to use by UI to verify the the item catalogs exist in inventory.
      */
-    public Response<String> VerifyItemCatalogs(List<String> items)
+    public synchronized Response<String> VerifyItemCatalogs(List<String> items)
     {
         Response<String> res = null;
         try
@@ -339,10 +338,22 @@ public class ProductServices {
         return res;
     }
 
-    public Response<String> Load() {
+    public synchronized Response<String> Load() {
         Response<String> res;
         try {
             pFacade.LoadData();
+            res = new Response<>(null,null);
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public synchronized Response<String> ReciveOrder(HashMap<String,Integer> orderItems) {
+        Response<String> res;
+        try {
+            pFacade.RestockOrder(orderItems);
             res = new Response<>(null,null);
         }
         catch (Exception e) {

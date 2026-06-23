@@ -1,8 +1,10 @@
 package SupplierModule.DomainLayer;
 import CrossCuttingPackage.Report;
+import CrossCuttingPackage.SupplierItemDTO;
 import CrossCuttingPackage.SupplierOrderDTO;
 import SupplierModule.DataAccessLayer.SupplierOrderDAO;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -10,8 +12,11 @@ public class OrderFacade {
 
     //private HashMap<String,SupplierOrder> orders;
     private static final SupplierOrderDAO orderDao = new SupplierOrderDAO();
+    private final HashMap<String,BuyOrder> buyOrders;
     public OrderFacade()
-    {}
+    {
+        buyOrders = new HashMap<>();
+    }
 
     public SupplierOrder FindOrderById(String oId)
     {
@@ -25,13 +30,12 @@ public class OrderFacade {
     Before creating an order UI must:
     Call for the service - GetAgreementPrices with the quantities.
      */
-    public String CreateOrder(String supId,boolean isUrgent,HashMap<String,Integer> itemsToQuan,HashMap<String,Double> prices)
+    public String CreateOrder(String supId,boolean isUrgent,HashMap<String,Integer> itemsToQuan)
     {
-        if(!prices.keySet().equals(itemsToQuan.keySet()))
-            throw new RuntimeException("OrderFacade:CreateOrder - Items sets is different between prices and amounts.");
         if(!isUrgent && SupplierFacade.IsSupplierOnFixedDays(supId) && !SupplierFacade.IsDayInSchedule(supId,LocalDate.now().getDayOfWeek()))
             throw new RuntimeException("OrderFacade:CreateOrder - Supplier " + supId +" accepts does not accept non urgent orders today.");
 
+        HashMap<String,Double> prices = SupplierFacade.GetPricesFromAgreement(supId,itemsToQuan);
         SupplierOrder toAdd = new SupplierOrder(supId,itemsToQuan,prices);
         orderDao.Insert(toAdd.toDTO());
         return toAdd.getOrderId();
@@ -101,28 +105,148 @@ public class OrderFacade {
     public void PrepareOrder(String orderId)
     {
         SupplierOrder order = FindOrderById(orderId);
+        order.Prepare();
         orderDao.UpdateStatus(order.getOrderId(), SupplierOrder.OrderStatus.PREP.toString());
     }
 
     public void CancelOrder(String orderId)
     {
         SupplierOrder order = FindOrderById(orderId);
+        order.Cancel();
         orderDao.UpdateStatus(order.getOrderId(), SupplierOrder.OrderStatus.CANCELLED.toString());
     }
 
     public void SendOrder(String orderId)
     {
         SupplierOrder order = FindOrderById(orderId);
+        order.SendOrder();
         orderDao.UpdateStatus(order.getOrderId(), SupplierOrder.OrderStatus.SENT.toString());
     }
-    public void DeliverOrder(String orderId)
+    public HashMap <String,Integer> DeliverOrder(String orderId)
     {
         SupplierOrder order = FindOrderById(orderId);
+        order.MarkDelivered();
         orderDao.UpdateStatus(order.getOrderId(), SupplierOrder.OrderStatus.DELIVERED.toString());
+
+        return this.GetOrderItems(orderId);
     }
 
     public void CleanData()
     {
         orderDao.Clean();
+    }
+
+
+    /*
+    Methods for automatic orders
+     */
+
+    public HashMap<String,Integer> GetOrderItems(String oId)
+    {
+        HashMap<String,Integer> res = new HashMap<>();
+        SupplierOrderDTO o = FindOrderById(oId).toDTO();
+        for(SupplierItemDTO i:o.items)
+        {
+            res.put(i.catalogNumber,i.amount);
+        }
+       return res;
+    }
+
+    public String CreateBuyOrder(String supId, HashMap<String,Integer> amounts, List<DayOfWeek> days)
+    {
+        if(!SupplierFacade.IsSupplierExist(supId))
+            throw new RuntimeException("OrderFacade:CreateBuyOrder - supplier " + supId + " does not exist in system.");
+
+        BuyOrder toAdd = new BuyOrder(supId,amounts,days);
+        this.buyOrders.put(toAdd.getBuyOrderID(),toAdd);
+
+        return toAdd.getSupId();
+    }
+
+    public BuyOrder FindBuyOrderById(String boId)
+    {
+        if(this.buyOrders.containsKey(boId))
+            throw new NoSuchElementException("OrderFacade:FindBuyOrderById - cannot find by order with id: " + boId + " in facade.");
+        return this.buyOrders.get(boId);
+    }
+
+    public void DeleteBuyOrder(String boId)
+    {
+        BuyOrder toRemove = FindBuyOrderById(boId);
+        this.buyOrders.remove(toRemove.getBuyOrderID());
+    }
+
+    public void AddItemToBuyOrder(String boId,String item,Integer amount)
+    {
+        BuyOrder b = FindBuyOrderById(boId);
+        b.AddItemToBO(item,amount);
+    }
+    public void RemoveItemFromBuyOrder(String boId,String item)
+    {
+        BuyOrder b = FindBuyOrderById(boId);
+        b.RemoveItemFromBO(item);
+    }
+
+    public void AddDayToBuyOrder(String boId,DayOfWeek d)
+    {
+        BuyOrder b = FindBuyOrderById(boId);
+        b.AddRegularDay(d);
+    }
+    public void RemoveDayFromBuyOrder(String boId,DayOfWeek d)
+    {
+        BuyOrder b = FindBuyOrderById(boId);
+        b.RemoveRegularDay(d);
+    }
+    public void UpdateItemInBO(String boId,String item,Integer amount)
+    {
+        BuyOrder b = FindBuyOrderById(boId);
+        b.UpdateAmount(item,amount);
+    }
+
+    public Report ViewAllBuyOrders()
+    {
+        Report res = new Report("All Buy Orders report\n");
+        res.AddLine("===========================");
+
+        for(Map.Entry<String,BuyOrder> en : this.buyOrders.entrySet())
+        {
+            res.AddLine(en.getValue().Summary());
+            res.AddLine("-----------------------------");
+        }
+        return res;
+    }
+
+    public Report ViewAllBuyOrders(String supId)
+    {
+        Report res = new Report("All Buy Orders by supplier:" + supId+ " report\n");
+        res.AddLine("===========================");
+
+        for(Map.Entry<String,BuyOrder> en : this.buyOrders.entrySet())
+        {
+            if(en.getValue().getSupId().equals(supId)) {
+                res.AddLine(en.getValue().Summary());
+                res.AddLine("-----------------------------");
+            }
+        }
+        return res;
+    }
+
+    public List<String> CreateOrdersFromBuyOrders()
+    {
+        List<String> res = new ArrayList<>();
+        for(Map.Entry<String,BuyOrder> en : this.buyOrders.entrySet()) {
+
+            BuyOrder b = en.getValue();
+            if(LocalDate.now().equals(b.getNextDeliveryDate())) {
+                try {
+                    res.add(CreateOrder(b.getSupId(), false, b.getItems()));
+                    b.ScheduleNextDelivery();
+                }catch (Exception e)
+                {
+                    System.out.println("Cannot create order from BuyOrder:" + b.getBuyOrderID() +" Reason:" + e.getMessage());
+                }
+            }
+        }
+        return res;
     }
 }

@@ -346,4 +346,12 @@ public class ProductDL {
             return endDate.isBefore(today);
         });
     }
+
+    public void Restock(int amount)
+    {
+        if(amount <=0)
+            throw new IllegalArgumentException("Cannot restock a non positive amount.");
+
+        this.amount_on_stock+=amount;
+    }
 }

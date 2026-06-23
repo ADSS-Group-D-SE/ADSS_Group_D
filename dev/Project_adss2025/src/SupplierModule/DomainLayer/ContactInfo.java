@@ -12,7 +12,6 @@ public class ContactInfo {
     private String name;
     private String phoneNumber;
     private String email;
-    private static final ContactDAO dao = new ContactDAO();
 
     public ContactInfo(String name, String email, String phoneNumber) {
         setName(name);
