@@ -482,7 +482,7 @@ public class InventoryCLI {
             throw new RuntimeException();
         }
         else {
-                System.out.println("\n[V] SUCCESS: Product '" +  "' added successfully!");
+                System.out.println("\n[V] SUCCESS: Bad Product report was created successfully!, Report ID:" + res.getReturnValue());
         }
     }
 
