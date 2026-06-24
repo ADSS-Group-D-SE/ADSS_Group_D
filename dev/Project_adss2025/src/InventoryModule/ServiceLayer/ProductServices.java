@@ -312,9 +312,33 @@ public class ProductServices {
     public synchronized Response<String> SetProductDiscount(String id, double discount, String endDateStr) {
         Response<String> res = null;
         try {
-            this.pFacade.SetProductDiscountMod(id, discount, endDateStr);
+            res = new Response<>(null,  this.pFacade.AddProductDiscountMod(id, discount, endDateStr));
+        } catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public synchronized Response<String> RemoveProductDiscount(String id, String pId) {
+        Response<String> res = null;
+        try {
+            this.pFacade.RemoveProductDiscountMod(id, pId);
             res = new Response<>(null, null);
         } catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public synchronized Response<Report> GetProductPromotions(String productId)
+    {
+        Response<Report> res = null;
+        try
+        {
+            res = new Response<>(null,this.pFacade.ViewProductPromotions(productId));
+        }
+        catch (Exception e)
+        {
             res = new Response<>(e.getMessage());
         }
         return res;

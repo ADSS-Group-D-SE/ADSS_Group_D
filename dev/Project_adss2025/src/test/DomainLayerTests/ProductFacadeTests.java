@@ -127,7 +127,7 @@ public class ProductFacadeTests
     void testSetProductDiscount() throws Exception {
         pFacade.addProduct("Milk", "101", "Dairy", "Fridge", "Top", "Main Warehouse", "A-1", "Tnuva", 10, 50, 4.0, 10.0, 5);
 
-        pFacade.SetProductDiscountMod("101", 0.1, defaultDate);
+        pFacade.AddProductDiscountMod("101", 0.1, defaultDate);
         ProductDL p = pFacade.FindProductByID("101");
 
 
@@ -140,7 +140,7 @@ public class ProductFacadeTests
 
         pFacade.addProduct("Milk", "101", "DairyPrice", "Fridge", "Top", "Main Warehouse", "A-1", "Tnuva", 10, 50, 10.0, 10.0, 5);
 
-        pFacade.SetProductDiscountMod("101", 0.1, defaultDate);
+        pFacade.AddProductDiscountMod("101", 0.1, defaultDate);
 
         assertEquals(9.0, pFacade.GetProductPrice("101"), 0.001);
     }

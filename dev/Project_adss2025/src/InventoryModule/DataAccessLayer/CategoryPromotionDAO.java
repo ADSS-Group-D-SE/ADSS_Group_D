@@ -1,7 +1,6 @@
-package InventoryModule.DataLayer;
+package InventoryModule.DataAccessLayer;
 
 import CrossCuttingPackage.promotionDTO;
-import InventoryModule.DomainLayer.Promotion;
 import InventoryModule.DomainLayer.PromotionScope;
 
 import java.sql.*;
@@ -22,7 +21,7 @@ public class CategoryPromotionDAO {
             qu.setString(1, promotion.getId());
             qu.setDouble(2, promotion.getDiscountPercentage());
             qu.setString(3, categoryId);
-            qu.setString(4, promotion.getEndDate().toString());
+            qu.setString(4, promotion.getEndDate());
             qu.setString(5, promotion.getScope());
 
             qu.executeUpdate();
@@ -38,30 +37,30 @@ public class CategoryPromotionDAO {
         }
     }
 
-    public void Update(promotionDTO promotion) {
-        String q = "INSERT OR REPLACE PromotionCategories SET discountPre = ?, endDate = ?, scope = ? WHERE id = ?";
+    public void Update(String categoryId,promotionDTO p) {
+        String q = "UPDATE PromotionCategories SET discountPre = ?, category_id = ?, endDate = ?, scope = ? WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(q)) {
 
-            qu.setDouble(1, promotion.getDiscountPercentage());
-            qu.setString(2, promotion.getEndDate().toString());
-            qu.setString(3, promotion.getScope());
-            qu.setString(4, promotion.getId());
+            qu.setDouble(1, p.getDiscountPercentage());
+            qu.setString(2, categoryId);
+            qu.setString(3, p.getEndDate());
+            qu.setString(4, p.getScope());
+            qu.setString(5, p.getId());
 
             int rowsUpdated = qu.executeUpdate();
 
-            if (rowsUpdated <= 0) {
-                throw new RuntimeException("CategoryPromotionDAO:Update - failed to find a promotion with ID: " + promotion.getId());
-            }
+            if (rowsUpdated <= 0)
+                throw new RuntimeException("PromotionCategoriesDAO:Update - no such promotion was found in db:" + p.getId());
 
         } catch (SQLException e) {
-            throw new RuntimeException("CategoryPromotionDAO:Update - " + e.getMessage());
+            throw new RuntimeException("PromotionCategoriesDAO:Update - " + e.getMessage());
         }
     }
 
     public void updatePromotions(String categoryId, List<promotionDTO> promotions) {
         for (promotionDTO promo : promotions) {
-            this.Update(promo);
+            this.Update(categoryId,promo);
         }
     }
 
@@ -131,7 +130,6 @@ public class CategoryPromotionDAO {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("CategoryPromotionDAO:selectByCategory failed - " + e.getMessage(), e);
         }
         return temp;

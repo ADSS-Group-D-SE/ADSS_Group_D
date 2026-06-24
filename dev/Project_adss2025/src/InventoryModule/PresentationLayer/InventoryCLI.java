@@ -7,7 +7,6 @@ import InventoryModule.ServiceLayer.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Scanner;
 
 public class InventoryCLI {
@@ -145,9 +144,6 @@ public class InventoryCLI {
         System.out.println("\n-----------------------------------------");
         System.out.println(">>> Action: Purchase Product (Update Inventory)");
         System.out.println("-----------------------------------------");
-
-
-
 
 
         System.out.print("Enter Product Catalog Number: ");
@@ -591,7 +587,7 @@ public class InventoryCLI {
             System.out.println("-----------------------------------------");
             throw new RuntimeException();
         } else {
-            System.out.println("[V] SUCCESS: Discount applied successfully!");
+            System.out.println("[V] SUCCESS: Discount applied successfully!, Promotion ID:" + res.getReturnValue());
         }
         System.out.println("-----------------------------------------");
     }
@@ -616,7 +612,7 @@ public class InventoryCLI {
             System.out.println("-----------------------------------------");
             throw new RuntimeException();
         } else {
-            System.out.println("[V] SUCCESS: Discount applied successfully!");
+            System.out.println("[V] SUCCESS: Discount applied successfully! Promotion id:" + res.getReturnValue());
         }
         System.out.println("-----------------------------------------");
     }
@@ -628,20 +624,76 @@ public class InventoryCLI {
         System.out.println("-----------------------------------------");
 
         String choice = "";
+        String cat = "";
+        String pId ="";
+        Response<String> res = null;
+        Response<Report> repRes = null;
         do {
 
             System.out.println("Select action:");
             System.out.println("1.Set category discount.");
             System.out.println("2.Set product discount.");
+            System.out.println("3.Remove category discount.");
+            System.out.println("4.Remove product discount.");
+            System.out.println("5.View Category promotions.");
+            System.out.println("6.View Product promotions.");
             System.out.println("0.Return to menu.");
             choice = scanner.nextLine();
-        }while(!choice.equals("0") && !choice.equals("1")&& !choice.equals("2"));
+        }while(!choice.equals("0") && !choice.equals("1")&& !choice.equals("2")&& !choice.equals("3")&& !choice.equals("4")&& !choice.equals("5")&& !choice.equals("6"));
         switch (choice){
             case "1":
                 catDiscount();
                 break;
             case "2":
                 productDiscount();
+                break;
+            case "3":
+                System.out.println("Please enter categoryId:");
+                cat = scanner.nextLine();
+                System.out.println("Please enter promotion Id:");
+                pId = scanner.nextLine();
+                res = categoryServices.RemoveProductDiscount(cat,pId);
+                if (res.isError()) {
+                    System.out.println("[!] ERROR: " + res.getErrorMsg());
+                    System.out.println("-----------------------------------------");
+                    throw new RuntimeException();
+                }
+                System.out.println("Promotion:" + pId +" was removed successfully.");
+                break;
+            case "4":
+                System.out.println("Please enter catalog number:");
+                cat = scanner.nextLine();
+                System.out.println("Please enter promotion Id:");
+                pId = scanner.nextLine();
+                res = productServices.RemoveProductDiscount(cat,pId);
+                if (res.isError()) {
+                    System.out.println("[!] ERROR: " + res.getErrorMsg());
+                    System.out.println("-----------------------------------------");
+                    throw new RuntimeException();
+                }
+                System.out.println("Promotion:" + pId +" was removed successfully.");
+                break;
+            case "5":
+                System.out.println("Please enter categoryId:");
+                cat = scanner.nextLine();
+                repRes = categoryServices.GetCategoryPromotions(cat);
+                if(repRes.isError()){
+                    System.out.println("[!] ERROR: " + repRes.getErrorMsg());
+                    System.out.println("-----------------------------------------");
+                    throw new RuntimeException();
+                }
+                System.out.println("Displaying report:\n" + repRes.getReturnValue().GetReport());
+                break;
+            case "6":
+                System.out.println("Please enter catalog number:");
+                cat = scanner.nextLine();
+                repRes = productServices.GetProductPromotions(cat);
+                if(repRes.isError()){
+                    System.out.println("[!] ERROR: " + repRes.getErrorMsg());
+                    System.out.println("-----------------------------------------");
+                    throw new RuntimeException();
+                }
+                System.out.println("Displaying report:\n" + repRes.getReturnValue().GetReport());
                 break;
             case "0":
                 return;

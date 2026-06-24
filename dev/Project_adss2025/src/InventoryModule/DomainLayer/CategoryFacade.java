@@ -1,10 +1,9 @@
 package InventoryModule.DomainLayer;
 
+import CrossCuttingPackage.Report;
 import CrossCuttingPackage.categoryDTO;
-import CrossCuttingPackage.productDTO;
-import InventoryModule.DataLayer.CategoryDAO;
-import InventoryModule.DataLayer.CategoryHierarchyDAO;
-import InventoryModule.DataLayer.ProductDAO;
+import InventoryModule.DataAccessLayer.CategoryDAO;
+import InventoryModule.DataAccessLayer.CategoryHierarchyDAO;
 
 import java.util.*;
 
@@ -61,8 +60,7 @@ public class CategoryFacade {
         Promotion initialPromo = null;
         if (discountPre > 0) {
             if (discountPre > 1) throw new IllegalArgumentException("CategoryFacade - Create Category:Discount is invalid.");
-            String promoId = String.valueOf(System.currentTimeMillis());
-            initialPromo = new Promotion(promoId, discountPre, date, PromotionScope.CATEGORY);
+            initialPromo = new Promotion(name, discountPre, date, PromotionScope.CATEGORY);
         }
 
         CategoryDL toAdd = new CategoryDL(name, name, new ArrayList<>(), initialPromo, CategoryDL.CategoryType.Main);
@@ -102,9 +100,7 @@ public class CategoryFacade {
 
         Promotion initialPromo = null;
         if (discountPre > 0) {
-            if (discountPre > 1) throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Discount is invalid.");
-            String promoId = String.valueOf(System.currentTimeMillis());
-            initialPromo = new Promotion(promoId, discountPre, date, PromotionScope.CATEGORY);
+            initialPromo = new Promotion(newId, discountPre, date, PromotionScope.CATEGORY);
         }
 
         CategoryDL toAdd = new CategoryDL(name,newId,new ArrayList<>(),initialPromo,newType);
@@ -136,26 +132,29 @@ public class CategoryFacade {
     /**
      Method that allows setting category discount, Looks for the category in the facade and updates its discount modifier.
      **/
-    public void addCatDiscount(String cat_id, double discount, String date)
+    public String addCatDiscount(String cat_id, double discount, String date)
     {
-        if(discount < 0 || discount > 1)
-            throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:" + discount);
+        CategoryDL c = FindCategoryById(cat_id);
+        return c.addPromotion(discount,date);
+    }
 
-        CategoryDL originalCat = FindCategoryById(cat_id);
+    public void RemoveCategoryPromo(String cat_id,String pId)
+    {
+        CategoryDL c = FindCategoryById(cat_id);
+        c.removePromotion(pId);
+    }
 
-        CategoryDL tempCat = new CategoryDL(originalCat);
-
-        Promotion initialPromo = null;
-        if (discount > 0) {
-            String promoId = String.valueOf((int) (System.currentTimeMillis() / 1000));
-            initialPromo = new Promotion(promoId, discount, date, PromotionScope.CATEGORY);
+    public Report ViewCategoryPromotions(String id)
+    {
+        Report res = new Report("Promotions report for category:" + id);
+        res.AddLine("\n====================");
+        List<Promotion> promos = this.FindCategoryById(id).getDiscount_pre();
+        for(Promotion p:promos) {
+            res.AddLine(p.Summary());
+            res.AddLine("----------------");
         }
 
-        tempCat.addPromotion(initialPromo);
-
-        categoryDAO.UpdateCategory(tempCat.toDTO());
-
-        originalCat.addPromotion(initialPromo);
+        return res;
     }
 
     /**

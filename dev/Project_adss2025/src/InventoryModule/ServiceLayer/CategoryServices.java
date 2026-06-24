@@ -1,5 +1,6 @@
 package InventoryModule.ServiceLayer;
 
+import CrossCuttingPackage.Report;
 import CrossCuttingPackage.Response;
 import InventoryModule.DomainLayer.CategoryFacade;
 
@@ -109,8 +110,32 @@ public class CategoryServices {
         Response<String> res = null;
         try
         {
-            this.cFacade.addCatDiscount(category_id,discount,date);
-            res = new Response<>(null,null);
+            res = new Response<>(null,this.cFacade.addCatDiscount(category_id,discount,date));
+        }
+        catch (Exception e)
+        {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public synchronized Response<String> RemoveProductDiscount(String cat_id, String pId) {
+        Response<String> res = null;
+        try {
+            this.cFacade.RemoveCategoryPromo(cat_id,pId);
+            res = new Response<>(null, null);
+        } catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+    public synchronized Response<Report> GetCategoryPromotions(String catId)
+    {
+        Response<Report> res = null;
+        try
+        {
+            res = new Response<>(null,this.cFacade.ViewCategoryPromotions(catId));
         }
         catch (Exception e)
         {

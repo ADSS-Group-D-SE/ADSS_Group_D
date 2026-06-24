@@ -2,10 +2,8 @@ package InventoryModule.DomainLayer;
 
 
 import CrossCuttingPackage.*;
-import InventoryModule.DataLayer.FaultyReportDAO;
-import InventoryModule.DataLayer.ProductDAO;
-import SupplierModule.DataAccessLayer.SupplierDAO;
-import SupplierModule.DomainLayer.Supplier;
+import InventoryModule.DataAccessLayer.FaultyReportDAO;
+import InventoryModule.DataAccessLayer.ProductDAO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,10 +66,10 @@ public class ProductFacade {
         }
 
         ProductDL product = new ProductDL(name, catalogNumber, main_id, sub_id, subsub_id, warehouseName, location, manu, amountOnShelves, amountOnStock, consumerPrice, supplyPrice, minAmount);
+
         productDAO.Insert(product.toDTO());
-
-
         products.put(catalogNumber, product);
+
         return product.getCatalog_number();
     }
 
@@ -307,15 +305,28 @@ public class ProductFacade {
      * @param id
      * @param newDisc
      */
-    public void SetProductDiscountMod(String id,double newDisc,String time)
+    public String AddProductDiscountMod(String id, double newDisc, String endDate)
     {
         ProductDL p =FindProductByID(id);
-        ProductDL tempProduct = new ProductDL(p);
-        Promotion newPromotion = new Promotion(Long.toString(System.currentTimeMillis()), newDisc, time, PromotionScope.PRODUCT);
+        return p.addPromotion(newDisc,endDate);
+    }
 
-        tempProduct.addPromotion(newPromotion);
-        productDAO.UpdateProduct(tempProduct.toDTO());
-        p.addPromotion(newPromotion);
+    public void RemoveProductDiscountMod(String id,String promoId)
+    {
+        ProductDL p =FindProductByID(id);
+        p.removePromotion(promoId);
+    }
+
+    public Report ViewProductPromotions(String id)
+    {
+        Report res = new Report("Promotions report for product:" + id);
+        res.AddLine("\n====================");
+        List<Promotion> promos = this.FindProductByID(id).getProduct_discounts();
+        for(Promotion p:promos) {
+            res.AddLine(p.Summary());
+            res.AddLine("----------------");
+        }
+        return res;
     }
 
     /**
