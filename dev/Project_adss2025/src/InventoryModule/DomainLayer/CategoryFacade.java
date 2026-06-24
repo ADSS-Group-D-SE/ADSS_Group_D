@@ -18,11 +18,6 @@ public class CategoryFacade {
     private static final CategoryHierarchyDAO categoryHierarchyDAO = new CategoryHierarchyDAO();
 
 
-    private static int catPromoCounter = 1;
-    /*
-    Id method for categories
-    NAME-NAME SUB- NAME SUBSUB
-     */
 
 
     public CategoryFacade()
@@ -48,9 +43,6 @@ public class CategoryFacade {
 
 
 
-    private int generateNextId() {
-        return catPromoCounter++;
-    }
 
     /**
      *
@@ -69,7 +61,7 @@ public class CategoryFacade {
         Promotion initialPromo = null;
         if (discountPre > 0) {
             if (discountPre > 1) throw new IllegalArgumentException("CategoryFacade - Create Category:Discount is invalid.");
-            String promoId = ""+(generateNextId());
+            String promoId = String.valueOf(System.currentTimeMillis());
             initialPromo = new Promotion(promoId, discountPre, date, PromotionScope.CATEGORY);
         }
 
@@ -111,7 +103,7 @@ public class CategoryFacade {
         Promotion initialPromo = null;
         if (discountPre > 0) {
             if (discountPre > 1) throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Discount is invalid.");
-            String promoId = "" + (generateNextId() );
+            String promoId = String.valueOf(System.currentTimeMillis());
             initialPromo = new Promotion(promoId, discountPre, date, PromotionScope.CATEGORY);
         }
 
@@ -144,20 +136,26 @@ public class CategoryFacade {
     /**
      Method that allows setting category discount, Looks for the category in the facade and updates its discount modifier.
      **/
-    public void addCatDiscount(String cat_id,double discount,String date)
+    public void addCatDiscount(String cat_id, double discount, String date)
     {
         if(discount < 0 || discount > 1)
-            throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:"+discount);
+            throw new RuntimeException("ProductFacade - SetCatDiscounts: Invalid discount was sent:" + discount);
 
-        CategoryDL cat = FindCategoryById(cat_id);
+        CategoryDL originalCat = FindCategoryById(cat_id);
+
+        CategoryDL tempCat = new CategoryDL(originalCat);
+
         Promotion initialPromo = null;
         if (discount > 0) {
-            if (discount > 1) throw new IllegalArgumentException("CategoryFacade - Create Sub-Category:Discount is invalid.");
-            String promoId = "" + (catPromoCounter++);
+            String promoId = String.valueOf((int) (System.currentTimeMillis() / 1000));
             initialPromo = new Promotion(promoId, discount, date, PromotionScope.CATEGORY);
         }
-        cat.addPromotion(initialPromo);
-        categoryDAO.UpdateCategory(cat.toDTO());
+
+        tempCat.addPromotion(initialPromo);
+
+        categoryDAO.UpdateCategory(tempCat.toDTO());
+
+        originalCat.addPromotion(initialPromo);
     }
 
     /**

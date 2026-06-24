@@ -39,13 +39,19 @@ public class ProductPromotionDAO {
         }
     }
 
-    public void Update(promotionDTO promotion) {
-        String sql = "INSERT OR REPLACE INTO PromotionProducts (id, discountPre, catalog_number, endDate, scope) VALUES (?, ?, ?, ?, ?)";        try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(sql)) {
+    public void Update(String catalogNumber,promotionDTO promotion) {
+        String sql = "INSERT OR REPLACE INTO PromotionProducts (id, discountPre, catalog_number, endDate, scope) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(url); PreparedStatement qu = conn.prepareStatement(sql)) {
 
-            qu.setDouble(1, promotion.getDiscountPercentage());
-            qu.setString(2, promotion.getEndDate().toString());
-            qu.setString(3, promotion.getScope());
-            qu.setString(4, promotion.getId());
+            qu.setString(1, promotion.getId());
+
+            qu.setDouble(2, promotion.getDiscountPercentage());
+
+            qu.setString(3, catalogNumber);
+
+            qu.setString(4, promotion.getEndDate().toString());
+
+            qu.setString(5, promotion.getScope());
 
             int rowsUpdated = qu.executeUpdate();
 
@@ -58,9 +64,9 @@ public class ProductPromotionDAO {
         }
     }
 
-    public void updatePromotions( List<promotionDTO> promotions) {
+    public void updatePromotions( String catalognumber,List<promotionDTO> promotions) {
         for (promotionDTO promo : promotions) {
-            this.Update(promo);
+            this.Update(catalognumber,promo);
         }
     }
 
