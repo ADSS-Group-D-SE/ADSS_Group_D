@@ -278,6 +278,18 @@ public class OrderServices {
         return res;
     }
 
+    public synchronized Response<String> FindSupIdFromBO(String boId)
+    {
+        Response<String> res;
+        try {
+            res = new Response<>(null,of.GetSupIdFromBO(boId));
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
     public synchronized Response<String> RemoveAllBOFromSupp(String supId)
     {
         Response<String> res;

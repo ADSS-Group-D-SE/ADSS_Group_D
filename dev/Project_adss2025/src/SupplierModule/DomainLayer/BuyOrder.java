@@ -40,6 +40,7 @@ public class BuyOrder {
 
         VerifyQ(items);
 
+        this.supId = supId;
         this.buyOrderID = generateOrderId(supId);
         this.items = items;
         this.regularDays = new DeliveryDaySchedule(days);

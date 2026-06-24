@@ -171,7 +171,7 @@ public class OrderFacade {
     public BuyOrder FindBuyOrderById(String boId)
     {
         if(!this.buyOrders.containsKey(boId))
-            throw new NoSuchElementException("OrderFacade:FindBuyOrderById - cannot find by order with id: " + boId + " in facade.");
+            throw new NoSuchElementException("OrderFacade:FindBuyOrderById - cannot find buy order with id: " + boId + " in facade.");
         return this.buyOrders.get(boId);
     }
 
@@ -258,6 +258,7 @@ public class OrderFacade {
                 try {
                     res.add(CreateOrder(b.getSupId(), false, b.getItems()));
                     b.ScheduleNextDelivery();
+                    boDao.Update(b.getBuyOrderID(),b.getSupId(),b.getRegularDays().toString(),b.getNextDeliveryDate().toString());
                 }catch (Exception e)
                 {
                     System.out.println("Cannot create order from BuyOrder:" + b.getBuyOrderID() +" Reason:" + e.getMessage());
@@ -275,6 +276,11 @@ public class OrderFacade {
             if(b.getSupId().equals(supId))
                 DeleteBuyOrder(b.getSupId());
         }
+    }
+
+    public String GetSupIdFromBO(String boId)
+    {
+        return FindBuyOrderById(boId).getSupId();
     }
 
     public void Load()

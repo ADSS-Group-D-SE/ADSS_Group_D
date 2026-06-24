@@ -298,10 +298,16 @@ public class supplierCLI {
         String item = null;
         Integer amount = null;
         Response<String> res;
+        Response<String> temp;
 
         if (subChoice.equals("1") || subChoice.equals("3")) {
-            System.out.print("Enter Supplier ID for this Buy Order: ");
-            String supId = scanner.nextLine();
+            temp = orderServices.FindSupIdFromBO(boId);
+            if(temp.isError()) {
+                System.out.println("[!] ERROR:" + temp.getErrorMsg());
+                return;
+            }
+
+            String supId = temp.getReturnValue();
 
             Response<HashMap<String, Double>> itemsRes = supplierServices.getSupplierItems(supId);
             if (itemsRes.isError() || itemsRes.getReturnValue() == null || itemsRes.getReturnValue().isEmpty()) {
@@ -385,11 +391,11 @@ public class supplierCLI {
         System.out.print("Enter Buy Order ID to remove: ");
         String boId = scanner.nextLine();
 
-        Response<String> res = orderServices.RemoveBuyOrder(boId);
+        Response<String> res = orderServices.RemoveBuyOrder(boId); // does not return id on removal
         if (res.isError()) {
             System.out.println("[!] Error: " + res.getErrorMsg());
         } else {
-            System.out.println("[+] Buy Order removed successfully! ID: " + res.getReturnValue());
+            System.out.println("[+] Buy Order removed successfully!");
         }    }
 
     private void handleCreateBuyOrder() {

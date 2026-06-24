@@ -148,6 +148,18 @@ public class Main {
                 throw new RuntimeException(oIdRes.getErrorMsg());
 
             System.out.println("Order:" + oIdRes.getReturnValue() + " Was created to supplier:"+supId);
+            Response<String> r = orderServices.PrepareOrder(oIdRes.getReturnValue());
+            if(r.isError())
+                throw new RuntimeException(r.getErrorMsg());
+            r = orderServices.SendOrder(oIdRes.getReturnValue());
+            if(r.isError())
+                throw new RuntimeException(r.getErrorMsg());
+            Response<HashMap<String,Integer>> re = orderServices.DeliverOrder(oIdRes.getReturnValue()); // auto delivery for inventory updates
+            if(re.isError())
+                throw new RuntimeException(re.getErrorMsg());
+            r = productServices.ReciveOrder(re.getReturnValue());
+            if(r.isError())
+                throw new RuntimeException(r.getErrorMsg());
         }
     }
 }
