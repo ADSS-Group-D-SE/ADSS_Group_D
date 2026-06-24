@@ -197,21 +197,29 @@ public class OrderFacade {
     public void AddDayToBuyOrder(String boId,DayOfWeek d)
     {
         BuyOrder b = FindBuyOrderById(boId);
+        if(b.isDeliveryTomorrow())
+            throw new RuntimeException("Cannot edit a buy order one day or less before expected delivery date");
+
         DeliveryDaySchedule temp = b.getRegularDays();
         temp.addDay(d);
+        LocalDate td = temp.ComputeNextOrderDate();
 
-        boDao.Update(b.getBuyOrderID(),b.getSupId(),temp.toString(),b.getNextDeliveryDate().toString());
+        boDao.Update(b.getBuyOrderID(),b.getSupId(),temp.toString(),td.toString());
         b.AddRegularDay(d);
     }
     public void RemoveDayFromBuyOrder(String boId,DayOfWeek d)
     {
         BuyOrder b = FindBuyOrderById(boId);
+        if(b.isDeliveryTomorrow())
+            throw new RuntimeException("Cannot edit a buy order one day or less before expected delivery date");
+
         DeliveryDaySchedule temp = b.getRegularDays();
         temp.removeDay(d);
         if(temp.getDays().isEmpty())
             throw new RuntimeException("Cannot remove day, as the buy order will remain with no regular delivery days.");
 
-        boDao.Update(b.getBuyOrderID(),b.getSupId(),temp.toString(),b.getNextDeliveryDate().toString());
+        LocalDate td = temp.ComputeNextOrderDate();
+        boDao.Update(b.getBuyOrderID(),b.getSupId(),temp.toString(),td.toString());
         b.RemoveRegularDay(d);
     }
     public void UpdateItemInBO(String boId,String item,Integer amount)
@@ -274,7 +282,7 @@ public class OrderFacade {
         {
             BuyOrder b = en.getValue();
             if(b.getSupId().equals(supId))
-                DeleteBuyOrder(b.getSupId());
+                DeleteBuyOrder(b.getBuyOrderID());
         }
     }
 

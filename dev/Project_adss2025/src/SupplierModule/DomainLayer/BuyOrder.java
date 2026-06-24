@@ -112,12 +112,13 @@ public class BuyOrder {
     public void AddRegularDay(DayOfWeek d)
     {
         this.regularDays.addDay(d);
+        ScheduleNextDelivery();
     }
 
     public void RemoveRegularDay(DayOfWeek d)
     {
-
         this.regularDays.removeDay(d);
+        ScheduleNextDelivery();
     }
 
     public void VerifyQ(HashMap<String,Integer> amounts)
