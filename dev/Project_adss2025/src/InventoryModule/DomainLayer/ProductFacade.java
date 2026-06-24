@@ -17,7 +17,7 @@ public class ProductFacade {
 //    private HashMap<Integer,FaultyProductDL> faultyProducts;
 
     private int faultyProductsIdCounter=0;
-    private int promotionIdCounter = 1;
+//    private int promotionIdCounter = 1;
 
 
     private static final ProductDAO productDAO = new ProductDAO();
@@ -34,9 +34,6 @@ public class ProductFacade {
         return faultyProductsIdCounter++;
     }
 
-    private int generatePromotionId() {
-        return promotionIdCounter++;
-    }
 
     public List<ProductDL> getAllProducts() {
         List<ProductDL> results = new ArrayList<>();
@@ -88,9 +85,14 @@ public class ProductFacade {
     public void setSupplierDiscount(String catalogNumber, double discount) throws Exception{
         ProductDL product = FindProductByID(catalogNumber);
 
-        product.setSupplier_discount(discount);
+        ProductDL tempProduct = new ProductDL(product);
+
+        tempProduct.setSupplier_discount(discount);
+
         try {
-            productDAO.UpdateProduct(product.toDTO());
+            productDAO.UpdateProduct(tempProduct.toDTO());
+            product.setSupplier_discount(discount);
+
         } catch (Exception e) {
             throw new Exception("Failed to update supplier discount in database: " + e.getMessage());
         }
@@ -150,7 +152,9 @@ public class ProductFacade {
     {
         ProductDL toFaulty = FindProductByID(catalog_number);
         LocalDateTime dateOnReport = LocalDateTime.now();
-        FaultyProductDL toAdd = new FaultyProductDL(toFaulty,generateNextId(),locationProduct,description,dateOnReport);
+
+        int promoId = (int) (System.currentTimeMillis() / 1000);
+        FaultyProductDL toAdd = new FaultyProductDL(toFaulty,promoId,locationProduct,description,dateOnReport);
         faultyReportDAO.Insert(toAdd.toDTO());
         return toAdd.getReportID();
     }
@@ -203,8 +207,12 @@ public class ProductFacade {
     public void PurchaseProduct(String catalog_number,int shelves,int stock)
     {
         ProductDL p = FindProductByID(catalog_number);
-        productDAO.UpdateProduct(p.toDTO());
-        p.Purchase(shelves,stock);
+        ProductDL tempProduct = new ProductDL(p);
+        tempProduct.Purchase(shelves, stock);
+
+        productDAO.UpdateProduct(tempProduct.toDTO());
+        p.Purchase(shelves, stock);
+
     }
 
 
@@ -212,19 +220,30 @@ public class ProductFacade {
                          Double consumerPrice, Double supplyPrice,
                          Integer shelvesAmount, Integer stockAmount, Integer minAmountAlert) {
 
-        ProductDL product = FindProductByID(catalogNumber);
-        if (name != null) product.setName(name);
+        ProductDL originalProduct = FindProductByID(catalogNumber);
 
-        if (storageWarehouse != null) product.setWarehouse(storageWarehouse);
+        ProductDL tempProduct = new ProductDL(originalProduct);
 
-        if (storageLocation != null) product.setLocation(storageLocation);
+        if (name != null) tempProduct.setName(name);
+        if (storageWarehouse != null) tempProduct.setWarehouse(storageWarehouse);
+        if (storageLocation != null) tempProduct.setLocation(storageLocation);
+        if (consumerPrice != null) tempProduct.setPrice_to_consumer(consumerPrice);
+        if (supplyPrice != null) tempProduct.setPrice_to_supply(supplyPrice);
+        if (shelvesAmount != null) tempProduct.setAmount_on_shelves(shelvesAmount);
+        if (stockAmount != null) tempProduct.setAmount_on_stock(stockAmount);
+        if (minAmountAlert != null) tempProduct.setMinAmountAlert(minAmountAlert);
 
-        if (consumerPrice != null) product.setPrice_to_consumer(consumerPrice);
-        if (supplyPrice != null) product.setPrice_to_supply(supplyPrice);
-        if (shelvesAmount != null) product.setAmount_on_shelves(shelvesAmount);
-        if (stockAmount != null) product.setAmount_on_stock(stockAmount);
-        if (minAmountAlert != null) product.setMinAmountAlert(minAmountAlert);
-        productDAO.UpdateProduct(product.toDTO());
+
+        productDAO.UpdateProduct(tempProduct.toDTO());
+
+        if (name != null) originalProduct.setName(name);
+        if (storageWarehouse != null) originalProduct.setWarehouse(storageWarehouse);
+        if (storageLocation != null) originalProduct.setLocation(storageLocation);
+        if (consumerPrice != null) originalProduct.setPrice_to_consumer(consumerPrice);
+        if (supplyPrice != null) originalProduct.setPrice_to_supply(supplyPrice);
+        if (shelvesAmount != null) originalProduct.setAmount_on_shelves(shelvesAmount);
+        if (stockAmount != null) originalProduct.setAmount_on_stock(stockAmount);
+        if (minAmountAlert != null) originalProduct.setMinAmountAlert(minAmountAlert);
 
         return "Product updated successfully!";
     }
@@ -291,8 +310,12 @@ public class ProductFacade {
     public void SetProductDiscountMod(String id,double newDisc,String time)
     {
         ProductDL p =FindProductByID(id);
-        p.addPromotion(new Promotion(Integer.toString(generatePromotionId()),newDisc,time, PromotionScope.PRODUCT));
-        productDAO.UpdateProduct(p.toDTO());
+        ProductDL tempProduct = new ProductDL(p);
+        Promotion newPromotion = new Promotion(Long.toString(System.currentTimeMillis()), newDisc, time, PromotionScope.PRODUCT);
+
+        tempProduct.addPromotion(newPromotion);
+        productDAO.UpdateProduct(tempProduct.toDTO());
+        p.addPromotion(newPromotion);
     }
 
     /**

@@ -74,7 +74,7 @@ public class ProductDAO {
                 "WHERE catalog_number = ?";
 
         try (Connection conn = DriverManager.getConnection(url); PreparedStatement ps = conn.prepareStatement(sql)) {
-            promotionDAO.updatePromotions(product.getProductDiscounts());
+            promotionDAO.updatePromotions(product.getCatalogNumber(),product.getProductDiscounts());
 
             ps.setString(1, product.getName());
             ps.setString(2, product.getMain_category_id());

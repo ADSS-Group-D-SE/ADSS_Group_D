@@ -104,6 +104,33 @@ public class ProductDL {
         }
     }
 
+    public ProductDL(ProductDL product) {
+        this.name = product.name;
+        this.catalog_number = product.catalog_number;
+        this.manufacturer = product.manufacturer;
+        this.amount_on_shelves = product.amount_on_shelves;
+        this.amount_on_stock = product.amount_on_stock;
+        this.price_to_consumer = product.price_to_consumer;
+        this.price_to_supply = product.price_to_supply;
+        this.supplier_discount = product.supplier_discount;
+        this.minAmountAlert = product.minAmountAlert;
+
+        this.warehouse = product.warehouse != null ? new Warehouse(product.warehouse.getName()) : null;
+        this.location = product.location != null ? new ShelfLocation(product.location.toString()) : null;
+
+        this.tags = new HashMap<>();
+        if (product.tags != null) {
+            this.tags.putAll(product.tags);
+        }
+
+        this.product_discounts = new ArrayList<>();
+        if (product.product_discounts != null) {
+            for (Promotion promo : product.product_discounts) {
+                this.product_discounts.add(new Promotion(promo));
+            }
+        }
+    }
+
     public productDTO toDTO() {
 
 
