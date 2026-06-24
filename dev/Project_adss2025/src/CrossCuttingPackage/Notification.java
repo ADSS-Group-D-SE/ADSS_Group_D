@@ -52,7 +52,7 @@ public class Notification {
                 +"\nNeed to restock:" + (min - (amountInStock+amountInStock));
     }
 
-    public int HowManyToRestock() { return (min - (amountInStock + amountOnShelf));}
+    public int HowManyToRestock() { return (min +1 - (amountInStock + amountOnShelf));}
 
 
 }

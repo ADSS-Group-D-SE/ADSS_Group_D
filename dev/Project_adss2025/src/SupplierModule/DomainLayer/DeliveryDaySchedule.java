@@ -1,6 +1,7 @@
 package SupplierModule.DomainLayer;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +78,19 @@ public class DeliveryDaySchedule {
         for (DayOfWeek d:this.deliveryDays)
             res+=d.toString()+',';
         return res.isEmpty() ? res : res.substring(0, res.length() - 1); //removes last ,
+    }
+
+    public LocalDate ComputeNextOrderDate()
+    {
+        if(deliveryDays.isEmpty())
+            throw new RuntimeException("Cannot compute next delivery date, as the list of days is empty.");
+        LocalDate date = LocalDate.now().plusDays(1);
+
+        while (!this.deliveryDays.contains(date.getDayOfWeek())) {
+            date = date.plusDays(1);
+        }
+
+        return date;
     }
 
 

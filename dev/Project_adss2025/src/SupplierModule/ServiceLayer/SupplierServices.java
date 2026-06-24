@@ -1,8 +1,10 @@
 package SupplierModule.ServiceLayer;
 
+import CrossCuttingPackage.Notification;
 import CrossCuttingPackage.Report;
 import CrossCuttingPackage.Response;
 import SupplierModule.DomainLayer.SupplierFacade;
+import kotlin.jvm.Synchronized;
 
 import java.time.DayOfWeek;
 import java.util.ArrayList;
@@ -10,21 +12,18 @@ import java.util.HashMap;
 
 public class SupplierServices {
 
-    private static SupplierServices INSTANCE;
+    private static final SupplierServices INSTANCE = new SupplierServices();
     private final SupplierFacade sf;
 
     private SupplierServices(){this.sf = new SupplierFacade();}
 
     public static SupplierServices getInstance()
     {
-        if(INSTANCE == null)
-            INSTANCE= new SupplierServices();
-
         return INSTANCE;
     }
 
 
-    public Response<String> AddItemToAgreement(String supId, String itemCatalog, Double price)
+    public synchronized Response<String> AddItemToAgreement(String supId, String itemCatalog, Double price)
     {
         Response<String> res;
         try {
@@ -37,7 +36,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> RemoveItemFromAgreement(String supId, String itemCatalog)
+    public synchronized Response<String> RemoveItemFromAgreement(String supId, String itemCatalog)
     {
         Response<String> res;
         try {
@@ -50,7 +49,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> UpdateItemPriceInAgreement(String supId, String itemCatalog, Double newPrice)
+    public synchronized Response<String> UpdateItemPriceInAgreement(String supId, String itemCatalog, Double newPrice)
     {
         Response<String> res;
         try {
@@ -64,7 +63,7 @@ public class SupplierServices {
     }
 
 
-    public Response<String> AddSupplier(String supId, String regNumber, String name, String bank, String pt, HashMap<String,Double> itemsToPrices)
+    public synchronized Response<String> AddSupplier(String supId, String regNumber, String name, String bank, String pt, HashMap<String,Double> itemsToPrices)
     {
         Response<String> res;
         try {
@@ -76,7 +75,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> RemoveSupplier(String supId)
+    public synchronized Response<String> RemoveSupplier(String supId)
     {
         Response<String> res;
         try {
@@ -89,7 +88,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> AddContact(String supId,String name,String email, String phone)
+    public synchronized Response<String> AddContact(String supId,String name,String email, String phone)
     {
         Response<String> res;
         try {
@@ -102,7 +101,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> RemoveContact(String supId,String name)
+    public synchronized Response<String> RemoveContact(String supId,String name)
     {
         Response<String> res;
         try {
@@ -115,7 +114,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditContactName(String supId,String oldName,String newName)
+    public synchronized Response<String> EditContactName(String supId,String oldName,String newName)
     {
         Response<String> res;
         try {
@@ -128,7 +127,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditContactEmail(String supId,String name,String email)
+    public synchronized Response<String> EditContactEmail(String supId,String name,String email)
     {
         Response<String> res;
         try {
@@ -141,7 +140,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditSupplierName(String supId,String name)
+    public synchronized Response<String> EditSupplierName(String supId,String name)
     {
         Response<String> res;
         try {
@@ -154,7 +153,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditSupplierBank(String supId,String b)
+    public synchronized Response<String> EditSupplierBank(String supId,String b)
     {
         Response<String> res;
         try {
@@ -167,7 +166,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditSupplierPaymentTerms(String supId,String pt)
+    public synchronized Response<String> EditSupplierPaymentTerms(String supId,String pt)
     {
         Response<String> res;
         try {
@@ -180,7 +179,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditSupplierRegNumber(String supId,String reg)
+    public synchronized Response<String> EditSupplierRegNumber(String supId,String reg)
     {
         Response<String> res;
         try {
@@ -193,7 +192,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> EditContactPhone(String supId,String name,String phone)
+    public synchronized Response<String> EditContactPhone(String supId,String name,String phone)
     {
         Response<String> res;
         try {
@@ -206,7 +205,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<Report> ViewContacts(String supId)
+    public synchronized Response<Report> ViewContacts(String supId)
     {
         Response<Report> res;
         try {
@@ -218,7 +217,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> AddDelvDay(String supId,DayOfWeek d)
+    public synchronized Response<String> AddDelvDay(String supId,DayOfWeek d)
     {
         Response<String> res;
         try {
@@ -230,7 +229,7 @@ public class SupplierServices {
         }
         return res;
     }
-    public Response<String> RemoveDelvDay(String supId, DayOfWeek d)
+    public synchronized Response<String> RemoveDelvDay(String supId, DayOfWeek d)
     {
         Response<String> res;
         try {
@@ -243,7 +242,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> AddDiscountRule(String supId,String cat,String name,double d,int min)
+    public synchronized Response<String> AddDiscountRule(String supId,String cat,String name,double d,int min)
     {
         Response<String> res;
         try {
@@ -256,7 +255,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> RemoveDiscountRule(String supId,String cat,String name)
+    public synchronized Response<String> RemoveDiscountRule(String supId,String cat,String name)
     {
         Response<String> res;
         try {
@@ -269,7 +268,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> UpdateDiscountRuleMin(String supId,String cat,String name,int min)
+    public synchronized Response<String> UpdateDiscountRuleMin(String supId,String cat,String name,int min)
     {
         Response<String> res;
         try {
@@ -282,7 +281,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> UpdateDiscountRuleDisc(String supId,String cat,String name,double d)
+    public synchronized Response<String> UpdateDiscountRuleDisc(String supId,String cat,String name,double d)
     {
         Response<String> res;
         try {
@@ -298,7 +297,7 @@ public class SupplierServices {
     /*
     Service that must be used before creating an order!
      */
-    public Response<HashMap<String,Double>> GetAgreementPrices(String supId, HashMap<String,Integer> itemsToAmounts)
+    public synchronized Response<HashMap<String,Double>> GetAgreementPrices(String supId, HashMap<String,Integer> itemsToAmounts)
     {
         Response<HashMap<String,Double>> res;
         try {
@@ -310,7 +309,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<Report> ViewAllSuppliers()
+    public synchronized Response<Report> ViewAllSuppliers()
     {
         Response<Report> res;
         try {
@@ -322,7 +321,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<HashMap<String,Double>> getSupplierItems(String supId) {
+    public synchronized Response<HashMap<String,Double>> getSupplierItems(String supId) {
         Response<HashMap<String,Double>> res;
         try {
             res = new Response<>(null,this.sf.getProductfromSupplier(supId));
@@ -333,7 +332,7 @@ public class SupplierServices {
         return res;
     }
 
-    public Response<String> Clean()
+    public synchronized Response<String> Clean()
     {
         Response<String> res;
         try {
@@ -358,5 +357,27 @@ public class SupplierServices {
         }
         return res;
     }
+
+    /*
+    ===================================
+    Automatic orders functionality
+    ===================================
+    */
+
+    public synchronized Response<String> FindBestSupplier(Notification n)
+    {
+        Response<String> res;
+        try {
+            res = new Response<>(null,sf.FindBestSupplier(n));
+        }
+        catch (Exception e) {
+            res = new Response<>(e.getMessage());
+        }
+        return res;
+    }
+
+
 }
+
+
 

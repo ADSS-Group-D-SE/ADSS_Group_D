@@ -2,6 +2,7 @@ package SupplierModule.PresentationLayer;
 
 import CrossCuttingPackage.Report;
 import CrossCuttingPackage.Response;
+import InventoryModule.ServiceLayer.ProductServices;
 import SupplierModule.ServiceLayer.OrderServices;
 import SupplierModule.ServiceLayer.SupplierServices;
 
@@ -16,10 +17,12 @@ public class supplierCLI {
     private final SupplierServices supplierServices;
     private final OrderServices orderServices;
 
-    public supplierCLI(Boolean shouldLoad){
-        this.scanner = new Scanner(System.in);
+    public supplierCLI(Boolean shouldLoad,Scanner scanner){
+        this.scanner = scanner;
         this.supplierServices = SupplierServices.getInstance();
         this.orderServices = OrderServices.getInstance();
+
+
         if(shouldLoad)
         {
             Response<String> res= supplierServices.Load();
@@ -67,9 +70,9 @@ public class supplierCLI {
         System.out.println("11. Remove Item from Agreement");
         System.out.println("12. Update Item Price in Agreement");
         System.out.println("13. Order Management Menu");
-        System.out.println("14. Load Supplier Test Data");
+        System.out.println("14. View All Suppliers");
         System.out.println("15. Discount Rule Menu");
-        System.out.println("16. View All Suppliers");
+        System.out.println("16. Load Supplier Test Data");
         System.out.println("0.  Exit");
         System.out.print("Please enter your choice: ");
     }
@@ -116,13 +119,13 @@ public class supplierCLI {
                 handleOrderMenu();
                 break;
             case "14":
-                CreateSupplierTestData();
+                HandleSuppliersReport();
                 break;
             case "15":
                 HandleDiscountMenu();
                 break;
             case "16":
-                HandleSuppliersReport();
+                CreateSupplierTestData();
                 break;
             default:
                 System.out.println("Invalid input. Please choose a number between 0 and 9.");
@@ -257,14 +260,9 @@ public class supplierCLI {
             amounts.put(itemId, amount);
             System.out.println("[V] Added " + amount + " units of " + itemId + " to the order.\n");
         }
-        Response<HashMap<String,Double>> effectivePrices = supplierServices.GetAgreementPrices(supId,amounts); //Finds prices with amounts Including discount rules!
-        if(effectivePrices.isError())
-        {
-            System.out.println("[!] ERROR: Could not figure prices for items selected - " + effectivePrices.getErrorMsg());
-            return;
-        }
 
-        Response<String> res = orderServices.CreateOrder(supId, isUrgent, amounts, effectivePrices.getReturnValue());
+
+        Response<String> res = orderServices.CreateOrder(supId, isUrgent, amounts);
 
 
         if (res.isError()) {
@@ -337,12 +335,18 @@ public class supplierCLI {
                 printOrderResponseResult(res, "Order successfully CANCELED!");
                 break;
             case "4":
-                res = orderServices.DeliverOrder(orderId);
-                printOrderResponseResult(res, "Order status updated to SENT!");
+                Response<HashMap<String,Integer>> amounts = orderServices.DeliverOrder(orderId);
+                if(amounts.isError())
+                {
+                    System.out.println("ERROR:" + amounts.getErrorMsg());
+                    break;
+                }
+                System.out.println("Order status updated to Delivered! - restocking:");
+                ProductServices.getInstance().ReciveOrder(amounts.getReturnValue());
                 break;
             case "3":
                 res = orderServices.SendOrder(orderId);
-                printOrderResponseResult(res, "Order status updated to DELIVERED!");
+                printOrderResponseResult(res, "Order status updated to SENT!");
                 break;
             default:
                 System.out.println("[!] Invalid status choice. Operation aborted.");
@@ -737,7 +741,7 @@ public class supplierCLI {
             order1Amounts.put("BEV-002", 30);
             order1Prices.put("BEV-002", beveragesCatalog.get("BEV-002"));
 
-            res = this.orderServices.CreateOrder(sup1Id, false, order1Amounts, order1Prices);
+            res = this.orderServices.CreateOrder(sup1Id, true, order1Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 1: " + res.getErrorMsg());
             System.out.println("[V] Created Order ID: " + res.getReturnValue() + " (Pending - SUP-001)");
 
@@ -749,7 +753,7 @@ public class supplierCLI {
             order2Amounts.put("BAK-004", 20);
             order2Prices.put("BAK-004", bakeryCatalog.get("BAK-004"));
 
-            res = this.orderServices.CreateOrder(sup2Id, true, order2Amounts, order2Prices);
+            res = this.orderServices.CreateOrder(sup2Id, true, order2Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 2: " + res.getErrorMsg());
             String order2Id = res.getReturnValue();
 
@@ -765,7 +769,7 @@ public class supplierCLI {
             order3Amounts.put("BAK-002", 25);
             order3Prices.put("BAK-002", bakeryCatalog.get("BAK-002"));
 
-            res = this.orderServices.CreateOrder(sup2Id, false, order3Amounts, order3Prices);
+            res = this.orderServices.CreateOrder(sup2Id, true, order3Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 3: " + res.getErrorMsg());
             String order3Id = res.getReturnValue();
 
@@ -781,7 +785,7 @@ public class supplierCLI {
             order4Amounts.put("HOU-004", 20);
             order4Prices.put("HOU-004", householdCatalog.get("HOU-004"));
 
-            res = this.orderServices.CreateOrder(sup3Id, false, order4Amounts, order4Prices);
+            res = this.orderServices.CreateOrder(sup3Id, true, order4Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 4: " + res.getErrorMsg());
             String order4Id = res.getReturnValue();
 
@@ -795,7 +799,7 @@ public class supplierCLI {
             order5Amounts.put("BAK-003", 10);
             order5Prices.put("BAK-003", boutiqueCatalog.get("BAK-003"));
 
-            res = this.orderServices.CreateOrder(sup4Id, false, order5Amounts, order5Prices);
+            res = this.orderServices.CreateOrder(sup4Id, true, order5Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 5: " + res.getErrorMsg());
             System.out.println("[V] Created Order ID: " + res.getReturnValue() + " (Pending - SUP-004)");
 

@@ -1,6 +1,8 @@
 package SupplierModule.DomainLayer;
 
+import CrossCuttingPackage.Notification;
 import CrossCuttingPackage.Report;
+import CrossCuttingPackage.SupplierAgreementDTO;
 import CrossCuttingPackage.SupplierDTO;
 import SupplierModule.DataAccessLayer.SupplierAgreementDAO;
 import SupplierModule.DataAccessLayer.SupplierDAO;
@@ -130,9 +132,12 @@ public class SupplierFacade {
     /*
     Note - must be used before creating an order
      */
-    public HashMap<String,Double> GetPricesFromAgreement(String supId,HashMap<String,Integer> itemsToQuan)
+    public static HashMap<String,Double> GetPricesFromAgreement(String supId,HashMap<String,Integer> itemsToQuan)
     {
-        SupplierAgreement agreement= GetAgreement(supId);
+        if(!suppliers.containsKey(supId))
+            throw new NoSuchElementException("SupplierFacade-FindSupplier:Supplier was not found in facade.");
+
+        SupplierAgreement agreement= suppliers.get(supId).getAgreement();
         if(!agreement.getItemsCatalogs().containsAll(itemsToQuan.keySet()))
             throw new RuntimeException("OrderFacade:GetPricesFromAgreement Items sent to order are not in the agreement.");
         HashMap<String,Double> res = new HashMap<>();
@@ -343,5 +348,34 @@ public class SupplierFacade {
         {
             suppliers.put(s.supplierId,new Supplier(s));
         }
+    }
+
+    /*
+    ===================================
+    Automatic orders functionality
+    ===================================
+    */
+
+    public String FindBestSupplier(Notification n)
+    {
+        String res = null;
+        Double min = null;
+        for(Map.Entry<String, Supplier> en :suppliers.entrySet())
+        {
+            String supId = en.getKey();
+            SupplierAgreement agreement = GetAgreement(supId);
+            if(agreement.getItemsCatalogs().contains(n.getCatalog_number()))
+            {
+                Double temp = agreement.GetEffectivePrice(n.getCatalog_number(), n.HowManyToRestock());
+                if (min == null || min > temp) {
+                    min = temp;
+                    res = supId;
+                }
+            }
+        }
+
+        if(res == null)
+            throw new RuntimeException("Find best supplier for notification for ite,:" + n.getCatalog_number() +" no suppliers sells such product.");
+        return res;
     }
 }

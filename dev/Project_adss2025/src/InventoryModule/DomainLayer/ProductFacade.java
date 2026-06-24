@@ -203,8 +203,8 @@ public class ProductFacade {
     public void PurchaseProduct(String catalog_number,int shelves,int stock)
     {
         ProductDL p = FindProductByID(catalog_number);
-        p.Purchase(shelves,stock);
         productDAO.UpdateProduct(p.toDTO());
+        p.Purchase(shelves,stock);
     }
 
 
@@ -332,5 +332,23 @@ public class ProductFacade {
         }
 
         System.out.println("[V] Database data loaded into Facade memory successfully!");
+    }
+
+    /*
+    Functionality of automatic orders and orders ind general
+     */
+
+    public void RestockOrder(HashMap<String,Integer> amountsToRestock)
+    {
+        for(String item: amountsToRestock.keySet())
+        {
+            FindProductByID(item);
+        }
+        for(String item: amountsToRestock.keySet())
+        {
+            ProductDL p = FindProductByID(item);
+            p.Restock(amountsToRestock.get(item));
+            productDAO.UpdateProduct(p.toDTO());
+        }
     }
 }
