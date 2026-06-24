@@ -28,6 +28,9 @@ public class supplierCLI {
             Response<String> res= supplierServices.Load();
             if(res.isError())
                 throw new RuntimeException("Could not build data - " + res.getErrorMsg());
+            res= orderServices.LoadData();
+            if(res.isError())
+                throw new RuntimeException("Could not build data - " + res.getErrorMsg());
         }
     }
 
@@ -423,6 +426,8 @@ public class supplierCLI {
 
         Response<String> res = supplierServices.RemoveSupplier(supId);
         printResponseResult(res, "Supplier removed successfully!");
+        res = orderServices.RemoveAllBOFromSupp(supId);
+        printResponseResult(res, "All BuyOrders of " + supId + " were removed successfully!");
     }
 
     private void handleAddContact() {

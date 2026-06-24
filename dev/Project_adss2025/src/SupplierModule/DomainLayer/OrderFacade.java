@@ -1,7 +1,9 @@
 package SupplierModule.DomainLayer;
+import CrossCuttingPackage.BuyOrderDTO;
 import CrossCuttingPackage.Report;
 import CrossCuttingPackage.SupplierItemDTO;
 import CrossCuttingPackage.SupplierOrderDTO;
+import SupplierModule.DataAccessLayer.BuyOrderDAO;
 import SupplierModule.DataAccessLayer.SupplierOrderDAO;
 
 import java.time.DayOfWeek;
@@ -12,6 +14,7 @@ public class OrderFacade {
 
     //private HashMap<String,SupplierOrder> orders;
     private static final SupplierOrderDAO orderDao = new SupplierOrderDAO();
+    private static final BuyOrderDAO boDao = new BuyOrderDAO();
     private final HashMap<String,BuyOrder> buyOrders;
     public OrderFacade()
     {
@@ -134,6 +137,7 @@ public class OrderFacade {
     public void CleanData()
     {
         orderDao.Clean();
+        boDao.Clean();
     }
 
 
@@ -158,6 +162,7 @@ public class OrderFacade {
             throw new RuntimeException("OrderFacade:CreateBuyOrder - supplier " + supId + " does not exist in system.");
 
         BuyOrder toAdd = new BuyOrder(supId,amounts,days);
+        boDao.Insert(toAdd.toDTO());
         this.buyOrders.put(toAdd.getBuyOrderID(),toAdd);
 
         return toAdd.getSupId();
@@ -173,6 +178,8 @@ public class OrderFacade {
     public void DeleteBuyOrder(String boId)
     {
         BuyOrder toRemove = FindBuyOrderById(boId);
+
+        boDao.Remove(toRemove.getBuyOrderID());
         this.buyOrders.remove(toRemove.getBuyOrderID());
     }
 
@@ -190,11 +197,21 @@ public class OrderFacade {
     public void AddDayToBuyOrder(String boId,DayOfWeek d)
     {
         BuyOrder b = FindBuyOrderById(boId);
+        DeliveryDaySchedule temp = b.getRegularDays();
+        temp.addDay(d);
+
+        boDao.Update(b.getBuyOrderID(),b.getSupId(),temp.toString(),b.getNextDeliveryDate().toString());
         b.AddRegularDay(d);
     }
     public void RemoveDayFromBuyOrder(String boId,DayOfWeek d)
     {
         BuyOrder b = FindBuyOrderById(boId);
+        DeliveryDaySchedule temp = b.getRegularDays();
+        temp.removeDay(d);
+        if(temp.getDays().isEmpty())
+            throw new RuntimeException("Cannot remove day, as the buy order will remain with no regular delivery days.");
+
+        boDao.Update(b.getBuyOrderID(),b.getSupId(),temp.toString(),b.getNextDeliveryDate().toString());
         b.RemoveRegularDay(d);
     }
     public void UpdateItemInBO(String boId,String item,Integer amount)
@@ -248,5 +265,24 @@ public class OrderFacade {
             }
         }
         return res;
+    }
+
+    public void RemoveAllBOFromSuppliers(String supId)
+    {
+        for(Map.Entry<String,BuyOrder> en: this.buyOrders.entrySet())
+        {
+            BuyOrder b = en.getValue();
+            if(b.getSupId().equals(supId))
+                DeleteBuyOrder(b.getSupId());
+        }
+    }
+
+    public void Load()
+    {
+        List<BuyOrderDTO> toLoad = boDao.SelectAll();
+        for(BuyOrderDTO b:toLoad)
+        {
+            this.buyOrders.put(b.buyOrderID,new BuyOrder(b));
+        }
     }
 }

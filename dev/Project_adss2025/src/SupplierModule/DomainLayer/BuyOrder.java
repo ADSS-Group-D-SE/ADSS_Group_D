@@ -1,5 +1,9 @@
 package SupplierModule.DomainLayer;
 
+import CrossCuttingPackage.BuyOrderDTO;
+import SupplierModule.DataAccessLayer.BuyOrderItemsDAO;
+import SupplierModule.DataAccessLayer.SupplierItemDAO;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -9,6 +13,7 @@ import java.util.UUID;
 
 public class BuyOrder {
 
+    private static final BuyOrderItemsDAO itemsDAO = new BuyOrderItemsDAO();
     private String buyOrderID;
     private String supId;
     private HashMap<String,Integer> items;
@@ -41,6 +46,19 @@ public class BuyOrder {
         this.nextDeliveryDate = regularDays.ComputeNextOrderDate();
     }
 
+    public BuyOrder(BuyOrderDTO dto)
+    {
+        this.buyOrderID = dto.buyOrderID;
+        this.supId = dto.supId;
+        this.items = dto.items;
+        this.nextDeliveryDate = LocalDate.parse(dto.nextDeliveryDate);
+        this.regularDays = new DeliveryDaySchedule(dto.regularDays);
+    }
+
+    public BuyOrderDTO toDTO(){
+        return new BuyOrderDTO(this.buyOrderID,this.supId,this.items,this.regularDays.toString(),this.nextDeliveryDate.toString());
+    }
+
     public boolean isDeliveryTomorrow() {
         return nextDeliveryDate != null
                 && nextDeliveryDate.equals(LocalDate.now().plusDays(1));
@@ -57,6 +75,7 @@ public class BuyOrder {
         if(isDeliveryTomorrow())
             throw new RuntimeException("Cannot change the buy order one day or less before delivery day.");
 
+        itemsDAO.InsertItem(this.buyOrderID,item,amount);
         this.items.put(item,amount);
     }
 
@@ -67,6 +86,7 @@ public class BuyOrder {
         if(isDeliveryTomorrow())
             throw new RuntimeException("Cannot change the buy order one day or less before delivery day.");
 
+        itemsDAO.RemoveItem(this.buyOrderID,item);
         items.remove(item);
     }
 
@@ -79,6 +99,7 @@ public class BuyOrder {
         if(isDeliveryTomorrow())
             throw new RuntimeException("Cannot change the buy order one day or less before delivery day.");
 
+        itemsDAO.UpdateAmount(this.buyOrderID,item,amount);
         this.items.put(item,amount);
     }
 
@@ -94,10 +115,6 @@ public class BuyOrder {
 
     public void RemoveRegularDay(DayOfWeek d)
     {
-        DeliveryDaySchedule temp = new DeliveryDaySchedule(regularDays.getDays());
-        temp.removeDay(d);
-        if(temp.getDays().isEmpty())
-            throw new RuntimeException("Cannot remove regular day from BO:"+buyOrderID+" as a buy order cannot have no delivery days.");
 
         this.regularDays.removeDay(d);
     }
