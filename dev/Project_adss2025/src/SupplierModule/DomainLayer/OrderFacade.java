@@ -165,12 +165,12 @@ public class OrderFacade {
         boDao.Insert(toAdd.toDTO());
         this.buyOrders.put(toAdd.getBuyOrderID(),toAdd);
 
-        return toAdd.getSupId();
+        return toAdd.getBuyOrderID();
     }
 
     public BuyOrder FindBuyOrderById(String boId)
     {
-        if(this.buyOrders.containsKey(boId))
+        if(!this.buyOrders.containsKey(boId))
             throw new NoSuchElementException("OrderFacade:FindBuyOrderById - cannot find by order with id: " + boId + " in facade.");
         return this.buyOrders.get(boId);
     }

@@ -31,6 +31,16 @@ public class Promotion {
         }
     }
 
+    public Promotion(Promotion other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Cannot copy a null Promotion object.");
+        }
+        this.id = other.id;
+        this.discountPercentage = other.discountPercentage;
+        this.endDate = other.endDate;
+        this.scope = other.scope;
+    }
+
     public Promotion(promotionDTO p) {
         this.id = p.getId();
         this.discountPercentage = p.getDiscountPercentage();

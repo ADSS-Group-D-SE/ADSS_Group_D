@@ -48,6 +48,30 @@ public class CategoryDL {
         }
     }
 
+    public CategoryDL(CategoryDL c) {
+        if (c == null) {
+            throw new IllegalArgumentException("Cannot copy a null CategoryDL object.");
+        }
+
+        this.name = c.name;
+        this.category_id = c.category_id;
+        this.type = c.type;
+
+        this.subCategory = new ArrayList<>();
+        if (c.subCategory != null) {
+            for (CategoryDL sub : c.subCategory) {
+                this.subCategory.add(new CategoryDL(sub));
+            }
+        }
+
+        this.discount_pre = new ArrayList<>();
+        if (c.discount_pre != null) {
+            for (Promotion promo : c.discount_pre) {
+                this.discount_pre.add(new Promotion(promo));
+            }
+        }
+    }
+
     public CategoryDL(categoryDTO dto) {
         this.name = dto.getName();
         this.category_id = dto.getCategoryId();

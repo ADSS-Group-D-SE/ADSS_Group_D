@@ -10,6 +10,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 public class supplierCLI {
@@ -147,6 +148,12 @@ public class supplierCLI {
             System.out.println("4. View Orders By Supplier ID");
             System.out.println("5. View Orders By Date Range");
             System.out.println("6. Update Order Status (Prepare/Send/Cancel/Deliver)");
+            System.out.println("-----------------------------------------");
+            System.out.println("7. Create New Periodic Buy Order");
+            System.out.println("8. Remove/Delete Buy Order");
+            System.out.println("9. Edit Buy Order (Add/Remove/Update Items)");
+            System.out.println("10. Edit Buy Order Days (Add/Remove Days)");
+            System.out.println("11. View All Buy Orders (All or By Supplier)");
             System.out.println("0. Back to Supplier Main Menu");
             System.out.print("Please enter your choice: ");
 
@@ -180,11 +187,309 @@ public class supplierCLI {
             case "6":
                 handleUpdateOrderStatusMenu();
                 break;
+            case "7":
+                handleCreateBuyOrder();
+                break;
+            case "8":
+                handleRemoveBuyOrder();
+                break;
+            case "9":
+                handleEditBuyOrderItemsMenu();
+                break;
+            case "10":
+                handleEditBuyOrderDaysMenu();
+                break;
+            case "11":
+                handleViewBuyOrdersMenu();
+                break;
             default:
                 System.out.println("[!] Invalid choice. Please select 0-6.");
                 break;
         }
     }
+
+    private void handleViewBuyOrdersMenu() {
+        System.out.println("\n--- View Buy Orders Reports ---");
+        System.out.println("1. View All Buy Orders in the system");
+        System.out.println("2. View Buy Orders By Supplier ID");
+        System.out.print("Choose option: ");
+        String subChoice = scanner.nextLine();
+
+        Response<Report> res;
+
+        if (subChoice.equals("1")) {
+            res = orderServices.ViewAllBuyOrders();
+            if (res.isError()) {
+                System.out.println("[!] Error: " + res.getErrorMsg());
+            } else {
+                System.out.println("\n=== Global Buy Orders Report ===");
+                System.out.println(res.getReturnValue().GetReport());
+            }
+        } else if (subChoice.equals("2")) {
+            System.out.print("Enter Supplier ID: ");
+            String supId = scanner.nextLine();
+
+            res = orderServices.ViewAllBuyOrdersBySupplier(supId);
+            if (res.isError()) {
+                System.out.println("[!] Error: " + res.getErrorMsg());
+            } else {
+                System.out.println("\n=== Buy Orders Report for Supplier: " + supId + " ===");
+                System.out.println(res.getReturnValue().GetReport());
+            }
+        } else {
+            System.out.println("[!] Invalid choice. Action canceled.");
+        }
+    }
+
+    private void handleEditBuyOrderDaysMenu() {
+        System.out.print("Enter Buy Order ID: ");
+        String boId = scanner.nextLine();
+
+        System.out.println("\n--- Edit Delivery Days ---");
+        System.out.println("1. Add Delivery Day to Buy Order");
+        System.out.println("2. Remove Delivery Day from Buy Order");
+        System.out.print("Choose option: ");
+        String subChoice = scanner.nextLine();
+
+        if (!subChoice.equals("1") && !subChoice.equals("2")) {
+            System.out.println("[!] Invalid choice. Action canceled.");
+            return;
+        }
+
+        System.out.print("Enter Day (e.g., MONDAY, TUESDAY, SUNDAY): ");
+        String dayStr = scanner.nextLine().trim().toUpperCase();
+
+        try {
+            DayOfWeek day = DayOfWeek.valueOf(dayStr);
+            Response<String> res;
+
+            if (subChoice.equals("1")) {
+                res = orderServices.AddDayToBO(boId, day);
+                if (res.isError()) {
+                    System.out.println("[!] Error: " + res.getErrorMsg());
+                } else {
+                    System.out.println("[+] " + day + " added successfully to Buy Order " + boId);
+                }
+            } else {
+                res = orderServices.RemoveDayFromBO(boId, day);
+                if (res.isError()) {
+                    System.out.println("[!] Error: " + res.getErrorMsg());
+                } else {
+                    System.out.println("[+] " + day + " removed successfully from Buy Order " + boId);
+                }
+            }
+
+        } catch (IllegalArgumentException e) {
+            System.out.println("[!] Invalid day name. Please use standard English day names (e.g., MONDAY, FRIDAY).");
+        }
+    }
+
+    private void handleEditBuyOrderItemsMenu() {
+        System.out.print("Enter Buy Order ID: ");
+        String boId = scanner.nextLine();
+
+        System.out.println("\n--- Edit Items ---");
+        System.out.println("1. Add Item to Buy Order");
+        System.out.println("2. Remove Item from Buy Order");
+        System.out.println("3. Update Item Quantity");
+        System.out.print("Choose option: ");
+        String subChoice = scanner.nextLine();
+
+        String item = null;
+        Integer amount = null;
+        Response<String> res;
+
+        if (subChoice.equals("1") || subChoice.equals("3")) {
+            System.out.print("Enter Supplier ID for this Buy Order: ");
+            String supId = scanner.nextLine();
+
+            Response<HashMap<String, Double>> itemsRes = supplierServices.getSupplierItems(supId);
+            if (itemsRes.isError() || itemsRes.getReturnValue() == null || itemsRes.getReturnValue().isEmpty()) {
+                System.out.println("[!] ERROR: Could not find items for this supplier: " + itemsRes.getErrorMsg());
+                return;
+            }
+
+            HashMap<String, Double> catalogMap = itemsRes.getReturnValue();
+            ArrayList<String> availableItems = new ArrayList<>(catalogMap.keySet());
+
+            System.out.println("\n--- Available Items for Supplier " + supId + " ---");
+            for (int i = 0; i < availableItems.size(); i++) {
+                String itemId = availableItems.get(i);
+                double itemPrice = catalogMap.get(itemId);
+                System.out.println((i + 1) + ". " + itemId + " - Price: " + itemPrice);
+            }
+
+            System.out.print("Select an item by its number: ");
+            try {
+                int itemIndex = Integer.parseInt(scanner.nextLine()) - 1;
+                if (itemIndex < 0 || itemIndex >= availableItems.size()) {
+                    System.out.println("[!] Invalid option. Action canceled.");
+                    return;
+                }
+                item = availableItems.get(itemIndex);
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid input. Action canceled.");
+                return;
+            }
+
+            System.out.print("Enter amount: ");
+            try {
+                amount = Integer.parseInt(scanner.nextLine());
+                if (amount <= 0) {
+                    System.out.println("[!] Amount must be greater than 0.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid amount. Action canceled.");
+                return;
+            }
+        }
+
+        switch (subChoice) {
+            case "1":
+                res = orderServices.AddItemToBuyOrder(boId, item, amount);
+                if (res.isError()) {
+                    System.out.println("[!] Error: " + res.getErrorMsg());
+                } else {
+                    System.out.println("[+] Item added successfully to Buy Order " + boId);
+                }
+                break;
+
+            case "2":
+                System.out.print("Enter Item ID/Name to remove: ");
+                item = scanner.nextLine();
+                res = orderServices.RemoveItemFromBuyOrder(boId, item);
+                if (res.isError()) {
+                    System.out.println("[!] Error: " + res.getErrorMsg());
+                } else {
+                    System.out.println("[+] Item removed successfully from Buy Order " + boId);
+                }
+                break;
+
+            case "3":
+                res = orderServices.UpdateItemInBuyOrder(boId, item, amount);
+                if (res.isError()) {
+                    System.out.println("[!] Error: " + res.getErrorMsg());
+                } else {
+                    System.out.println("[+] Item quantity updated successfully in Buy Order " + boId);
+                }
+                break;
+
+            default:
+                System.out.println("[!] Invalid choice.");
+                break;
+        }
+    }
+
+    private void handleRemoveBuyOrder() {
+        System.out.print("Enter Buy Order ID to remove: ");
+        String boId = scanner.nextLine();
+
+        Response<String> res = orderServices.RemoveBuyOrder(boId);
+        if (res.isError()) {
+            System.out.println("[!] Error: " + res.getErrorMsg());
+        } else {
+            System.out.println("[+] Buy Order removed successfully! ID: " + res.getReturnValue());
+        }    }
+
+    private void handleCreateBuyOrder() {
+        System.out.print("Enter Supplier ID: ");
+        String supId = scanner.nextLine();
+
+        Response<HashMap<String, Double>> itemsRes = supplierServices.getSupplierItems(supId);
+
+        if (itemsRes.isError() || itemsRes.getReturnValue() == null || itemsRes.getReturnValue().isEmpty()) {
+            System.out.println("[!] ERROR: Could not find items for this supplier: " + itemsRes.getErrorMsg());
+            return;
+        }
+
+        HashMap<String, Double> catalogMap = itemsRes.getReturnValue();
+        ArrayList<String> availableItems = new ArrayList<>(catalogMap.keySet());
+
+        HashMap<String, Integer> amounts = new HashMap<>();
+
+        System.out.println("\n--- Available Items for Supplier " + supId + " ---");
+
+        while (true) {
+            System.out.println("\nSelect an item by its number (or type 'done' to finish):");
+            for (int i = 0; i < availableItems.size(); i++) {
+                String itemId = availableItems.get(i);
+                double itemPrice = catalogMap.get(itemId);
+                System.out.println((i + 1) + ". " + itemId + " - Price: " + itemPrice);
+            }
+
+            System.out.print("Enter your choice: ");
+            String choice = scanner.nextLine();
+
+            if (choice.equalsIgnoreCase("done")) {
+                if (amounts.isEmpty()) {
+                    System.out.println("[!] You must add at least one item to create a buy order.");
+                    continue;
+                }
+                break;
+            }
+
+            int itemIndex;
+            try {
+                itemIndex = Integer.parseInt(choice) - 1;
+                if (itemIndex < 0 || itemIndex >= availableItems.size()) {
+                    System.out.println("[!] Invalid option. Please select a number from the list.");
+                    continue;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid input. Please enter a number or 'done'.");
+                continue;
+            }
+
+            String itemId = availableItems.get(itemIndex);
+
+            if (amounts.containsKey(itemId)) {
+                System.out.println("[!] This item is already in your order. Overwriting existing details.");
+            }
+
+            System.out.print("Enter amount for " + itemId + ": ");
+            try {
+                int amount = Integer.parseInt(scanner.nextLine());
+                if (amount <= 0) {
+                    System.out.println("[!] Amount must be greater than 0.");
+                    continue;
+                }
+                amounts.put(itemId, amount);
+                System.out.println("[+] Added " + amount + " units of " + itemId);
+            } catch (NumberFormatException e) {
+                System.out.println("[!] Invalid amount. Item was not added.");
+            }
+        }
+
+        List<DayOfWeek> days = new ArrayList<>();
+        System.out.println("\nEnter delivery days (e.g., MONDAY, TUESDAY) (type 'done' when finished):");
+        while (true) {
+            System.out.print("Day: ");
+            String dayStr = scanner.nextLine();
+            if (dayStr.equalsIgnoreCase("done")) {
+                if (days.isEmpty()) {
+                    System.out.println("[!] You must add at least one delivery day.");
+                    continue;
+                }
+                break;
+            }
+            try {
+                days.add(DayOfWeek.valueOf(dayStr.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                System.out.println("[!] Invalid day name. Try again (e.g., SUNDAY, MONDAY...).");
+            }
+        }
+
+        Response<String> res = orderServices.CreateBuyOrder(supId, amounts, days);
+
+        if (res.isError()) {
+            System.out.println("[!] Error: " + res.getErrorMsg());
+        } else {
+            System.out.println("[+] Buy Order Created successfully! ID: " + res.getReturnValue());
+        }
+    }
+
+
 
     private void handleCreateOrder() {
         System.out.println("\n--- Create New Order ---");
@@ -642,50 +947,41 @@ public class supplierCLI {
 
 
     private void CreateSupplierTestData() {
-        System.out.println("\n==================================================");
-        System.out.println(">>> [!] Initializing Comprehensive Supplier & Order Test Data...");
-        System.out.println("==================================================");
 
         Response<String> res;
         try {
-
             String sup1Id = "SUP-001";
             HashMap<String, Double> beveragesCatalog = new HashMap<>();
-
             beveragesCatalog.put("BEV-001", 2.10);
             beveragesCatalog.put("BEV-002", 4.20);
             beveragesCatalog.put("BEV-003", 5.80);
             beveragesCatalog.put("BEV-004", 3.20);
 
-            System.out.println("[->] Registering Supplier: Beverage Distributors Ltd (SUP-001)...");
             res = this.supplierServices.AddSupplier(
                     sup1Id, "511234567", "Beverage Distributors Ltd",
                     "Bank Leumi (10), Branch 800, Account 123456", "Net30", beveragesCatalog
             );
-            if (res.isError()) throw new RuntimeException("Failed to add Supplier 1 base profile: " + res.getErrorMsg());
+            if (res.isError())
+                throw new RuntimeException("Failed to add Supplier 1 base profile: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup1Id, "Dan Drinker", "0501112223", "dan.d@bevdist.co.il");
             this.supplierServices.AddContact(sup1Id, "Maya Soda", "0501112224", "maya.s@bevdist.co.il");
             this.supplierServices.AddDelvDay(sup1Id, DayOfWeek.SUNDAY);
             this.supplierServices.AddDelvDay(sup1Id, DayOfWeek.WEDNESDAY);
 
-            System.out.println("[V] SUP-001 loaded with 4 items, 2 contacts, and 2 delivery days.");
-
-
             String sup2Id = "SUP-002";
             HashMap<String, Double> bakeryCatalog = new HashMap<>();
-
             bakeryCatalog.put("BAK-001", 3.15);
             bakeryCatalog.put("BAK-002", 2.90);
             bakeryCatalog.put("BAK-003", 1.65);
             bakeryCatalog.put("BAK-004", 5.50);
 
-            System.out.println("[->] Registering Supplier: Angel & Sons Bakery (SUP-002)...");
             res = this.supplierServices.AddSupplier(
                     sup2Id, "512345678", "Angel & Sons Bakery",
                     "Bank Hapoalim (12), Branch 612, Account 789101", "Cash", bakeryCatalog
             );
-            if (res.isError()) throw new RuntimeException("Failed to add Supplier 2 base profile: " + res.getErrorMsg());
+            if (res.isError())
+                throw new RuntimeException("Failed to add Supplier 2 base profile: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup2Id, "Ronny Rollingpin", "0524445556", "ronny@angel-bakery.co.il");
             this.supplierServices.AddContact(sup2Id, "Beni Baker", "0524445557", "orders@angel-bakery.co.il");
@@ -693,124 +989,123 @@ public class supplierCLI {
             this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.TUESDAY);
             this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.THURSDAY);
 
-            System.out.println("[V] SUP-002 loaded with 4 items, 2 contacts, and 3 delivery days.");
-
-
-
             String sup3Id = "SUP-003";
             HashMap<String, Double> householdCatalog = new HashMap<>();
-
             householdCatalog.put("HOU-001", 4.80);
             householdCatalog.put("HOU-002", 6.50);
             householdCatalog.put("HOU-003", 11.20);
             householdCatalog.put("HOU-004", 7.50);
 
-            System.out.println("[->] Registering Supplier: Clean & Bright Wholesale (SUP-003)...");
             res = this.supplierServices.AddSupplier(
                     sup3Id, "513456789", "Clean & Bright Wholesale Logistics",
                     "Bank Discount (11), Branch 110, Account 456789", "Net60", householdCatalog
             );
-            if (res.isError()) throw new RuntimeException("Failed to add Supplier 3 base profile: " + res.getErrorMsg());
+            if (res.isError())
+                throw new RuntimeException("Failed to add Supplier 3 base profile: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup3Id, "Sara Soap", "0547778889", "sara.s@cleanbright.com");
             this.supplierServices.AddContact(sup3Id, "Gabi Glanz", "039201144", "office@cleanbright.com");
             this.supplierServices.AddDelvDay(sup3Id, DayOfWeek.TUESDAY);
 
-            System.out.println("[V] SUP-003 loaded with 4 items, 2 contacts, and 1 delivery day.");
-
-
             String sup4Id = "SUP-004";
             HashMap<String, Double> boutiqueCatalog = new HashMap<>();
             boutiqueCatalog.put("BAK-003", 2.50);
 
-            System.out.println("[->] Registering Supplier: Express Boutique Food (SUP-004)...");
             res = this.supplierServices.AddSupplier(
                     sup4Id, "514567890", "Express Boutique Food",
                     "Bank Yahav (04), Branch 112, Account 998877", "Net15", boutiqueCatalog
             );
-            if (res.isError()) throw new RuntimeException("Failed to add Supplier 4 base profile: " + res.getErrorMsg());
+            if (res.isError())
+                throw new RuntimeException("Failed to add Supplier 4 base profile: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup4Id, "Avi Express", "0556667778", "avi@expressboutique.co.il");
             this.supplierServices.AddDelvDay(sup4Id, DayOfWeek.FRIDAY);
 
-            System.out.println("[V] SUP-004 loaded with 1 item, 1 contact, and 1 delivery day.");
 
-
-
-            System.out.println("\n[->] Generating Sample Orders across different statuses...");
 
             HashMap<String, Integer> order1Amounts = new HashMap<>();
-            HashMap<String, Double> order1Prices = new HashMap<>();
             order1Amounts.put("BEV-001", 50);
-            order1Prices.put("BEV-001", beveragesCatalog.get("BEV-001"));
             order1Amounts.put("BEV-002", 30);
-            order1Prices.put("BEV-002", beveragesCatalog.get("BEV-002"));
-
             res = this.orderServices.CreateOrder(sup1Id, true, order1Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 1: " + res.getErrorMsg());
-            System.out.println("[V] Created Order ID: " + res.getReturnValue() + " (Pending - SUP-001)");
-
 
             HashMap<String, Integer> order2Amounts = new HashMap<>();
-            HashMap<String, Double> order2Prices = new HashMap<>();
             order2Amounts.put("BAK-003", 100);
-            order2Prices.put("BAK-003", bakeryCatalog.get("BAK-003"));
             order2Amounts.put("BAK-004", 20);
-            order2Prices.put("BAK-004", bakeryCatalog.get("BAK-004"));
-
             res = this.orderServices.CreateOrder(sup2Id, true, order2Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 2: " + res.getErrorMsg());
             String order2Id = res.getReturnValue();
-
-            Response<String> statusRes = this.orderServices.PrepareOrder(order2Id);
-            if (statusRes.isError()) throw new RuntimeException("Failed to update Order 2 to Prepare: " + statusRes.getErrorMsg());
-            System.out.println("[V] Created Order ID: " + order2Id + " (Status: PREPARE [Urgent] - SUP-002)");
-
+            this.orderServices.PrepareOrder(order2Id);
 
             HashMap<String, Integer> order3Amounts = new HashMap<>();
-            HashMap<String, Double> order3Prices = new HashMap<>();
             order3Amounts.put("BAK-001", 40);
-            order3Prices.put("BAK-001", bakeryCatalog.get("BAK-001"));
             order3Amounts.put("BAK-002", 25);
-            order3Prices.put("BAK-002", bakeryCatalog.get("BAK-002"));
-
             res = this.orderServices.CreateOrder(sup2Id, true, order3Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 3: " + res.getErrorMsg());
             String order3Id = res.getReturnValue();
-
-            statusRes = this.orderServices.PrepareOrder(order3Id);
-            if (statusRes.isError()) throw new RuntimeException("Failed to update Order 3 to Prepare: " + statusRes.getErrorMsg());
-            System.out.println("[V] Created Order ID: " + order3Id + " (Status: PREPARE - SUP-002)");
-
+            this.orderServices.PrepareOrder(order3Id);
 
             HashMap<String, Integer> order4Amounts = new HashMap<>();
-            HashMap<String, Double> order4Prices = new HashMap<>();
             order4Amounts.put("HOU-003", 15);
-            order4Prices.put("HOU-003", householdCatalog.get("HOU-003"));
             order4Amounts.put("HOU-004", 20);
-            order4Prices.put("HOU-004", householdCatalog.get("HOU-004"));
-
             res = this.orderServices.CreateOrder(sup3Id, true, order4Amounts);
             if (res.isError()) throw new RuntimeException("Failed to create Order 4: " + res.getErrorMsg());
             String order4Id = res.getReturnValue();
-
-            statusRes = this.orderServices.CancelOrder(order4Id);
-            if (statusRes.isError()) throw new RuntimeException("Failed to cancel Order 4: " + statusRes.getErrorMsg());
-            System.out.println("[V] Created Order ID: " + order4Id + " (Status: CANCELED - SUP-003)");
-
+            this.orderServices.CancelOrder(order4Id);
 
             HashMap<String, Integer> order5Amounts = new HashMap<>();
-            HashMap<String, Double> order5Prices = new HashMap<>();
             order5Amounts.put("BAK-003", 10);
-            order5Prices.put("BAK-003", boutiqueCatalog.get("BAK-003"));
-
             res = this.orderServices.CreateOrder(sup4Id, true, order5Amounts);
-            if (res.isError()) throw new RuntimeException("Failed to create Order 5: " + res.getErrorMsg());
-            System.out.println("[V] Created Order ID: " + res.getReturnValue() + " (Pending - SUP-004)");
+            if (res.isError())
+                throw new RuntimeException("Failed to create Order 5: " + res.getReturnValue() + " (Pending - SUP-004)");
 
-            System.out.println("\n==================================================");
-            System.out.println("[V] SUCCESS: All Supplier & Order Test Data Loaded!");
-            System.out.println("==================================================");
+
+
+            HashMap<String, Integer> bo1Amounts = new HashMap<>();
+            bo1Amounts.put("BEV-001", 100);
+            bo1Amounts.put("BEV-003", 40);
+            List<DayOfWeek> bo1Days = new ArrayList<>();
+            bo1Days.add(DayOfWeek.SUNDAY);
+            bo1Days.add(DayOfWeek.WEDNESDAY);
+
+            Response<String> boRes1 = orderServices.CreateBuyOrder(sup1Id, bo1Amounts, bo1Days);
+            if (boRes1.isError()) throw new RuntimeException("Failed to create Buy Order 1: " + boRes1.getErrorMsg());
+
+            String bo1Id = boRes1.getReturnValue();
+
+            HashMap<String, Integer> bo2Amounts = new HashMap<>();
+            bo2Amounts.put("BAK-001", 200);
+            List<DayOfWeek> bo2Days = new ArrayList<>();
+            bo2Days.add(DayOfWeek.MONDAY);
+
+            Response<String> boRes2 = orderServices.CreateBuyOrder(sup2Id, bo2Amounts, bo2Days);
+            if (boRes2.isError()) throw new RuntimeException("Failed to create Buy Order 2: " + boRes2.getErrorMsg());
+
+            String bo2Id = boRes2.getReturnValue();
+
+
+            Response<String> addItemRes = orderServices.AddItemToBuyOrder(bo2Id, "BAK-002", 150);
+            if (addItemRes.isError()) throw new RuntimeException("Test Failed: AddItemToBuyOrder - " + addItemRes.getErrorMsg());
+
+            Response<String> updateItemRes = orderServices.UpdateItemInBuyOrder(bo2Id, "BAK-001", 250);
+            if (updateItemRes.isError()) throw new RuntimeException("Test Failed: UpdateItemInBuyOrder - " + updateItemRes.getErrorMsg());
+
+            Response<String> addDayRes = orderServices.AddDayToBO(bo2Id, DayOfWeek.THURSDAY);
+            if (addDayRes.isError()) throw new RuntimeException("Test Failed: AddDayToBO - " + addDayRes.getErrorMsg());
+
+
+            HashMap<String, Integer> bo3Amounts = new HashMap<>();
+            bo3Amounts.put("BAK-003", 15);
+            List<DayOfWeek> bo3Days = new ArrayList<>();
+            bo3Days.add(DayOfWeek.FRIDAY);
+
+            Response<String> boRes3 = orderServices.CreateBuyOrder(sup4Id, bo3Amounts, bo3Days);
+            if (!boRes3.isError()) {
+                String bo3Id = boRes3.getReturnValue();
+                Response<String> removeRes = orderServices.RemoveBuyOrder(bo3Id);
+                if (removeRes.isError()) throw new RuntimeException("Test Failed: RemoveBuyOrder - " + removeRes.getErrorMsg());
+            }
+
         }
         catch (Exception e) {
             System.out.println("\n==================================================");
@@ -819,7 +1114,6 @@ public class supplierCLI {
             System.out.println("==================================================");
         }
     }
-
     public void HandleDiscountMenu()
     {
         System.out.println("\nChoose an option:");
