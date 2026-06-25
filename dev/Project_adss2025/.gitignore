@@ -27,3 +27,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Local build/run helpers (downloaded jars, javac arg file) ###
+lib/
+sources.txt
+build/

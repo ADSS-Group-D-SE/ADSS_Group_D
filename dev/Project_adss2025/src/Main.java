@@ -5,10 +5,7 @@ import InventoryModule.ServiceLayer.ProductServices;
 import SupplierModule.PresentationLayer.supplierCLI;
 import SupplierModule.ServiceLayer.OrderServices;
 import SupplierModule.ServiceLayer.SupplierServices;
-import kotlin.jvm.Synchronized;
-import org.junit.jupiter.api.Order;
 
-import javax.swing.text.StyledEditorKit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +15,11 @@ public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+
+        // Make sure the schema exists (runs on a clean install) and seed example data on first run.
+        DatabaseSchema.ensure();
+        DataSeeder.seedIfEmpty();
+
         Boolean shouldLoad = shouldLoadFromDatabase(scanner);
 
         InventoryCLI inventory = new InventoryCLI(shouldLoad,scanner); // add the boolean later when db func is finished

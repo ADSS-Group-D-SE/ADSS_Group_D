@@ -4,7 +4,6 @@ import CrossCuttingPackage.Notification;
 import CrossCuttingPackage.Report;
 import CrossCuttingPackage.Response;
 import SupplierModule.DomainLayer.SupplierFacade;
-import kotlin.jvm.Synchronized;
 
 import java.time.DayOfWeek;
 import java.util.ArrayList;

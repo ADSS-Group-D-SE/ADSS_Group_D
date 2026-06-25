@@ -16,6 +16,7 @@ public class CategoryFacadeTests
     @BeforeEach
     public void SetUp()
     {
+        TestSupport.resetState();
         c = new CategoryFacade();
         c.CleanData();
     }
