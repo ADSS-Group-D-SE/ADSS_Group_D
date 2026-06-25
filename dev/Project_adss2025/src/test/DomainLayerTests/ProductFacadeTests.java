@@ -1,5 +1,6 @@
 package DomainLayerTests;
 
+import InventoryModule.DataAccessLayer.*;
 import InventoryModule.DomainLayer.CategoryFacade;
 import CrossCuttingPackage.Notification;
 import InventoryModule.DomainLayer.ProductDL;
@@ -20,6 +21,15 @@ public class ProductFacadeTests
     void setUp() {
         TestSupport.resetState();
         pFacade = new ProductFacade();
+        pFacade.CleanData();
+        new FaultyReportDAO().Clean();
+        new ProductPromotionDAO().Clean();
+        new ProductDAO().Clean();
+
+        new CategoryHierarchyDAO().Clean();
+        new CategoryPromotionDAO().Clean();
+        new CategoryDAO().Clean();
+
     }
 
     @Test

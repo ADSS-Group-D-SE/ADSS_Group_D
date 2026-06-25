@@ -25,8 +25,8 @@ public class ProductFacade {
 
     public ProductFacade(){
         products=new HashMap<String, ProductDL>();
-        // Seed the counter from the DB so generated report ids continue past persisted ones.
         this.faultyProductsIdCounter = faultyReportDAO.getMaxReportId();
+
     }
 
     private int generateNextId() {
@@ -152,8 +152,8 @@ public class ProductFacade {
         ProductDL toFaulty = FindProductByID(catalog_number);
         LocalDateTime dateOnReport = LocalDateTime.now();
 
-        int reportId = generateNextId();
-        FaultyProductDL toAdd = new FaultyProductDL(toFaulty,reportId,locationProduct,description,dateOnReport);
+        int promoId = generateNextId();
+        FaultyProductDL toAdd = new FaultyProductDL(toFaulty,promoId,locationProduct,description,dateOnReport);
         faultyReportDAO.Insert(toAdd.toDTO());
         return toAdd.getReportID();
     }

@@ -968,7 +968,7 @@ public class InventoryCLI {
 
     }
 
-    private void CreateTestData()
+    public void CreateTestData()
     {
         Response<String> res;
         try {
@@ -986,19 +986,9 @@ public class InventoryCLI {
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String householdId = res.getReturnValue();
 
-
-            res = this.categoryServices.CreateCategory("aaa", 0.0, defaultEndDate);
-            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
-            String aaa = res.getReturnValue();
-            /*
-            Subcategories
-             */
-
-            res = this.categoryServices.CreateSubCategory("bbb", 0, defaultEndDate, aaa);
-            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
-            String bbb = res.getReturnValue();
-
-
+        /*
+        Subcategories
+         */
             res = this.categoryServices.CreateSubCategory("Soft Drinks", 0, defaultEndDate, beveragesId);
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinksId = res.getReturnValue();
@@ -1023,9 +1013,9 @@ public class InventoryCLI {
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundryId = res.getReturnValue();
 
-            /*
-            SubSubCategories
-             */
+        /*
+        SubSubCategories
+         */
             res = this.categoryServices.CreateSubCategory("250 ml", 0, defaultEndDate, softDrinksId);
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinks250mlId = res.getReturnValue();
@@ -1070,10 +1060,10 @@ public class InventoryCLI {
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundry1LId = res.getReturnValue();
 
-
             res = this.categoryServices.CreateSubCategory("2 L", 0, defaultEndDate, laundryId);
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundry2LId = res.getReturnValue();
+
             Response<String> pres;
 
             pres = this.productServices.addProduct(
@@ -1148,10 +1138,28 @@ public class InventoryCLI {
             );
             if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
-            System.out.println("[V] Test data loaded successfully!");
+            Response<Integer> rRes;
+            rRes = this.productServices.ReportFaultyProduct("BEV-001", "a-12", "Expired - bad smell");
+            if(rRes.isError()) throw new RuntimeException("Faulty report 1 error: " + rRes.getErrorMsg());
+
+            rRes = this.productServices.ReportFaultyProduct("BAK-003", "d-34", "Crushed package during refill");
+            if(rRes.isError()) throw new RuntimeException("Faulty report 2 error: " + rRes.getErrorMsg());
+
+            rRes = this.productServices.ReportFaultyProduct("HOU-001", "w-23", "Leaking bottle cap");
+            if(rRes.isError()) throw new RuntimeException("Faulty report 3 error: " + rRes.getErrorMsg());
+
+            Response<String> discRes;
+            discRes = this.productServices.SetProductDiscount("BEV-001", 0.15, "15/07/2026");
+            if(discRes.isError()) throw new RuntimeException("Product discount 1 error: " + discRes.getErrorMsg());
+
+            discRes = this.productServices.SetProductDiscount("BAK-004", 0.25, "20/07/2026");
+            if(discRes.isError()) throw new RuntimeException("Product discount 2 error: " + discRes.getErrorMsg());
+
+            System.out.println("[V] Inventory test data loaded successfully!");
         }
         catch (Exception e) {
-            System.out.println("Error creating data. " + e.getMessage());
+            System.out.println("Error creating data: " + e.getMessage());
         }
     }
+
 }

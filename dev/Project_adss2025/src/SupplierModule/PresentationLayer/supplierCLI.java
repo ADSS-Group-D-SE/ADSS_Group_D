@@ -949,11 +949,7 @@ public class supplierCLI {
             }
         }
     }
-
-
-
-    private void CreateSupplierTestData() {
-
+    public void CreateSupplierTestData() {
         Response<String> res;
         try {
             String sup1Id = "SUP-001";
@@ -967,13 +963,19 @@ public class supplierCLI {
                     sup1Id, "511234567", "Beverage Distributors Ltd",
                     "Bank Leumi (10), Branch 800, Account 123456", "Net30", beveragesCatalog
             );
-            if (res.isError())
-                throw new RuntimeException("Failed to add Supplier 1 base profile: " + res.getErrorMsg());
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 1: " + res.getErrorMsg());
 
-            this.supplierServices.AddContact(sup1Id, "Dan Drinker", "0501112223", "dan.d@bevdist.co.il");
-            this.supplierServices.AddContact(sup1Id, "Maya Soda", "0501112224", "maya.s@bevdist.co.il");
+            this.supplierServices.AddContact(sup1Id, "Dan Drinker","dan.d@bevdist.co.il", "0501112223 ");
+            this.supplierServices.AddContact(sup1Id, "Maya Soda", "maya.s@bevdist.co.il","0501112224" );
+            this.supplierServices.AddContact(sup1Id, "Ron Shaker","ron.s@bevdist.co.il", "0501112225");
+
             this.supplierServices.AddDelvDay(sup1Id, DayOfWeek.SUNDAY);
             this.supplierServices.AddDelvDay(sup1Id, DayOfWeek.WEDNESDAY);
+
+            this.supplierServices.AddDiscountRule(sup1Id, "BEV-001", "Bulk Discount 50", 0.10, 50);
+            this.supplierServices.AddDiscountRule(sup1Id, "BEV-001", "Bulk Discount 100", 0.15, 100);
+            this.supplierServices.AddDiscountRule(sup1Id, "BEV-003", "Juice Promo", 0.05, 40);
+
 
             String sup2Id = "SUP-002";
             HashMap<String, Double> bakeryCatalog = new HashMap<>();
@@ -986,14 +988,19 @@ public class supplierCLI {
                     sup2Id, "512345678", "Angel & Sons Bakery",
                     "Bank Hapoalim (12), Branch 612, Account 789101", "Cash", bakeryCatalog
             );
-            if (res.isError())
-                throw new RuntimeException("Failed to add Supplier 2 base profile: " + res.getErrorMsg());
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 2: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup2Id, "Ronny Rollingpin", "0524445556", "ronny@angel-bakery.co.il");
             this.supplierServices.AddContact(sup2Id, "Beni Baker", "0524445557", "orders@angel-bakery.co.il");
+            this.supplierServices.AddContact(sup2Id, "Sarit Dough", "0524445558", "sarit@angel-bakery.co.il");
+
             this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.MONDAY);
             this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.TUESDAY);
             this.supplierServices.AddDelvDay(sup2Id, DayOfWeek.THURSDAY);
+
+            this.supplierServices.AddDiscountRule(sup2Id, "BAK-003", "Croissant Festival", 0.20, 100);
+            this.supplierServices.AddDiscountRule(sup2Id, "BAK-001", "Bread Stock", 0.08, 150);
+
 
             String sup3Id = "SUP-003";
             HashMap<String, Double> householdCatalog = new HashMap<>();
@@ -1006,27 +1013,34 @@ public class supplierCLI {
                     sup3Id, "513456789", "Clean & Bright Wholesale Logistics",
                     "Bank Discount (11), Branch 110, Account 456789", "Net60", householdCatalog
             );
-            if (res.isError())
-                throw new RuntimeException("Failed to add Supplier 3 base profile: " + res.getErrorMsg());
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 3: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup3Id, "Sara Soap", "0547778889", "sara.s@cleanbright.com");
             this.supplierServices.AddContact(sup3Id, "Gabi Glanz", "039201144", "office@cleanbright.com");
+
             this.supplierServices.AddDelvDay(sup3Id, DayOfWeek.TUESDAY);
+
+            this.supplierServices.AddDiscountRule(sup3Id, "HOU-003", "Detergent Sale", 0.12, 20);
+            this.supplierServices.AddDiscountRule(sup3Id, "HOU-004", "Softener Bundle", 0.10, 30);
+
 
             String sup4Id = "SUP-004";
             HashMap<String, Double> boutiqueCatalog = new HashMap<>();
             boutiqueCatalog.put("BAK-003", 2.50);
+            boutiqueCatalog.put("BEV-001", 1.95);
 
             res = this.supplierServices.AddSupplier(
                     sup4Id, "514567890", "Express Boutique Food",
                     "Bank Yahav (04), Branch 112, Account 998877", "Net15", boutiqueCatalog
             );
-            if (res.isError())
-                throw new RuntimeException("Failed to add Supplier 4 base profile: " + res.getErrorMsg());
+            if (res.isError()) throw new RuntimeException("Failed to add Supplier 4: " + res.getErrorMsg());
 
             this.supplierServices.AddContact(sup4Id, "Avi Express", "0556667778", "avi@expressboutique.co.il");
+            this.supplierServices.AddContact(sup4Id, "Eli Quick", "0556667779", "eli@expressboutique.co.il");
+
             this.supplierServices.AddDelvDay(sup4Id, DayOfWeek.FRIDAY);
 
+            this.supplierServices.AddDiscountRule(sup4Id, "BEV-001", "Boutique Cola Promo", 0.05, 200);
 
 
             HashMap<String, Integer> order1Amounts = new HashMap<>();
@@ -1062,9 +1076,6 @@ public class supplierCLI {
             HashMap<String, Integer> order5Amounts = new HashMap<>();
             order5Amounts.put("BAK-003", 10);
             res = this.orderServices.CreateOrder(sup4Id, true, order5Amounts);
-            if (res.isError())
-                throw new RuntimeException("Failed to create Order 5: " + res.getReturnValue() + " (Pending - SUP-004)");
-
 
 
             HashMap<String, Integer> bo1Amounts = new HashMap<>();
@@ -1076,7 +1087,6 @@ public class supplierCLI {
 
             Response<String> boRes1 = orderServices.CreateBuyOrder(sup1Id, bo1Amounts, bo1Days);
             if (boRes1.isError()) throw new RuntimeException("Failed to create Buy Order 1: " + boRes1.getErrorMsg());
-
             String bo1Id = boRes1.getReturnValue();
 
             HashMap<String, Integer> bo2Amounts = new HashMap<>();
@@ -1086,32 +1096,13 @@ public class supplierCLI {
 
             Response<String> boRes2 = orderServices.CreateBuyOrder(sup2Id, bo2Amounts, bo2Days);
             if (boRes2.isError()) throw new RuntimeException("Failed to create Buy Order 2: " + boRes2.getErrorMsg());
-
             String bo2Id = boRes2.getReturnValue();
 
+            orderServices.AddItemToBuyOrder(bo2Id, "BAK-002", 150);
+            orderServices.UpdateItemInBuyOrder(bo2Id, "BAK-001", 250);
+            orderServices.AddDayToBO(bo2Id, DayOfWeek.THURSDAY);
 
-            Response<String> addItemRes = orderServices.AddItemToBuyOrder(bo2Id, "BAK-002", 150);
-            if (addItemRes.isError()) throw new RuntimeException("Test Failed: AddItemToBuyOrder - " + addItemRes.getErrorMsg());
-
-            Response<String> updateItemRes = orderServices.UpdateItemInBuyOrder(bo2Id, "BAK-001", 250);
-            if (updateItemRes.isError()) throw new RuntimeException("Test Failed: UpdateItemInBuyOrder - " + updateItemRes.getErrorMsg());
-
-            Response<String> addDayRes = orderServices.AddDayToBO(bo2Id, DayOfWeek.THURSDAY);
-            if (addDayRes.isError()) throw new RuntimeException("Test Failed: AddDayToBO - " + addDayRes.getErrorMsg());
-
-
-            HashMap<String, Integer> bo3Amounts = new HashMap<>();
-            bo3Amounts.put("BAK-003", 15);
-            List<DayOfWeek> bo3Days = new ArrayList<>();
-            bo3Days.add(DayOfWeek.FRIDAY);
-
-            Response<String> boRes3 = orderServices.CreateBuyOrder(sup4Id, bo3Amounts, bo3Days);
-            if (!boRes3.isError()) {
-                String bo3Id = boRes3.getReturnValue();
-                Response<String> removeRes = orderServices.RemoveBuyOrder(bo3Id);
-                if (removeRes.isError()) throw new RuntimeException("Test Failed: RemoveBuyOrder - " + removeRes.getErrorMsg());
-            }
-
+            System.out.println("[V] Supplier & Orders test data loaded successfully with contacts and discounts!");
         }
         catch (Exception e) {
             System.out.println("\n==================================================");
@@ -1120,6 +1111,7 @@ public class supplierCLI {
             System.out.println("==================================================");
         }
     }
+
     public void HandleDiscountMenu()
     {
         System.out.println("\nChoose an option:");
