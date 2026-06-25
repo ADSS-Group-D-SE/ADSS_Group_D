@@ -2,6 +2,7 @@ package InventoryModule.DomainLayer;
 
 import CrossCuttingPackage.productDTO;
 import CrossCuttingPackage.promotionDTO;
+import InventoryModule.DataAccessLayer.ProductPromotionDAO;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -9,8 +10,12 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class ProductDL {
+    private final static ProductPromotionDAO promoDao = new ProductPromotionDAO();
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final static int MAIN = 0;
     private final static int SUB = 1;
     private final static int SUBSUB = 2;
@@ -191,13 +196,37 @@ public class ProductDL {
     }
 
 
-    public void addPromotion(Promotion promotion) {
-        if (promotion == null) {
-            throw new IllegalArgumentException("Promotion cannot be null");
-        }
-        this.product_discounts.add(promotion);
+    public String addPromotion(double newDisc,String endDate) {
+        if (endDate == null || endDate.isEmpty() || LocalDate.parse(endDate,FORMATTER).isBefore(LocalDate.now()))
+            throw new IllegalArgumentException("Bad end date was sent.");
+        if(newDisc <0 || newDisc > 1)
+            throw new IllegalArgumentException("Bad discount% was sent. needs to be between 0 and 1.");
+
+        Promotion toAdd = new Promotion(this.catalog_number,newDisc,endDate,PromotionScope.PRODUCT);
+
+        promoDao.insertPromotion(this.catalog_number,toAdd.toDTO());
+        this.product_discounts.add(toAdd);
+
+        return toAdd.getId();
     }
 
+    public void removePromotion(String promoId)
+    {
+        Promotion toRemove = FindPromo(promoId);
+
+        promoDao.RemoveItem(promoId);
+        this.product_discounts.remove(toRemove);
+    }
+
+    private Promotion FindPromo(String promoId)
+    {
+        for(Promotion p : this.product_discounts)
+        {
+            if(p.getId().equals(promoId))
+                return p;
+        }
+        throw new NoSuchElementException("The promotion:" + promoId + " was not found for the product:" + this.catalog_number);
+    }
     public double getTotalProductDiscount() {
         double priceMultiplier = 1.0;
 

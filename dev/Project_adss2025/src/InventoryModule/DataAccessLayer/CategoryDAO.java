@@ -1,18 +1,12 @@
-package InventoryModule.DataLayer;
+package InventoryModule.DataAccessLayer;
 
 import CrossCuttingPackage.categoryDTO;
 import CrossCuttingPackage.promotionDTO;
 import InventoryModule.DomainLayer.CategoryDL;
-import InventoryModule.DomainLayer.ProductDL;
-import InventoryModule.DomainLayer.Promotion;
-import InventoryModule.DomainLayer.PromotionScope;
 
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class CategoryDAO {
 
@@ -39,29 +33,6 @@ public class CategoryDAO {
         }
     }
 
-    public void UpdateCategory(categoryDTO category) {
-        String sql = "UPDATE Categories SET name = ?, type = ? WHERE category_id = ?";
-
-        try (Connection conn = DriverManager.getConnection(url); PreparedStatement ps = conn.prepareStatement(sql)) {
-            promotionDAO.updatePromotions(category.getCategoryId(),category.getDiscountIds());
-
-            ps.setString(1, category.getName());
-            ps.setString(2, category.getType());
-            ps.setString(3, category.getCategoryId());
-
-            int rowsUpdated = ps.executeUpdate();
-
-            if (rowsUpdated <= 0) {
-                throw new RuntimeException("CategoryDAO:UpdateCategory - no such category was found in db: " + category.getCategoryId());
-            }
-
-            hierarchyDAO.DeleteLinksByParent(category.getCategoryId());
-            hierarchyDAO.InsertLinks(category.getCategoryId(), category.getSubCategoryIds());
-
-        } catch (SQLException e) {
-            throw new RuntimeException("CategoryDAO:UpdateCategory - " + e.getMessage());
-        }
-    }
 
     public List<categoryDTO> SelectAll() {
         String q = "SELECT category_id, name, type FROM Categories";

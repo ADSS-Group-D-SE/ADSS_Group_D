@@ -3,6 +3,7 @@ package InventoryModule.DomainLayer;
 import CrossCuttingPackage.SupplierDTO;
 import CrossCuttingPackage.categoryDTO;
 import CrossCuttingPackage.promotionDTO;
+import InventoryModule.DataAccessLayer.CategoryPromotionDAO;
 import SupplierModule.DomainLayer.ContactInfo;
 import SupplierModule.DomainLayer.DeliveryDaySchedule;
 import SupplierModule.DomainLayer.SupplierAgreement;
@@ -12,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.NoSuchElementException;
 
 
 public class CategoryDL {
@@ -20,6 +21,8 @@ public class CategoryDL {
     public enum CategoryType {
         Main, Sub, Subsub
     }
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    public static final CategoryPromotionDAO promoDao = new CategoryPromotionDAO();
 
     private String name;
     private String category_id;
@@ -135,11 +138,36 @@ public class CategoryDL {
     }
 
 
-    public void addPromotion(Promotion promotion) {
-        if (promotion == null) {
-            throw new IllegalArgumentException("Promotion cannot be null");
+    public String addPromotion(double newDisc,String endDate) {
+        if (endDate == null || endDate.isEmpty() || LocalDate.parse(endDate,FORMATTER).isBefore(LocalDate.now()))
+            throw new IllegalArgumentException("Bad end date was sent.");
+        if(newDisc <0 || newDisc > 1)
+            throw new IllegalArgumentException("Bad discount% was sent. needs to be between 0 and 1.");
+
+        Promotion toAdd = new Promotion(this.category_id,newDisc,endDate,PromotionScope.CATEGORY);
+
+        promoDao.insertPromotion(this.category_id,toAdd.toDTO());
+        this.discount_pre.add(toAdd);
+
+        return toAdd.getId();
+    }
+
+    public void removePromotion(String promoId)
+    {
+        Promotion toRemove = FindPromo(promoId);
+
+        promoDao.RemoveItem(promoId);
+        this.discount_pre.remove(toRemove);
+    }
+
+    private Promotion FindPromo(String promoId)
+    {
+        for(Promotion p : this.discount_pre)
+        {
+            if(p.getId().equals(promoId))
+                return p;
         }
-        this.discount_pre.add(promotion);
+        throw new NoSuchElementException("The promotion:" + promoId + " was not found for the category:" + this.category_id);
     }
 
     public double getTotalCategoryDiscount() {

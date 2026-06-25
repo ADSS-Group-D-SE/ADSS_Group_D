@@ -1,10 +1,5 @@
 package CrossCuttingPackage;
 
-import InventoryModule.DataLayer.CategoryDAO;
-import InventoryModule.DomainLayer.CategoryDL;
-import InventoryModule.DomainLayer.Promotion;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class categoryDTO {

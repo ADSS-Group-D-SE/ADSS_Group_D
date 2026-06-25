@@ -1,7 +1,6 @@
-package InventoryModule.DataLayer;
+package InventoryModule.DataAccessLayer;
 
 import CrossCuttingPackage.categoryDTO;
-import InventoryModule.DomainLayer.CategoryDL;
 
 import java.sql.*;
 import java.util.ArrayList;

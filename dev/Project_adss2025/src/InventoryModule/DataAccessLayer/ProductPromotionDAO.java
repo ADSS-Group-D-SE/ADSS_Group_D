@@ -1,7 +1,6 @@
-package InventoryModule.DataLayer;
+package InventoryModule.DataAccessLayer;
 
 import CrossCuttingPackage.promotionDTO;
-import InventoryModule.DomainLayer.Promotion;
 import InventoryModule.DomainLayer.PromotionScope;
 
 import java.sql.*;
@@ -23,7 +22,7 @@ public class ProductPromotionDAO {
             qu.setString(1, promotion.getId());
             qu.setDouble(2, promotion.getDiscountPercentage());
             qu.setString(3, catalogNumber);
-            qu.setString(4, promotion.getEndDate().toString());
+            qu.setString(4, promotion.getEndDate());
             qu.setString(5, promotion.getScope());
 
             qu.executeUpdate();
@@ -110,7 +109,7 @@ public class ProductPromotionDAO {
 
             try (ResultSet rs = qu.executeQuery()) {
                 while (rs.next()) {
-                    LocalDate localDate = LocalDate.parse(rs.getString("endDate"));
+                    LocalDate localDate = LocalDate.parse(rs.getString("endDate"), DATE_FORMATTER);
                     String formattedDateForConstructor = localDate.format(DATE_FORMATTER);
 
                     PromotionScope scope = PromotionScope.valueOf(rs.getString("scope"));
@@ -121,6 +120,7 @@ public class ProductPromotionDAO {
                             formattedDateForConstructor,
                             scope.name()
                     );
+
                     temp.add(promo);
                 }
             }

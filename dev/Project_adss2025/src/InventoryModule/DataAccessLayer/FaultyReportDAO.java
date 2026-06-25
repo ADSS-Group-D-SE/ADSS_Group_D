@@ -1,11 +1,10 @@
-package InventoryModule.DataLayer;
+package InventoryModule.DataAccessLayer;
 
 import CrossCuttingPackage.FaultyProductDTO;
 import InventoryModule.DomainLayer.FaultyProductDL;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
@@ -13,19 +12,24 @@ import java.util.List;
 
 public class FaultyReportDAO {
     private static final String url = "jdbc:sqlite:database.db";
+    public static final DateTimeFormatter DATE_FORMATTER = new DateTimeFormatterBuilder()
+            .appendPattern("dd/MM/yyyy")
+            .optionalStart()
+            .appendPattern(" HH:mm")
+            .optionalEnd()
+            .toFormatter();
 
 
     public void Insert(FaultyProductDTO report) {
         String q = "INSERT INTO FaultyProductReports (report_id, name, catalog_number, location, description, dateOnReport) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(url);
-             PreparedStatement ps = conn.prepareStatement(q)) {
+        try (Connection conn = DriverManager.getConnection(url); PreparedStatement ps = conn.prepareStatement(q)) {
 
             ps.setInt(1, report.getReportID());
             ps.setString(2, report.getName());
             ps.setString(3, report.getCatalogNumber());
-            ps.setString(4, report.getLocation().toString());
+            ps.setString(4, report.getLocation());
             ps.setString(5, report.getDescription());
 
             ps.setString(6, report.getDateOnReport());
@@ -37,53 +41,43 @@ public class FaultyReportDAO {
         }
     }
 
-    public static final DateTimeFormatter DATE_FORMATTER = new DateTimeFormatterBuilder()
-            .appendPattern("dd/MM/yyyy")
-            .optionalStart()
-            .appendPattern(" HH:mm")
-            .optionalEnd()
-            .toFormatter();
+
     public List<FaultyProductDL> SelectByDateRange(LocalDate fromDate, LocalDate toDate) {
-        if (fromDate == null || toDate == null) {
-            throw new IllegalArgumentException("Dates cannot be null");
-        }
-        if (fromDate.isAfter(toDate)) {
-            throw new IllegalArgumentException("Start date cannot be after end date");
-        }
-
-        String q = "SELECT report_id, name, catalog_number, location, description, dateOnReport " +
-                "FROM FaultyProductReports " +
-                "WHERE substr(dateOnReport, 1, 10) BETWEEN ? AND ?";
-
+        String q = "SELECT report_id, name, catalog_number, location, description, dateOnReport FROM FaultyProductReports WHERE (substr(dateOnReport, 7, 4) || '-' || substr(dateOnReport, 4, 2) || '-' || substr(dateOnReport, 1, 2)) BETWEEN ? AND ?";
         List<FaultyProductDL> results = new ArrayList<>();
 
         try (Connection conn = DriverManager.getConnection(url);
              PreparedStatement ps = conn.prepareStatement(q)) {
 
-            ps.setString(1, fromDate.format(DATE_FORMATTER));
-            ps.setString(2, toDate.format(DATE_FORMATTER));
+            ps.setString(1, fromDate.toString());
+            ps.setString(2, toDate.toString());
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String rawDate = rs.getString("dateOnReport");
-                    if (rawDate == null || rawDate.trim().isEmpty()) continue;
+            ResultSet rs = ps.executeQuery();
 
-                    LocalDate reportDate = LocalDate.parse(rawDate, DATE_FORMATTER);
+            while (rs.next()) {
+                String rawDate = rs.getString("dateOnReport");
 
-                    FaultyProductDL report = new FaultyProductDL(
-                            rs.getInt("report_id"),
-                            rs.getString("name"),
-                            rs.getString("catalog_number"),
-                            rs.getString("location"),
-                            rs.getString("description"),
-                            reportDate
-                    );
-                    results.add(report);
-                }
+                if (rawDate == null || rawDate.trim().isEmpty())
+                    continue;
+
+                LocalDate reportDate = LocalDate.parse(rawDate.substring(0, 10), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+                FaultyProductDL report = new FaultyProductDL(
+                        rs.getInt("report_id"),
+                        rs.getString("name"),
+                        rs.getString("catalog_number"),
+                        rs.getString("location"),
+                        rs.getString("description"),
+                        reportDate
+                );
+
+                results.add(report);
             }
+
         } catch (SQLException e) {
             throw new RuntimeException("FaultyReportDAO:SelectByDateRange - " + e.getMessage());
         }
+
         return results;
     }
 

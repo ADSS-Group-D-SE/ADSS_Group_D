@@ -1,7 +1,6 @@
-package InventoryModule.DataLayer;
+package InventoryModule.DataAccessLayer;
 
 import CrossCuttingPackage.productDTO;
-import InventoryModule.DomainLayer.ProductDL;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -22,14 +21,14 @@ public class ProductDAO {
 
         try (Connection conn = DriverManager.getConnection(url);PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            promotionDAO.insertPromotions(product.getCatalogNumber(),product.getProductDiscounts());
+            //no need to insert promotion as a product gets created with an empty list
             ps.setString(1, product.getCatalogNumber());
             ps.setString(2, product.getName());
             ps.setString(3, product.getMain_category_id());
             ps.setString(4, product.getSub_category_id());
             ps.setString(5, product.getSubsub_category_id());
-            ps.setString(6, product.getWarehouseName().toString());
-            ps.setString(7, product.getShelfLocation().toString());
+            ps.setString(6, product.getWarehouseName());
+            ps.setString(7, product.getShelfLocation());
             ps.setString(8, product.getManufacturer());
             ps.setInt(9, product.getAmountOnShelves());
             ps.setInt(10, product.getAmountOnStock());
@@ -80,8 +79,8 @@ public class ProductDAO {
             ps.setString(2, product.getMain_category_id());
             ps.setString(3, product.getSub_category_id());
             ps.setString(4, product.getSubsub_category_id());
-            ps.setString(5, product.getWarehouseName().toString());
-            ps.setString(6, product.getShelfLocation().toString());
+            ps.setString(5, product.getWarehouseName());
+            ps.setString(6, product.getShelfLocation());
             ps.setString(7, product.getManufacturer());
             ps.setInt(8, product.getAmountOnShelves());
             ps.setInt(9, product.getAmountOnStock());

@@ -5,6 +5,7 @@ import CrossCuttingPackage.promotionDTO;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.UUID;
 
 
 public class Promotion {
@@ -15,11 +16,11 @@ public class Promotion {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    public Promotion(String id, double discountPercentage, String endDateStr, PromotionScope scope) {
+    public Promotion(String baseId,double discountPercentage, String endDateStr, PromotionScope scope) {
         if (discountPercentage < 0 || discountPercentage > 1) {
             throw new IllegalArgumentException("Discount percentage must be between 0 and 1");
         }
-        this.id = id;
+        this.id = generateOrderId(baseId);
         this.discountPercentage = discountPercentage;
         this.scope = scope;
 
@@ -29,6 +30,13 @@ public class Promotion {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid date format. Please use DD/MM/YYYY");
         }
+    }
+    private static String generateOrderId(String s) {
+        return "PROMO-"+ s+"-"+ UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 16)
+                .toUpperCase();
     }
 
     public Promotion(Promotion other) {
@@ -95,6 +103,10 @@ public class Promotion {
         this.discountPercentage = discountPercentage;
     }
 
+    public String Summary()
+    {
+        return "Promotion:" + this.id+"\nDiscount%:" + this.discountPercentage*100 +"%\nEnd date:" + this.endDate.toString();
+    }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
     public void setScope(PromotionScope scope) { this.scope = scope; }
 }
