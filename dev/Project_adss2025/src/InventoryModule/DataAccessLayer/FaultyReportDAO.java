@@ -20,6 +20,21 @@ public class FaultyReportDAO {
             .toFormatter();
 
 
+    /**
+     * Returns the highest report_id currently stored, or 0 if there are no reports.
+     * Used to seed the in-memory id counter so generated ids never collide with persisted ones.
+     */
+    public int getMaxReportId() {
+        String q = "SELECT COALESCE(MAX(report_id), 0) FROM FaultyProductReports";
+        try (Connection conn = DriverManager.getConnection(url);
+             PreparedStatement ps = conn.prepareStatement(q);
+             ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("FaultyReportDAO:getMaxReportId - " + e.getMessage());
+        }
+    }
+
     public void Insert(FaultyProductDTO report) {
         String q = "INSERT INTO FaultyProductReports (report_id, name, catalog_number, location, description, dateOnReport) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";

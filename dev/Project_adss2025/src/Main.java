@@ -5,10 +5,7 @@ import InventoryModule.ServiceLayer.ProductServices;
 import SupplierModule.PresentationLayer.supplierCLI;
 import SupplierModule.ServiceLayer.OrderServices;
 import SupplierModule.ServiceLayer.SupplierServices;
-import kotlin.jvm.Synchronized;
-import org.junit.jupiter.api.Order;
 
-import javax.swing.text.StyledEditorKit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;

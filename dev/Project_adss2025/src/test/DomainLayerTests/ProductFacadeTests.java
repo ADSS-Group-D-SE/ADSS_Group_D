@@ -18,6 +18,7 @@ public class ProductFacadeTests
 
     @BeforeEach
     void setUp() {
+        TestSupport.resetState();
         pFacade = new ProductFacade();
     }
 
