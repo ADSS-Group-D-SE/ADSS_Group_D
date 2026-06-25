@@ -968,7 +968,7 @@ public class InventoryCLI {
 
     }
 
-    private void CreateTestData()
+    public void CreateTestData()
     {
         Response<String> res;
         try {
@@ -986,19 +986,9 @@ public class InventoryCLI {
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String householdId = res.getReturnValue();
 
-
-            res = this.categoryServices.CreateCategory("aaa", 0.0, defaultEndDate);
-            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
-            String aaa = res.getReturnValue();
-            /*
-            Subcategories
-             */
-
-            res = this.categoryServices.CreateSubCategory("bbb", 0, defaultEndDate, aaa);
-            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
-            String bbb = res.getReturnValue();
-
-
+        /*
+        Subcategories
+         */
             res = this.categoryServices.CreateSubCategory("Soft Drinks", 0, defaultEndDate, beveragesId);
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinksId = res.getReturnValue();
@@ -1023,9 +1013,9 @@ public class InventoryCLI {
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundryId = res.getReturnValue();
 
-            /*
-            SubSubCategories
-             */
+        /*
+        SubSubCategories
+         */
             res = this.categoryServices.CreateSubCategory("250 ml", 0, defaultEndDate, softDrinksId);
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String softDrinks250mlId = res.getReturnValue();
@@ -1070,10 +1060,10 @@ public class InventoryCLI {
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundry1LId = res.getReturnValue();
 
-
             res = this.categoryServices.CreateSubCategory("2 L", 0, defaultEndDate, laundryId);
             if(res.isError()) throw new RuntimeException(res.getErrorMsg());
             String laundry2LId = res.getReturnValue();
+
             Response<String> pres;
 
             pres = this.productServices.addProduct(
@@ -1148,10 +1138,197 @@ public class InventoryCLI {
             );
             if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
 
-            System.out.println("[V] Test data loaded successfully!");
+            System.out.println("[V] Inventory test data loaded successfully!");
         }
         catch (Exception e) {
-            System.out.println("Error creating data. " + e.getMessage());
+            System.out.println("Error creating data: " + e.getMessage());
         }
     }
+//
+//    private void CreateTestData()
+//    {
+//        Response<String> res;
+//        try {
+//            String defaultEndDate = "31/12/2030";
+//
+//            res = this.categoryServices.CreateCategory("Beverages", 0.05, defaultEndDate);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String beveragesId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateCategory("Bakery", 0.075, defaultEndDate);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String bakeryId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateCategory("Household", 0.1, defaultEndDate);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String householdId = res.getReturnValue();
+//
+//
+//            res = this.categoryServices.CreateCategory("aaa", 0.0, defaultEndDate);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String aaa = res.getReturnValue();
+//            /*
+//            Subcategories
+//             */
+//
+//            res = this.categoryServices.CreateSubCategory("bbb", 0, defaultEndDate, aaa);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String bbb = res.getReturnValue();
+//
+//
+//            res = this.categoryServices.CreateSubCategory("Soft Drinks", 0, defaultEndDate, beveragesId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String softDrinksId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Juices", 0, defaultEndDate, beveragesId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String juicesId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Bread", 0, defaultEndDate, bakeryId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String breadId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Pastries", 0, defaultEndDate, bakeryId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String pastriesId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Cleaning", 0, defaultEndDate, householdId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String cleaningId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Laundry", 0, defaultEndDate, householdId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String laundryId = res.getReturnValue();
+//
+//            /*
+//            SubSubCategories
+//             */
+//            res = this.categoryServices.CreateSubCategory("250 ml", 0, defaultEndDate, softDrinksId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String softDrinks250mlId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, softDrinksId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String softDrinks1LId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("500 ml", 0, defaultEndDate, juicesId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String juices500mlId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, juicesId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String juices1LId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Small Loaf", 0, defaultEndDate, breadId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String breadSmallLoafId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Large Loaf", 0, defaultEndDate, breadId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String breadLargeLoafId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Single", 0, defaultEndDate, pastriesId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String pastriesSingleId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("Pack of 4", 0, defaultEndDate, pastriesId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String pastriesPack4Id = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("500 ml", 0, defaultEndDate, cleaningId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String cleaning500mlId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, cleaningId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String cleaning1LId = res.getReturnValue();
+//
+//            res = this.categoryServices.CreateSubCategory("1 L", 0, defaultEndDate, laundryId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String laundry1LId = res.getReturnValue();
+//
+//
+//            res = this.categoryServices.CreateSubCategory("2 L", 0, defaultEndDate, laundryId);
+//            if(res.isError()) throw new RuntimeException(res.getErrorMsg());
+//            String laundry2LId = res.getReturnValue();
+//            Response<String> pres;
+//
+//            pres = this.productServices.addProduct(
+//                    "Coca Cola", "BEV-001", beveragesId, softDrinksId, softDrinks250mlId,
+//                    "Main Warehouse", "A-23", "Coca Cola", 30, 120, 2.5, 4.5, 20
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Sprite", "BEV-002", beveragesId, softDrinksId, softDrinks1LId,
+//                    "Main Warehouse", "A-56", "Coca Cola", 25, 80, 4.0, 6.5, 15
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Orange Juice", "BEV-003", beveragesId, juicesId, juices1LId,
+//                    "Main Warehouse", "d-23", "Tropicana", 20, 60, 5.0, 8.0, 12
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Apple Juice", "BEV-004", beveragesId, juicesId, juices500mlId,
+//                    "Main Warehouse", "g-4", "Prigat", 18, 50, 3.5, 6.0, 10
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "White Bread", "BAK-001", bakeryId, breadId, breadLargeLoafId,
+//                    "Main Warehouse", "w-65", "Angel", 15, 40, 4.0, 6.5, 10
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Whole Wheat Bread", "BAK-002", bakeryId, breadId, breadSmallLoafId,
+//                    "Main Warehouse", "e-5", "Angel", 12, 35, 3.5, 5.8, 8
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Butter Croissant", "BAK-003", bakeryId, pastriesId, pastriesSingleId,
+//                    "Main Warehouse", "c-23", "Bakery House", 20, 30, 2.0, 3.8, 10
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Chocolate Muffin Pack", "BAK-004", bakeryId, pastriesId, pastriesPack4Id,
+//                    "Main Warehouse", "A-14", "Bakery House", 10, 25, 6.0, 10.0, 6
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Dish Soap", "HOU-001", householdId, cleaningId, cleaning500mlId,
+//                    "Main Warehouse", "s-14", "Fairy", 16, 45, 5.5, 8.9, 10
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Floor Cleaner", "HOU-002", householdId, cleaningId, cleaning1LId,
+//                    "Main Warehouse", "k-23", "Sano", 14, 40, 7.0, 11.5, 8
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Laundry Detergent", "HOU-003", householdId, laundryId, laundry2LId,
+//                    "Main Warehouse", "y-4", "Ariel", 10, 35, 12.0, 18.5, 7
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            pres = this.productServices.addProduct(
+//                    "Fabric Softener", "HOU-004", householdId, laundryId, laundry1LId,
+//                    "Main Warehouse", "w-7", "Lenor", 11, 28, 8.0, 13.0, 6
+//            );
+//            if(pres.isError()) throw new RuntimeException(pres.getErrorMsg());
+//
+//            System.out.println("[V] Test data loaded successfully!");
+//        }
+//        catch (Exception e) {
+//            System.out.println("Error creating data. " + e.getMessage());
+//        }
+//    }
 }

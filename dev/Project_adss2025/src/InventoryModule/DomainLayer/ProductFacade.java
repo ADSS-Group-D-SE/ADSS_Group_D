@@ -151,7 +151,7 @@ public class ProductFacade {
         ProductDL toFaulty = FindProductByID(catalog_number);
         LocalDateTime dateOnReport = LocalDateTime.now();
 
-        int promoId = (int) (System.currentTimeMillis() / 1000);
+        int promoId = LocalDateTime.now().getNano();
         FaultyProductDL toAdd = new FaultyProductDL(toFaulty,promoId,locationProduct,description,dateOnReport);
         faultyReportDAO.Insert(toAdd.toDTO());
         return toAdd.getReportID();
@@ -294,7 +294,9 @@ public class ProductFacade {
         for(Map.Entry<String,ProductDL> en:this.products.entrySet())
         {
             ProductDL p = en.getValue();
-            if(p.getMain_category_id().equals(category_id) || p.getSub_category_id().equals(category_id) || p.getSubsub_category_id().equals(category_id))
+            if ((p.getMain_category_id() != null && p.getMain_category_id().equals(category_id)) ||
+                    (p.getSub_category_id() != null && p.getSub_category_id().equals(category_id)) ||
+                    (p.getSubsub_category_id() != null && p.getSubsub_category_id().equals(category_id)))
                 list.add(p);
         }
         return list;

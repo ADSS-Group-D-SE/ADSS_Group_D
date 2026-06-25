@@ -17,6 +17,7 @@ public class CategoryFacadeTests
     public void SetUp()
     {
         c = new CategoryFacade();
+        c.CleanData();
     }
 
     @Test

@@ -34,6 +34,7 @@ public class Main {
             System.out.println("1. Inventory Management System");
             System.out.println("2. Supplier Management System");
             System.out.println("3. Clear saved data.");
+            System.out.println("4. Load Initial Test Data");
             System.out.println("0. Exit Application");
 
             String choice = scanner.nextLine();
@@ -49,6 +50,16 @@ public class Main {
                 inventory.Clean();
                 supplier.Clean();
                 System.out.println("Shutting down, re-start system");
+                break;
+            }
+            else if (choice.equals("4")) {
+                System.out.println("Loading initial system test data...");
+
+                inventory.Clean();
+                supplier.Clean();
+                inventory.CreateTestData();
+                supplier.CreateSupplierTestData();
+                System.out.println("System data setup is complete!");
                 break;
             }
             else {

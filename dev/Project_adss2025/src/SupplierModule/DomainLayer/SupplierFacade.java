@@ -69,7 +69,7 @@ public class SupplierFacade {
             throw new RuntimeException("SupplierFacade-AddSupplier:Supplier already exist in system.");
         Supplier toAdd = new Supplier(supplierId,name,bankAccount,new PaymentTerms(PayingTerms),regNum,itemsToPrices);
 
-        supDao.Insert(toAdd.toDTO()); // saves in db.
+        supDao.Insert(toAdd.toDTO());
 
         suppliers.put(supplierId,toAdd);
         return toAdd.getSupplierId();
