@@ -57,9 +57,12 @@ public final class TestSupport {
             Field f = owner.getDeclaredField(fieldName);
             f.setAccessible(true);
             Object value = f.get(null);
-            if (value instanceof Map<?, ?> map) {
+
+            if (value instanceof Map<?, ?>) {
+                Map<?, ?> map = (Map<?, ?>) value;
                 map.clear();
             }
+
         } catch (NoSuchFieldException e) {
             // Field renamed/removed - nothing to clear.
         } catch (Exception e) {

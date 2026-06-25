@@ -4,6 +4,7 @@ import InventoryModule.DomainLayer.CategoryFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,7 +13,6 @@ public class CategoryFacadeTests
 {
     private CategoryFacade c;
     private final String defaultDate = "31/12/2030";
-
     @BeforeEach
     public void SetUp()
     {
