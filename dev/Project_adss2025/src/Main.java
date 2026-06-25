@@ -16,9 +16,6 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // Make sure the schema exists (runs on a clean install) and seed example data on first run.
-        DatabaseSchema.ensure();
-        DataSeeder.seedIfEmpty();
 
         Boolean shouldLoad = shouldLoadFromDatabase(scanner);
 

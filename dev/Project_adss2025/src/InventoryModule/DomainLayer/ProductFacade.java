@@ -25,11 +25,12 @@ public class ProductFacade {
 
     public ProductFacade(){
         products=new HashMap<String, ProductDL>();
+        this.faultyProductsIdCounter = faultyReportDAO.getMaxReportId();
 
     }
 
     private int generateNextId() {
-        return faultyProductsIdCounter++;
+        return ++faultyProductsIdCounter;
     }
 
 
@@ -151,7 +152,7 @@ public class ProductFacade {
         ProductDL toFaulty = FindProductByID(catalog_number);
         LocalDateTime dateOnReport = LocalDateTime.now();
 
-        int promoId = (int) (System.currentTimeMillis() / 1000);
+        int promoId = generateNextId();
         FaultyProductDL toAdd = new FaultyProductDL(toFaulty,promoId,locationProduct,description,dateOnReport);
         faultyReportDAO.Insert(toAdd.toDTO());
         return toAdd.getReportID();
