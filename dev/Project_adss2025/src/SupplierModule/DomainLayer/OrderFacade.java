@@ -265,11 +265,13 @@ public class OrderFacade {
             if(LocalDate.now().equals(b.getNextDeliveryDate())) {
                 try {
                     res.add(CreateOrder(b.getSupId(), false, b.getItems()));
-                    b.ScheduleNextDelivery();
-                    boDao.Update(b.getBuyOrderID(),b.getSupId(),b.getRegularDays().toString(),b.getNextDeliveryDate().toString());
                 }catch (Exception e)
                 {
                     System.out.println("Cannot create order from BuyOrder:" + b.getBuyOrderID() +" Reason:" + e.getMessage());
+                }
+                finally {
+                    b.ScheduleNextDelivery();
+                    boDao.Update(b.getBuyOrderID(),b.getSupId(),b.getRegularDays().toString(),b.getNextDeliveryDate().toString());
                 }
             }
         }
